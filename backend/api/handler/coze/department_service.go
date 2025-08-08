@@ -23,22 +23,22 @@ import (
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/protocol/consts"
-	corporation1 "github.com/coze-dev/coze-studio/backend/api/model/corporation/corporation"
+	department1 "github.com/coze-dev/coze-studio/backend/api/model/corporation/department"
 	"github.com/coze-dev/coze-studio/backend/application/corporation"
 )
 
-// CreateCorporation .
-// @router /v1/corporation/create [POST]
-func CreateCorporation(ctx context.Context, c *app.RequestContext) {
+// CreateDepartment .
+// @router /v1/corporation/department/create [POST]
+func CreateDepartment(ctx context.Context, c *app.RequestContext) {
 	var err error
-	var req corporation1.CreateCorpRequest
+	var req department1.CreateDepartmentRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
 		c.String(consts.StatusBadRequest, err.Error())
 		return
 	}
 
-	resp, err := corporation.CorporationSVC.CreateCorporation(ctx, &req)
+	resp, err := corporation.CorporationSVC.CreateDepartment(ctx, &req)
 	if err != nil {
 		c.String(consts.StatusInternalServerError, err.Error())
 		return
@@ -47,18 +47,18 @@ func CreateCorporation(ctx context.Context, c *app.RequestContext) {
 	c.JSON(consts.StatusOK, resp)
 }
 
-// GetCorporation .
-// @router /v1/corporation/:id [GET]
-func GetCorporation(ctx context.Context, c *app.RequestContext) {
+// GetDepartment .
+// @router /v1/corporation/department/:id [GET]
+func GetDepartment(ctx context.Context, c *app.RequestContext) {
 	var err error
-	var req corporation1.GetCorpRequest
+	var req department1.GetDepartmentRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
 		c.String(consts.StatusBadRequest, err.Error())
 		return
 	}
 
-	resp, err := corporation.CorporationSVC.GetCorporationByID(ctx, &req)
+	resp, err := corporation.CorporationSVC.GetDepartmentByID(ctx, &req)
 	if err != nil {
 		c.String(consts.StatusInternalServerError, err.Error())
 		return
@@ -67,18 +67,18 @@ func GetCorporation(ctx context.Context, c *app.RequestContext) {
 	c.JSON(consts.StatusOK, resp)
 }
 
-// UpdateCorporation .
-// @router /v1/corporation/:id [PUT]
-func UpdateCorporation(ctx context.Context, c *app.RequestContext) {
+// UpdateDepartment .
+// @router /v1/corporation/department/:id [PUT]
+func UpdateDepartment(ctx context.Context, c *app.RequestContext) {
 	var err error
-	var req corporation1.UpdateCorpRequest
+	var req department1.UpdateDepartmentRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
 		c.String(consts.StatusBadRequest, err.Error())
 		return
 	}
 
-	resp, err := corporation.CorporationSVC.UpdateCorporation(ctx, &req)
+	resp, err := corporation.CorporationSVC.UpdateDepartment(ctx, &req)
 	if err != nil {
 		c.String(consts.StatusInternalServerError, err.Error())
 		return
@@ -87,18 +87,18 @@ func UpdateCorporation(ctx context.Context, c *app.RequestContext) {
 	c.JSON(consts.StatusOK, resp)
 }
 
-// DeleteCorporation .
-// @router /v1/corporation/:id [DELETE]
-func DeleteCorporation(ctx context.Context, c *app.RequestContext) {
+// DeleteDepartment .
+// @router /v1/corporation/department/:id [DELETE]
+func DeleteDepartment(ctx context.Context, c *app.RequestContext) {
 	var err error
-	var req corporation1.DeleteCorpRequest
+	var req department1.DeleteDepartmentRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
 		c.String(consts.StatusBadRequest, err.Error())
 		return
 	}
 
-	resp, err := corporation.CorporationSVC.DeleteCorporation(ctx, &req)
+	resp, err := corporation.CorporationSVC.DeleteDepartment(ctx, &req)
 	if err != nil {
 		c.String(consts.StatusInternalServerError, err.Error())
 		return
@@ -107,18 +107,38 @@ func DeleteCorporation(ctx context.Context, c *app.RequestContext) {
 	c.JSON(consts.StatusOK, resp)
 }
 
-// ListCorporations .
-// @router /v1/corporation/list [POST]
-func ListCorporations(ctx context.Context, c *app.RequestContext) {
+// ListDepartments .
+// @router /v1/corporation/department/list [POST]
+func ListDepartments(ctx context.Context, c *app.RequestContext) {
 	var err error
-	var req corporation1.ListCorpsRequest
+	var req department1.ListDepartmentRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
 		c.String(consts.StatusBadRequest, err.Error())
 		return
 	}
 
-	resp, err := corporation.CorporationSVC.ListCorporations(ctx, &req)
+	resp, err := corporation.CorporationSVC.ListDepartments(ctx, &req)
+	if err != nil {
+		c.String(consts.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(consts.StatusOK, resp)
+}
+
+// SortDepartments .
+// @router /v1/corporation/department/sort [POST]
+func SortDepartments(ctx context.Context, c *app.RequestContext) {
+	var err error
+	var req department1.SortDepartmentRequest
+	err = c.BindAndValidate(&req)
+	if err != nil {
+		c.String(consts.StatusBadRequest, err.Error())
+		return
+	}
+
+	resp, err := corporation.CorporationSVC.SortDepartments(ctx, &req)
 	if err != nil {
 		c.String(consts.StatusInternalServerError, err.Error())
 		return

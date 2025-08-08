@@ -22,6 +22,9 @@ include "./passport/passport.thrift"
 include "./bot_platform/ocean_cloud_workflow/ocean_cloud_workflow.thrift"
 include "./bot_open_api/bot_open_api.thrift"
 include "./upload/upload.thrift"
+include "./corporation/corporation_service.thrift"
+include "./corporation/department_service.thrift"
+include "./corporation/employee_service.thrift"
 
 
 namespace go coze
@@ -43,3 +46,6 @@ service WorkflowService extends ocean_cloud_workflow.WorkflowService {}
 service KnowledgeService extends flow_dataengine_dataset.DatasetService {}
 service BotOpenApiService extends bot_open_api.BotOpenApiService {}
 service UploadService extends upload.UploadService {}
+service CorporationService extends corporation_service.CorporationService {}
+service DepartmentService extends department_service.DepartmentService {}
+service EmployeeService extends employee_service.EmployeeService {}

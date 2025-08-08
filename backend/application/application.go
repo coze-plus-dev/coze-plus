@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/coze-dev/coze-studio/backend/application/corporation"
 	"github.com/coze-dev/coze-studio/backend/application/openauth"
 	"github.com/coze-dev/coze-studio/backend/application/template"
 	"github.com/coze-dev/coze-studio/backend/crossdomain/contract/crosssearch"
@@ -73,14 +74,15 @@ type eventbusImpl struct {
 }
 
 type basicServices struct {
-	infra        *appinfra.AppDependencies
-	eventbus     *eventbusImpl
-	modelMgrSVC  *modelmgr.ModelmgrApplicationService
-	connectorSVC *connector.ConnectorApplicationService
-	userSVC      *user.UserApplicationService
-	promptSVC    *prompt.PromptApplicationService
-	templateSVC  *template.ApplicationService
-	openAuthSVC  *openauth.OpenAuthApplicationService
+	infra           *appinfra.AppDependencies
+	eventbus        *eventbusImpl
+	modelMgrSVC     *modelmgr.ModelmgrApplicationService
+	connectorSVC    *connector.ConnectorApplicationService
+	userSVC         *user.UserApplicationService
+	promptSVC       *prompt.PromptApplicationService
+	templateSVC     *template.ApplicationService
+	openAuthSVC     *openauth.OpenAuthApplicationService
+	corporationSVC  *corporation.CorporationApplicationService
 }
 
 type primaryServices struct {
@@ -163,16 +165,25 @@ func initBasicServices(ctx context.Context, infra *appinfra.AppDependencies, e *
 		IDGen:   infra.IDGenSVC,
 		Storage: infra.TOSClient,
 	})
+	corporationSVC, err := corporation.InitService(&corporation.ServiceComponents{
+		DB:      infra.DB,
+		IDGen:   infra.IDGenSVC,
+		Storage: infra.TOSClient,
+	})
+	if err != nil {
+		return nil, err
+	}
 
 	return &basicServices{
-		infra:        infra,
-		eventbus:     e,
-		modelMgrSVC:  modelMgrSVC,
-		connectorSVC: connectorSVC,
-		userSVC:      userSVC,
-		promptSVC:    promptSVC,
-		templateSVC:  templateSVC,
-		openAuthSVC:  openAuthSVC,
+		infra:          infra,
+		eventbus:       e,
+		modelMgrSVC:    modelMgrSVC,
+		connectorSVC:   connectorSVC,
+		userSVC:        userSVC,
+		promptSVC:      promptSVC,
+		templateSVC:    templateSVC,
+		openAuthSVC:    openAuthSVC,
+		corporationSVC: corporationSVC,
 	}, nil
 }
 

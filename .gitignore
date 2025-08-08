@@ -58,3 +58,5 @@ values-dev.yaml
 
 *.tsbuildinfo
 
+vibe-coding/*
+docs/*
