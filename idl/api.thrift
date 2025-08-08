@@ -15,6 +15,9 @@ include "./passport/passport.thrift"
 include "./workflow/workflow_svc.thrift"
 include "./app/bot_open_api.thrift"
 include "./upload/upload.thrift"
+include "./corporation/corporation_service.thrift"
+include "./corporation/department_service.thrift"
+include "./corporation/employee_service.thrift"
 
 
 namespace go coze
@@ -36,3 +39,6 @@ service WorkflowService extends workflow_svc.WorkflowService {}
 service KnowledgeService extends knowledge_svc.DatasetService {}
 service BotOpenApiService extends bot_open_api.BotOpenApiService {}
 service UploadService extends upload.UploadService {}
+service CorporationService extends corporation_service.CorporationService {}
+service DepartmentService extends department_service.DepartmentService {}
+service EmployeeService extends employee_service.EmployeeService {}

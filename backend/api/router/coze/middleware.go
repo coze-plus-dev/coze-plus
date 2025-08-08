@@ -1511,7 +1511,17 @@ func _conversation1Mw() []app.HandlerFunc {
 	return nil
 }
 
+func _corporationMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
 func _openapicreateconversationMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _createcorporationMw() []app.HandlerFunc {
 	// your code...
 	return nil
 }
@@ -1521,7 +1531,17 @@ func _coze_web_appMw() []app.HandlerFunc {
 	return nil
 }
 
+func _deletecorporationMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
 func _impersonatecozeuserMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _getcorporationMw() []app.HandlerFunc {
 	// your code...
 	return nil
 }
@@ -1531,7 +1551,17 @@ func _botsMw() []app.HandlerFunc {
 	return nil
 }
 
+func _updatecorporationMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
 func _opengetbotinfoMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _listcorporationsMw() []app.HandlerFunc {
 	// your code...
 	return nil
 }
@@ -1541,7 +1571,17 @@ func _deleteconversationapiMw() []app.HandlerFunc {
 	return nil
 }
 
+func _departmentMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
 func _updateconversationapiMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _createdepartmentMw() []app.HandlerFunc {
 	// your code...
 	return nil
 }
@@ -1551,7 +1591,17 @@ func _conversations0Mw() []app.HandlerFunc {
 	return nil
 }
 
+func _deletedepartmentMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
 func _chatMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _getdepartmentMw() []app.HandlerFunc {
 	// your code...
 	return nil
 }
@@ -1561,12 +1611,77 @@ func _cancelchatapiMw() []app.HandlerFunc {
 	return nil
 }
 
+func _updatedepartmentMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
 func _appsMw() []app.HandlerFunc {
 	// your code...
 	return nil
 }
 
+func _listdepartmentsMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
 func _getonlineappdataMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _sortdepartmentsMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _employeeMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _assignemployeetodepartmentMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _createemployeeMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _deleteemployeeMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _getemployeeMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _updateemployeeMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _listemployeesMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _department0Mw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _removeemployeefromdepartmentMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _updateemployeedepartmentMw() []app.HandlerFunc {
 	// your code...
 	return nil
 }

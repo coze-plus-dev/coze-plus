@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/coze-dev/coze-studio/backend/application/corporation"
 	"github.com/coze-dev/coze-studio/backend/application/openauth"
 	"github.com/coze-dev/coze-studio/backend/application/template"
 	crosssearch "github.com/coze-dev/coze-studio/backend/crossdomain/contract/search"
@@ -84,15 +85,16 @@ type eventbusImpl struct {
 }
 
 type basicServices struct {
-	infra        *appinfra.AppDependencies
-	eventbus     *eventbusImpl
-	modelMgrSVC  *modelmgr.ModelmgrApplicationService
-	connectorSVC *connector.ConnectorApplicationService
-	userSVC      *user.UserApplicationService
-	promptSVC    *prompt.PromptApplicationService
-	templateSVC  *template.ApplicationService
-	openAuthSVC  *openauth.OpenAuthApplicationService
-	uploadSVC    *upload.UploadService
+	infra          *appinfra.AppDependencies
+	eventbus       *eventbusImpl
+	modelMgrSVC    *modelmgr.ModelmgrApplicationService
+	connectorSVC   *connector.ConnectorApplicationService
+	userSVC        *user.UserApplicationService
+	promptSVC      *prompt.PromptApplicationService
+	templateSVC    *template.ApplicationService
+	openAuthSVC    *openauth.OpenAuthApplicationService
+	uploadSVC      *upload.UploadService
+	corporationSVC *corporation.CorporationApplicationService
 }
 
 type primaryServices struct {
@@ -181,17 +183,26 @@ func initBasicServices(ctx context.Context, infra *appinfra.AppDependencies, e *
 		IDGen:   infra.IDGenSVC,
 		Storage: infra.TOSClient,
 	})
+	corporationSVC, err := corporation.InitService(&corporation.ServiceComponents{
+		DB:      infra.DB,
+		IDGen:   infra.IDGenSVC,
+		Storage: infra.TOSClient,
+	})
+	if err != nil {
+		return nil, err
+	}
 
 	return &basicServices{
-		infra:        infra,
-		eventbus:     e,
-		modelMgrSVC:  modelMgrSVC,
-		connectorSVC: connectorSVC,
-		userSVC:      userSVC,
-		promptSVC:    promptSVC,
-		templateSVC:  templateSVC,
-		openAuthSVC:  openAuthSVC,
-		uploadSVC:    uploadSVC,
+		infra:          infra,
+		eventbus:       e,
+		modelMgrSVC:    modelMgrSVC,
+		connectorSVC:   connectorSVC,
+		userSVC:        userSVC,
+		promptSVC:      promptSVC,
+		templateSVC:    templateSVC,
+		openAuthSVC:    openAuthSVC,
+		uploadSVC:      uploadSVC,
+		corporationSVC: corporationSVC,
 	}, nil
 }
 

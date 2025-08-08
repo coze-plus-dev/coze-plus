@@ -456,7 +456,41 @@ func Register(r *server.Hertz) {
 			_conversations0 := _v1.Group("/conversations", _conversations0Mw()...)
 			{
 				_conversation_id := _conversations0.Group("/:conversation_id", _conversation_idMw()...)
+			_conversations := _v1.Group("/conversations", _conversationsMw()...)
+			{
+				_conversation_id := _conversations.Group("/:conversation_id", _conversation_idMw()...)
 				_conversation_id.POST("/clear", append(_clearconversationapiMw(), coze.ClearConversationApi)...)
+			}
+		}
+		{
+			_corporation := _v1.Group("/corporation", _corporationMw()...)
+			_corporation.POST("/create", append(_createcorporationMw(), coze.CreateCorporation)...)
+			_corporation.DELETE("/:id", append(_deletecorporationMw(), coze.DeleteCorporation)...)
+			_corporation.GET("/:id", append(_getcorporationMw(), coze.GetCorporation)...)
+			_corporation.PUT("/:id", append(_updatecorporationMw(), coze.UpdateCorporation)...)
+			_corporation.POST("/list", append(_listcorporationsMw(), coze.ListCorporations)...)
+			{
+				_department := _corporation.Group("/department", _departmentMw()...)
+				_department.POST("/create", append(_createdepartmentMw(), coze.CreateDepartment)...)
+				_department.DELETE("/:id", append(_deletedepartmentMw(), coze.DeleteDepartment)...)
+				_department.GET("/:id", append(_getdepartmentMw(), coze.GetDepartment)...)
+				_department.PUT("/:id", append(_updatedepartmentMw(), coze.UpdateDepartment)...)
+				_department.POST("/list", append(_listdepartmentsMw(), coze.ListDepartments)...)
+				_department.POST("/sort", append(_sortdepartmentsMw(), coze.SortDepartments)...)
+			}
+			{
+				_employee := _corporation.Group("/employee", _employeeMw()...)
+				_employee.POST("/assign-department", append(_assignemployeetodepartmentMw(), coze.AssignEmployeeToDepartment)...)
+				_employee.POST("/create", append(_createemployeeMw(), coze.CreateEmployee)...)
+				_employee.DELETE("/:id", append(_deleteemployeeMw(), coze.DeleteEmployee)...)
+				_employee.GET("/:id", append(_getemployeeMw(), coze.GetEmployee)...)
+				_employee.PUT("/:id", append(_updateemployeeMw(), coze.UpdateEmployee)...)
+				_employee.POST("/list", append(_listemployeesMw(), coze.ListEmployees)...)
+				{
+					_department0 := _employee.Group("/department", _department0Mw()...)
+					_department0.DELETE("/:id", append(_removeemployeefromdepartmentMw(), coze.RemoveEmployeeFromDepartment)...)
+					_department0.PUT("/:id", append(_updateemployeedepartmentMw(), coze.UpdateEmployeeDepartment)...)
+				}
 			}
 		}
 		{
