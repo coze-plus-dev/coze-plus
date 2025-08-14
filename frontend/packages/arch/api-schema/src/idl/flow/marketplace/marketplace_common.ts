@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 coze-dev Authors
+ * Copyright 2025 coze-plus Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,20 +17,20 @@
 import * as base from './../../base';
 export { base };
 export interface Price {
-  /** 金额 */
-  amount: string;
-  /** 币种，如USD、CNY */
-  currency: string;
-  /** 小数位数 */
-  decimal_num: number;
+  /** amount */
+  amount: string,
+  /** Currencies such as USD and CNY */
+  currency: string,
+  /** decimal places */
+  decimal_num: number,
 }
 export enum FollowType {
-  /** 无关系 */
+  /** Unknown */
   Unknown = 0,
-  /** 关注 */
+  /** followee */
   Followee = 1,
-  /** 粉丝 */
+  /** follower */
   Follower = 2,
-  /** 互相关注 */
+  /** MutualFollow */
   MutualFollow = 3,
 }

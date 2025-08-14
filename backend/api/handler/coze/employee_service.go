@@ -1,4 +1,20 @@
 /*
+ * Copyright 2025 coze-plus Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * Copyright 2025 coze-dev Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,13 +50,13 @@ func CreateEmployee(ctx context.Context, c *app.RequestContext) {
 	var req employee1.CreateEmployeeRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
-		c.String(consts.StatusBadRequest, err.Error())
+		invalidParamRequestResponse(c, err.Error())
 		return
 	}
 
 	resp, err := corporation.CorporationSVC.CreateEmployee(ctx, &req)
 	if err != nil {
-		c.String(consts.StatusInternalServerError, err.Error())
+		internalServerErrorResponse(ctx, c, err)
 		return
 	}
 
@@ -54,13 +70,13 @@ func GetEmployee(ctx context.Context, c *app.RequestContext) {
 	var req employee1.GetEmployeeRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
-		c.String(consts.StatusBadRequest, err.Error())
+		invalidParamRequestResponse(c, err.Error())
 		return
 	}
 
 	resp, err := corporation.CorporationSVC.GetEmployeeByID(ctx, &req)
 	if err != nil {
-		c.String(consts.StatusInternalServerError, err.Error())
+		internalServerErrorResponse(ctx, c, err)
 		return
 	}
 
@@ -74,13 +90,13 @@ func UpdateEmployee(ctx context.Context, c *app.RequestContext) {
 	var req employee1.UpdateEmployeeRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
-		c.String(consts.StatusBadRequest, err.Error())
+		invalidParamRequestResponse(c, err.Error())
 		return
 	}
 
 	resp, err := corporation.CorporationSVC.UpdateEmployee(ctx, &req)
 	if err != nil {
-		c.String(consts.StatusInternalServerError, err.Error())
+		internalServerErrorResponse(ctx, c, err)
 		return
 	}
 
@@ -94,13 +110,13 @@ func DeleteEmployee(ctx context.Context, c *app.RequestContext) {
 	var req employee1.DeleteEmployeeRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
-		c.String(consts.StatusBadRequest, err.Error())
+		invalidParamRequestResponse(c, err.Error())
 		return
 	}
 
 	resp, err := corporation.CorporationSVC.DeleteEmployee(ctx, &req)
 	if err != nil {
-		c.String(consts.StatusInternalServerError, err.Error())
+		internalServerErrorResponse(ctx, c, err)
 		return
 	}
 
@@ -114,73 +130,73 @@ func ListEmployees(ctx context.Context, c *app.RequestContext) {
 	var req employee1.ListEmployeeRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
-		c.String(consts.StatusBadRequest, err.Error())
+		invalidParamRequestResponse(c, err.Error())
 		return
 	}
 
 	resp, err := corporation.CorporationSVC.ListEmployees(ctx, &req)
 	if err != nil {
-		c.String(consts.StatusInternalServerError, err.Error())
+		internalServerErrorResponse(ctx, c, err)
 		return
 	}
 
 	c.JSON(consts.StatusOK, resp)
 }
 
-// AssignEmployeeToDepartment .
-// @router /v1/corporation/employee/assign-department [POST]
-func AssignEmployeeToDepartment(ctx context.Context, c *app.RequestContext) {
+// ChangeEmployeeDepartment .
+// @router /api/v1/corporation/employee/:id/department [PUT]
+func ChangeEmployeeDepartment(ctx context.Context, c *app.RequestContext) {
 	var err error
-	var req employee1.AssignEmployeeToDepartmentRequest
+	var req employee1.ChangeEmployeeDepartmentRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
-		c.String(consts.StatusBadRequest, err.Error())
+		invalidParamRequestResponse(c, err.Error())
 		return
 	}
 
-	resp, err := corporation.CorporationSVC.AssignEmployeeToDepartment(ctx, &req)
+	resp, err := corporation.CorporationSVC.ChangeEmployeeDepartment(ctx, &req)
 	if err != nil {
-		c.String(consts.StatusInternalServerError, err.Error())
+		internalServerErrorResponse(ctx, c, err)
 		return
 	}
 
 	c.JSON(consts.StatusOK, resp)
 }
 
-// UpdateEmployeeDepartment .
-// @router /v1/corporation/employee/department/:id [PUT]
-func UpdateEmployeeDepartment(ctx context.Context, c *app.RequestContext) {
+// ResignEmployee .
+// @router /api/v1/corporation/employee/:id/resign [PUT]
+func ResignEmployee(ctx context.Context, c *app.RequestContext) {
 	var err error
-	var req employee1.UpdateEmployeeDepartmentRequest
+	var req employee1.ResignEmployeeRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
-		c.String(consts.StatusBadRequest, err.Error())
+		invalidParamRequestResponse(c, err.Error())
 		return
 	}
 
-	resp, err := corporation.CorporationSVC.UpdateEmployeeDepartment(ctx, &req)
+	resp, err := corporation.CorporationSVC.ResignEmployee(ctx, &req)
 	if err != nil {
-		c.String(consts.StatusInternalServerError, err.Error())
+		internalServerErrorResponse(ctx, c, err)
 		return
 	}
 
 	c.JSON(consts.StatusOK, resp)
 }
 
-// RemoveEmployeeFromDepartment .
-// @router /v1/corporation/employee/department/:id [DELETE]
-func RemoveEmployeeFromDepartment(ctx context.Context, c *app.RequestContext) {
+// RestoreEmployee .
+// @router /api/v1/corporation/employee/:id/restore [PUT]
+func RestoreEmployee(ctx context.Context, c *app.RequestContext) {
 	var err error
-	var req employee1.RemoveEmployeeFromDepartmentRequest
+	var req employee1.RestoreEmployeeRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
-		c.String(consts.StatusBadRequest, err.Error())
+		invalidParamRequestResponse(c, err.Error())
 		return
 	}
 
-	resp, err := corporation.CorporationSVC.RemoveEmployeeFromDepartment(ctx, &req)
+	resp, err := corporation.CorporationSVC.RestoreEmployee(ctx, &req)
 	if err != nil {
-		c.String(consts.StatusInternalServerError, err.Error())
+		internalServerErrorResponse(ctx, c, err)
 		return
 	}
 

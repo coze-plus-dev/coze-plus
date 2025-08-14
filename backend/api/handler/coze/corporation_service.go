@@ -1,4 +1,20 @@
 /*
+ * Copyright 2025 coze-plus Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * Copyright 2025 coze-dev Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,13 +50,13 @@ func CreateCorporation(ctx context.Context, c *app.RequestContext) {
 	var req corporation1.CreateCorpRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
-		c.String(consts.StatusBadRequest, err.Error())
+		invalidParamRequestResponse(c, err.Error())
 		return
 	}
 
 	resp, err := corporation.CorporationSVC.CreateCorporation(ctx, &req)
 	if err != nil {
-		c.String(consts.StatusInternalServerError, err.Error())
+		internalServerErrorResponse(ctx, c, err)
 		return
 	}
 
@@ -54,13 +70,13 @@ func GetCorporation(ctx context.Context, c *app.RequestContext) {
 	var req corporation1.GetCorpRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
-		c.String(consts.StatusBadRequest, err.Error())
+		invalidParamRequestResponse(c, err.Error())
 		return
 	}
 
 	resp, err := corporation.CorporationSVC.GetCorporationByID(ctx, &req)
 	if err != nil {
-		c.String(consts.StatusInternalServerError, err.Error())
+		internalServerErrorResponse(ctx, c, err)
 		return
 	}
 
@@ -74,13 +90,13 @@ func UpdateCorporation(ctx context.Context, c *app.RequestContext) {
 	var req corporation1.UpdateCorpRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
-		c.String(consts.StatusBadRequest, err.Error())
+		invalidParamRequestResponse(c, err.Error())
 		return
 	}
 
 	resp, err := corporation.CorporationSVC.UpdateCorporation(ctx, &req)
 	if err != nil {
-		c.String(consts.StatusInternalServerError, err.Error())
+		internalServerErrorResponse(ctx, c, err)
 		return
 	}
 
@@ -94,13 +110,13 @@ func DeleteCorporation(ctx context.Context, c *app.RequestContext) {
 	var req corporation1.DeleteCorpRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
-		c.String(consts.StatusBadRequest, err.Error())
+		invalidParamRequestResponse(c, err.Error())
 		return
 	}
 
 	resp, err := corporation.CorporationSVC.DeleteCorporation(ctx, &req)
 	if err != nil {
-		c.String(consts.StatusInternalServerError, err.Error())
+		internalServerErrorResponse(ctx, c, err)
 		return
 	}
 
@@ -114,13 +130,33 @@ func ListCorporations(ctx context.Context, c *app.RequestContext) {
 	var req corporation1.ListCorpsRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
-		c.String(consts.StatusBadRequest, err.Error())
+		invalidParamRequestResponse(c, err.Error())
 		return
 	}
 
 	resp, err := corporation.CorporationSVC.ListCorporations(ctx, &req)
 	if err != nil {
-		c.String(consts.StatusInternalServerError, err.Error())
+		internalServerErrorResponse(ctx, c, err)
+		return
+	}
+
+	c.JSON(consts.StatusOK, resp)
+}
+
+// GetOrganizationTree .
+// @router /api/v1/organization/tree [POST]
+func GetOrganizationTree(ctx context.Context, c *app.RequestContext) {
+	var err error
+	var req corporation1.GetOrganizationTreeRequest
+	err = c.BindAndValidate(&req)
+	if err != nil {
+		invalidParamRequestResponse(c, err.Error())
+		return
+	}
+
+	resp, err := corporation.CorporationSVC.GetOrganizationTree(ctx, &req)
+	if err != nil {
+		internalServerErrorResponse(ctx, c, err)
 		return
 	}
 

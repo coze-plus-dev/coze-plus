@@ -1,4 +1,20 @@
 /*
+ * Copyright 2025 coze-plus Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * Copyright 2025 coze-dev Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -188,19 +204,51 @@ func (dao *CorporationDAO) GetRootCorporations(ctx context.Context) ([]*entity.C
 	return dao.corporationBatchPO2DO(ctx, poList), nil
 }
 
-// GetCorporationTree gets corporation tree (simplified - would need recursive logic for full tree)
+// GetCorporationTree gets corporation tree with all descendants
 func (dao *CorporationDAO) GetCorporationTree(ctx context.Context, rootID int64) ([]*entity.Corporation, error) {
-	// This is a simplified implementation - for full tree, you'd need recursive queries
-	poList, err := dao.Query.Corporation.WithContext(ctx).
-		Where(dao.Query.Corporation.ParentID.Eq(rootID)).
-		Where(dao.Query.Corporation.DeletedAt.IsNull()).
-		Order(dao.Query.Corporation.Sort.Asc()).
-		Find()
-
+	// Get root corporation
+	root, err := dao.GetByID(ctx, rootID)
 	if err != nil {
 		return nil, err
 	}
-	return dao.corporationBatchPO2DO(ctx, poList), nil
+	if root == nil {
+		return nil, nil
+	}
+	
+	// Collect all corporations in tree
+	allCorps := []*entity.Corporation{root}
+	
+	// Recursively get all descendants
+	descendants, err := dao.getDescendants(ctx, rootID)
+	if err != nil {
+		return nil, err
+	}
+	
+	allCorps = append(allCorps, descendants...)
+	return allCorps, nil
+}
+
+// getDescendants recursively gets all descendant corporations
+func (dao *CorporationDAO) getDescendants(ctx context.Context, parentID int64) ([]*entity.Corporation, error) {
+	// Get direct children
+	children, err := dao.GetByParentID(ctx, parentID)
+	if err != nil {
+		return nil, err
+	}
+	
+	allDescendants := make([]*entity.Corporation, 0)
+	allDescendants = append(allDescendants, children...)
+	
+	// Recursively get descendants of each child
+	for _, child := range children {
+		descendants, err := dao.getDescendants(ctx, child.ID)
+		if err != nil {
+			return nil, err
+		}
+		allDescendants = append(allDescendants, descendants...)
+	}
+	
+	return allDescendants, nil
 }
 
 // UpdateSort updates corporation sort order
@@ -238,20 +286,27 @@ func (dao *CorporationDAO) corporationDO2PO(ctx context.Context, corp *entity.Co
 		Name:      corp.Name,
 		CorpType:  string(corp.CorpType),
 		Sort:      corp.Sort,
-		CorpSource: int32(corp.CorpSource),
 		CreatorID: corp.CreatorID,
 		CreatedAt: time.Now().UnixMilli(),
 		UpdatedAt: time.Now().UnixMilli(),
 	}
 	
 	if corp.ParentID != nil {
-		po.ParentID = *corp.ParentID
+		po.ParentID = corp.ParentID
 	}
 	if corp.OutCorpID != nil {
-		po.OutCorpID = *corp.OutCorpID
+		po.OutCorpID = corp.OutCorpID
+	}
+	if corp.CorpSource != 0 {
+		corpSource := int32(corp.CorpSource)
+		po.CorpSource = &corpSource
 	}
 	if corp.DeletedAt != nil {
-		po.DeletedAt = *corp.DeletedAt
+		deletedAt := gorm.DeletedAt{
+			Time:  time.UnixMilli(*corp.DeletedAt),
+			Valid: true,
+		}
+		po.DeletedAt = deletedAt
 	}
 	
 	return po
@@ -259,24 +314,28 @@ func (dao *CorporationDAO) corporationDO2PO(ctx context.Context, corp *entity.Co
 
 func (dao *CorporationDAO) corporationPO2DO(ctx context.Context, po *model.Corporation) *entity.Corporation {
 	corp := &entity.Corporation{
-		ID:         po.ID,
-		Name:       po.Name,
-		CorpType:   entity.CorporationType(po.CorpType),
-		Sort:       po.Sort,
-		CorpSource: entity.CorporationSource(po.CorpSource),
-		CreatorID:  po.CreatorID,
-		CreatedAt:  po.CreatedAt,
-		UpdatedAt:  po.UpdatedAt,
+		ID:        po.ID,
+		Name:      po.Name,
+		CorpType:  entity.CorporationType(po.CorpType),
+		Sort:      po.Sort,
+		CreatorID: po.CreatorID,
+		CreatedAt: po.CreatedAt,
+		UpdatedAt: po.UpdatedAt,
 	}
 	
-	if po.ParentID != 0 {
-		corp.ParentID = &po.ParentID
+	if po.ParentID != nil {
+		corp.ParentID = po.ParentID
 	}
-	if po.OutCorpID != "" {
-		corp.OutCorpID = &po.OutCorpID
+	if po.OutCorpID != nil {
+		corp.OutCorpID = po.OutCorpID
 	}
-	if po.DeletedAt != 0 {
-		corp.DeletedAt = &po.DeletedAt
+	if po.CorpSource != nil {
+		corpSource := entity.CorporationSource(*po.CorpSource)
+		corp.CorpSource = corpSource
+	}
+	if po.DeletedAt.Valid {
+		deletedAt := po.DeletedAt.Time.UnixMilli()
+		corp.DeletedAt = &deletedAt
 	}
 	
 	return corp

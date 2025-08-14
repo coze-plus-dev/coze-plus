@@ -1,4 +1,20 @@
 /*
+ * Copyright 2025 coze-plus Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * Copyright 2025 coze-dev Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +31,7 @@
  */
 /* eslint-disable */
 /* prettier-ignore */
-// Automatically generated based on src/index.ts, do not modify manually
+// Automatically generated based on src/index.ts, do not modify manually 
 declare const APP_ID: number;
 declare const APP_KEY: string;
 declare const AWEME_ORIGIN: string;
@@ -24,15 +40,7 @@ declare const AWEME_PLATFORM_ID: number;
 declare const BOT_BRAND_NAME: string;
 declare const BUILD_BRANCH: string;
 declare const BUILD_TYPE: 'local' | 'online' | 'offline' | 'test';
-declare const BYTE_UPLOADER_REGION:
-  | 'cn-north-1'
-  | 'us-east-1'
-  | 'ap-singapore-1'
-  | 'us-east-red'
-  | 'boe'
-  | 'boei18n'
-  | 'US-TTP'
-  | 'gcp';
+declare const BYTE_UPLOADER_REGION: 'cn-north-1' | 'us-east-1' | 'ap-singapore-1' | 'us-east-red' | 'boe' | 'boei18n' | 'US-TTP' | 'gcp';
 declare const CARD_BUILDER_ENV_STR: string;
 declare const CDN: string | undefined;
 declare const CDN_PATH_PREFIX: string;
@@ -116,3 +124,4 @@ declare const VOLCANO_PLATFORM_APP_KEY: string | null;
 declare const VOLCANO_PLATFORM_ID: number | null;
 declare const VOLC_PRIVATE_POLICY: string;
 declare const VOLC_TERMS_OF_SERVICE: string;
+ 

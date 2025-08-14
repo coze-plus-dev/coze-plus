@@ -1,4 +1,20 @@
 /*
+ * Copyright 2025 coze-plus Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * Copyright 2025 coze-dev Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,6 +51,7 @@ func NewDepartmentSVC(config *DepartmentSVCConfig) Department {
 	return &departmentSVC{
 		departmentRepo:  repository.NewDepartmentRepo(config.DB, config.IDGen),
 		corporationRepo: repository.NewCorporationRepo(config.DB, config.IDGen),
+		employeeRepo:    repository.NewEmployeeRepo(config.DB, config.IDGen),
 		idgen:          config.IDGen,
 	}
 }
@@ -48,6 +65,7 @@ type DepartmentSVCConfig struct {
 type departmentSVC struct {
 	departmentRepo  repository.DepartmentRepo
 	corporationRepo repository.CorporationRepo
+	employeeRepo    repository.EmployeeRepo
 	idgen          idgen.IDGenerator
 }
 
@@ -181,6 +199,10 @@ func (s *departmentSVC) UpdateDepartment(ctx context.Context, req *UpdateDepartm
 		}
 	}
 
+	// Check what needs to be updated before making changes
+	nameChanged := req.Name != nil && *req.Name != existingDept.Name
+	parentChanged := req.ParentDeptID != existingDept.ParentDeptID
+	
 	// Update entity
 	if req.Name != nil {
 		existingDept.Name = *req.Name
@@ -200,8 +222,10 @@ func (s *departmentSVC) UpdateDepartment(ctx context.Context, req *UpdateDepartm
 	}
 	existingDept.OutDeptID = req.OutDeptID
 
-	// Regenerate path if parent changed
-	if req.ParentDeptID != existingDept.ParentDeptID {
+	// Regenerate path if parent changed or name changed
+	needPathUpdate := parentChanged || nameChanged
+	
+	if needPathUpdate {
 		newPath, err := s.generateDepartmentPath(ctx, existingDept)
 		if err != nil {
 			return errorx.WrapByCode(err, errno.ErrCorporationInternalError)
@@ -213,6 +237,14 @@ func (s *departmentSVC) UpdateDepartment(ctx context.Context, req *UpdateDepartm
 	// Save changes
 	if err := s.departmentRepo.Update(ctx, existingDept); err != nil {
 		return errorx.WrapByCode(err, errno.ErrCorporationInternalError)
+	}
+
+	// If department name changed, update all child departments' paths
+	if nameChanged {
+		if err := s.updateChildDepartmentPaths(ctx, existingDept.ID); err != nil {
+			// Log error but don't fail the operation
+			// TODO: Add proper logging here
+		}
 	}
 
 	return nil
@@ -239,6 +271,15 @@ func (s *departmentSVC) DeleteDepartment(ctx context.Context, req *DeleteDepartm
 		return errorx.WrapByCode(err, errno.ErrCorporationInternalError)
 	}
 	if len(children) > 0 {
+		return errorx.New(errno.ErrDepartmentCannotDelete)
+	}
+
+	// Check if department has employees
+	employees, err := s.employeeRepo.GetByDeptID(ctx, req.ID)
+	if err != nil {
+		return errorx.WrapByCode(err, errno.ErrCorporationInternalError)
+	}
+	if len(employees) > 0 {
 		return errorx.New(errno.ErrDepartmentCannotDelete)
 	}
 
@@ -379,10 +420,15 @@ func (s *departmentSVC) MoveDepartment(ctx context.Context, req *MoveDepartmentR
 
 // Helper functions
 
-// generateDepartmentPath generates full path for department
+// generateDepartmentPath generates full path for department including corporation path
 func (s *departmentSVC) generateDepartmentPath(ctx context.Context, dept *entity.Department) (string, error) {
 	if dept.ParentDeptID == nil {
-		return dept.Name, nil
+		// For top-level departments, include corporation path
+		corpPath, err := s.generateCorporationPath(ctx, dept.CorpID)
+		if err != nil {
+			return "", err
+		}
+		return corpPath + "/" + dept.Name, nil
 	}
 
 	parent, err := s.departmentRepo.GetByID(ctx, *dept.ParentDeptID)
@@ -393,7 +439,47 @@ func (s *departmentSVC) generateDepartmentPath(ctx context.Context, dept *entity
 		return "", errors.New("parent department not found")
 	}
 
-	return parent.FullPath + "/" + dept.Name, nil
+	// If parent's FullPath is empty, recursively generate it
+	parentPath := parent.FullPath
+	if parentPath == "" {
+		parentPath, err = s.generateDepartmentPath(ctx, parent)
+		if err != nil {
+			return "", err
+		}
+		// Update parent's FullPath in database
+		parent.FullPath = parentPath
+		parent.Level = s.calculateDepartmentLevel(parentPath)
+		if updateErr := s.departmentRepo.Update(ctx, parent); updateErr != nil {
+			// Log error but don't fail the operation
+			// TODO: Add proper logging here
+		}
+	}
+
+	return parentPath + "/" + dept.Name, nil
+}
+
+// generateCorporationPath generates full path for corporation hierarchy
+func (s *departmentSVC) generateCorporationPath(ctx context.Context, corpID int64) (string, error) {
+	corp, err := s.corporationRepo.GetByID(ctx, corpID)
+	if err != nil {
+		return "", err
+	}
+	if corp == nil {
+		return "", errors.New("corporation not found")
+	}
+
+	if corp.ParentID == nil {
+		// Root corporation
+		return corp.Name, nil
+	}
+
+	// Get parent corporation path recursively
+	parentPath, err := s.generateCorporationPath(ctx, *corp.ParentID)
+	if err != nil {
+		return "", err
+	}
+
+	return parentPath + "/" + corp.Name, nil
 }
 
 // calculateDepartmentLevel calculates department level based on path
@@ -484,6 +570,39 @@ func (s *departmentSVC) SortDepartments(ctx context.Context, req *SortDepartment
 	for _, item := range req.Items {
 		if err := s.departmentRepo.UpdateSort(ctx, item.ID, item.Sort); err != nil {
 			return errorx.WrapByCode(err, errno.ErrCorporationInternalError)
+		}
+	}
+
+	return nil
+}
+
+// updateChildDepartmentPaths updates all child departments' paths when parent department name changes
+func (s *departmentSVC) updateChildDepartmentPaths(ctx context.Context, parentDeptID int64) error {
+	// Get all child departments
+	children, err := s.departmentRepo.GetByParentDeptID(ctx, parentDeptID)
+	if err != nil {
+		return err
+	}
+
+	// Update each child department recursively
+	for _, child := range children {
+		// Regenerate path for this child
+		newPath, err := s.generateDepartmentPath(ctx, child)
+		if err != nil {
+			continue // Skip on error
+		}
+		
+		child.FullPath = newPath
+		child.Level = s.calculateDepartmentLevel(newPath)
+		
+		// Update in database
+		if err := s.departmentRepo.Update(ctx, child); err != nil {
+			continue // Skip on error
+		}
+		
+		// Recursively update grandchildren
+		if err := s.updateChildDepartmentPaths(ctx, child.ID); err != nil {
+			continue // Skip on error
 		}
 	}
 

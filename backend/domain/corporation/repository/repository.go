@@ -1,4 +1,20 @@
 /*
+ * Copyright 2025 coze-plus Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * Copyright 2025 coze-dev Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -87,15 +103,22 @@ type EmployeeRepo interface {
 	GetByID(ctx context.Context, id int64) (*entity.Employee, error)
 	Update(ctx context.Context, emp *entity.Employee) error
 	Delete(ctx context.Context, id int64) error
-	List(ctx context.Context, filter *entity.EmployeeListFilter) ([]*entity.Employee, bool, error)
+	List(ctx context.Context, filter *entity.EmployeeListFilter) ([]*entity.Employee, bool, int64, error)
 	
 	// Business specific operations
-	GetByCorpID(ctx context.Context, corpID int64) ([]*entity.Employee, error)
 	GetByDeptID(ctx context.Context, deptID int64) ([]*entity.Employee, error)
 	GetByEmail(ctx context.Context, email string) (*entity.Employee, error)
+	GetByPhone(ctx context.Context, phone string) (*entity.Employee, error)
 	GetByEmployeeID(ctx context.Context, employeeID string) (*entity.Employee, error)
 	UpdateStatus(ctx context.Context, id int64, status int32) error
 	BatchUpdateDepartments(ctx context.Context, empID int64, deptIDs []int64, isLeader []bool) error
+	
+	// Employee Department relationship operations
+	AssignEmployeeToDepartment(ctx context.Context, relation *entity.EmployeeDepartmentRelation) error
+	GetEmployeeDepartments(ctx context.Context, empID int64) ([]*entity.EmployeeDepartmentRelation, error)
+	GetEmployeeDepartmentByID(ctx context.Context, id int64) (*entity.EmployeeDepartmentRelation, error)
+	UpdateEmployeeDepartment(ctx context.Context, relation *entity.EmployeeDepartmentRelation) error
+	DeleteEmployeeDepartment(ctx context.Context, id int64) error
 }
 
 // EmployeeDepartmentRepo defines employee-department relationship repository interface
