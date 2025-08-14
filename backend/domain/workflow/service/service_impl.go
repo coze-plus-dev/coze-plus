@@ -21,24 +21,28 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"time"
 
 	einoCompose "github.com/cloudwego/eino/compose"
-	"github.com/redis/go-redis/v9"
+
 	"github.com/spf13/cast"
 	"golang.org/x/exp/maps"
 	"golang.org/x/sync/errgroup"
 	"gorm.io/gorm"
 
-	cloudworkflow "github.com/coze-dev/coze-studio/backend/api/model/ocean/cloud/workflow"
+	"github.com/coze-dev/coze-studio/backend/api/model/crossdomain/plugin"
+	workflowModel "github.com/coze-dev/coze-studio/backend/api/model/crossdomain/workflow"
+	cloudworkflow "github.com/coze-dev/coze-studio/backend/api/model/workflow"
 	"github.com/coze-dev/coze-studio/backend/application/base/ctxutil"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow"
-	"github.com/coze-dev/coze-studio/backend/domain/workflow/crossdomain/search"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/entity/vo"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/internal/canvas/adaptor"
-	"github.com/coze-dev/coze-studio/backend/domain/workflow/internal/compose"
+	"github.com/coze-dev/coze-studio/backend/domain/workflow/internal/canvas/convert"
+	"github.com/coze-dev/coze-studio/backend/domain/workflow/internal/nodes/intentdetector"
+	"github.com/coze-dev/coze-studio/backend/domain/workflow/internal/nodes/llm"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/internal/repo"
+	"github.com/coze-dev/coze-studio/backend/domain/workflow/internal/schema"
+	"github.com/coze-dev/coze-studio/backend/infra/contract/cache"
 	"github.com/coze-dev/coze-studio/backend/infra/contract/chatmodel"
 	"github.com/coze-dev/coze-studio/backend/infra/contract/idgen"
 	"github.com/coze-dev/coze-studio/backend/infra/contract/storage"
@@ -67,12 +71,12 @@ func NewWorkflowService(repo workflow.Repository) workflow.Service {
 	}
 }
 
-func NewWorkflowRepository(idgen idgen.IDGenerator, db *gorm.DB, redis *redis.Client, tos storage.Storage,
+func NewWorkflowRepository(idgen idgen.IDGenerator, db *gorm.DB, redis cache.Cmdable, tos storage.Storage,
 	cpStore einoCompose.CheckPointStore, chatModel chatmodel.BaseChatModel) workflow.Repository {
 	return repo.NewRepository(idgen, db, redis, tos, cpStore, chatModel)
 }
 
-func (i *impl) ListNodeMeta(ctx context.Context, nodeTypes map[entity.NodeType]bool) (map[string][]*entity.NodeTypeMeta, []entity.Category, error) {
+func (i *impl) ListNodeMeta(_ context.Context, nodeTypes map[entity.NodeType]bool) (map[string][]*entity.NodeTypeMeta, []entity.Category, error) {
 	// Initialize result maps
 	nodeMetaMap := make(map[string][]*entity.NodeTypeMeta)
 
@@ -81,7 +85,7 @@ func (i *impl) ListNodeMeta(ctx context.Context, nodeTypes map[entity.NodeType]b
 		if meta.Disabled {
 			return false
 		}
-		nodeType := meta.Type
+		nodeType := meta.Key
 		if nodeTypes == nil || len(nodeTypes) == 0 {
 			return true // No filter, include all
 		}
@@ -119,21 +123,6 @@ func (i *impl) Create(ctx context.Context, meta *vo.MetaCreate) (int64, error) {
 		return 0, err
 	}
 
-	err = search.GetNotifier().PublishWorkflowResource(ctx, search.Created, &search.Resource{
-		WorkflowID:    id,
-		URI:           &meta.IconURI,
-		Name:          &meta.Name,
-		Desc:          &meta.Desc,
-		APPID:         meta.AppID,
-		SpaceID:       &meta.SpaceID,
-		OwnerID:       &meta.CreatorID,
-		Mode:          ptr.Of(int32(meta.Mode)),
-		PublishStatus: ptr.Of(search.UnPublished),
-		CreatedAt:     ptr.Of(time.Now().UnixMilli()),
-	})
-	if err != nil {
-		return 0, vo.WrapError(errno.ErrNotifyWorkflowResourceChangeErr, err)
-	}
 	return id, nil
 }
 
@@ -191,10 +180,10 @@ func extractInputsAndOutputsNamedInfoList(c *vo.Canvas) (inputs []*vo.NamedTypeI
 		if startNode != nil && endNode != nil {
 			break
 		}
-		if node.Type == vo.BlockTypeBotStart {
+		if node.Type == entity.NodeTypeEntry.IDStr() {
 			startNode = node
 		}
-		if node.Type == vo.BlockTypeBotEnd {
+		if node.Type == entity.NodeTypeExit.IDStr() {
 			endNode = node
 		}
 	}
@@ -206,7 +195,7 @@ func extractInputsAndOutputsNamedInfoList(c *vo.Canvas) (inputs []*vo.NamedTypeI
 			if err != nil {
 				return nil, err
 			}
-			nInfo, err := adaptor.VariableToNamedTypeInfo(v)
+			nInfo, err := convert.VariableToNamedTypeInfo(v)
 			if err != nil {
 				return nil, err
 			}
@@ -219,7 +208,7 @@ func extractInputsAndOutputsNamedInfoList(c *vo.Canvas) (inputs []*vo.NamedTypeI
 
 	if endNode != nil {
 		outputs, err = slices.TransformWithErrorCheck(endNode.Data.Inputs.InputParameters, func(a *vo.Param) (*vo.NamedTypeInfo, error) {
-			return adaptor.BlockInputToNamedTypeInfo(a.Name, a.Input)
+			return convert.BlockInputToNamedTypeInfo(a.Name, a.Input)
 		})
 		if err != nil {
 			logs.Warn(fmt.Sprintf("transform end node inputs to named info failed, err=%v", err))
@@ -229,7 +218,7 @@ func extractInputsAndOutputsNamedInfoList(c *vo.Canvas) (inputs []*vo.NamedTypeI
 	return inputs, outputs
 }
 
-func (i *impl) Delete(ctx context.Context, policy *vo.DeletePolicy) (err error) {
+func (i *impl) Delete(ctx context.Context, policy *vo.DeletePolicy) (ids []int64, err error) {
 	if policy.ID != nil || len(policy.IDs) == 1 {
 		var id int64
 		if policy.ID != nil {
@@ -239,48 +228,28 @@ func (i *impl) Delete(ctx context.Context, policy *vo.DeletePolicy) (err error) 
 		}
 
 		if err = i.repo.Delete(ctx, id); err != nil {
-			return err
+			return nil, err
 		}
 
-		if err = search.GetNotifier().PublishWorkflowResource(ctx, search.Deleted, &search.Resource{
-			WorkflowID: id,
-		}); err != nil {
-			return vo.WrapError(errno.ErrNotifyWorkflowResourceChangeErr, err)
-		}
-
-		return nil
+		return []int64{id}, nil
 	}
 
-	ids := policy.IDs
+	ids = policy.IDs
 	if policy.AppID != nil {
 		metas, _, err := i.repo.MGetMetas(ctx, &vo.MetaQuery{
 			AppID: policy.AppID,
 		})
 		if err != nil {
-			return err
+			return nil, err
 		}
 		ids = maps.Keys(metas)
 	}
 
 	if err = i.repo.MDelete(ctx, ids); err != nil {
-		return err
+		return nil, err
 	}
 
-	g := errgroup.Group{}
-	for i := range ids {
-		wid := ids[i]
-		g.Go(func() error {
-			return search.GetNotifier().PublishWorkflowResource(ctx, search.Deleted, &search.Resource{
-				WorkflowID: wid,
-			})
-		})
-	}
-
-	if err = g.Wait(); err != nil {
-		return vo.WrapError(errno.ErrNotifyWorkflowResourceChangeErr, err)
-	}
-
-	return nil
+	return ids, nil
 }
 
 func (i *impl) Get(ctx context.Context, policy *vo.GetPolicy) (*entity.Workflow, error) {
@@ -315,6 +284,34 @@ func (i *impl) GetWorkflowReference(ctx context.Context, id int64) (map[int64]*v
 	return ret, nil
 }
 
+type workflowIdentity struct {
+	ID      string `json:"id"`
+	Version string `json:"version"`
+}
+
+func getAllSubWorkflowIdentities(c *vo.Canvas) []*workflowIdentity {
+	workflowEntities := make([]*workflowIdentity, 0)
+
+	var collectSubWorkFlowEntities func(nodes []*vo.Node)
+	collectSubWorkFlowEntities = func(nodes []*vo.Node) {
+		for _, n := range nodes {
+			if n.Type == entity.NodeTypeSubWorkflow.IDStr() {
+				workflowEntities = append(workflowEntities, &workflowIdentity{
+					ID:      n.Data.Inputs.WorkflowID,
+					Version: n.Data.Inputs.WorkflowVersion,
+				})
+			}
+			if len(n.Blocks) > 0 {
+				collectSubWorkFlowEntities(n.Blocks)
+			}
+		}
+	}
+
+	collectSubWorkFlowEntities(c.Nodes)
+
+	return workflowEntities
+}
+
 func (i *impl) ValidateTree(ctx context.Context, id int64, validateConfig vo.ValidateTreeConfig) ([]*cloudworkflow.ValidateTreeInfo, error) {
 	wfValidateInfos := make([]*cloudworkflow.ValidateTreeInfo, 0)
 	issues, err := validateWorkflowTree(ctx, validateConfig)
@@ -336,7 +333,7 @@ func (i *impl) ValidateTree(ctx context.Context, id int64, validateConfig vo.Val
 			fmt.Errorf("failed to unmarshal canvas schema: %w", err))
 	}
 
-	subWorkflowIdentities := c.GetAllSubWorkflowIdentities()
+	subWorkflowIdentities := getAllSubWorkflowIdentities(c)
 
 	if len(subWorkflowIdentities) > 0 {
 		var ids []int64
@@ -354,7 +351,7 @@ func (i *impl) ValidateTree(ctx context.Context, id int64, validateConfig vo.Val
 			MetaQuery: vo.MetaQuery{
 				IDs: ids,
 			},
-			QType: vo.FromDraft,
+			QType: workflowModel.FromDraft,
 		})
 		if err != nil {
 			return nil, err
@@ -420,25 +417,21 @@ func (i *impl) collectNodePropertyMap(ctx context.Context, canvas *vo.Canvas) (m
 	}
 
 	for _, n := range canvas.Nodes {
-		if n.Type == vo.BlockTypeBotSubWorkflow {
-			nodeSchema := &compose.NodeSchema{
+		if n.Type == entity.NodeTypeSubWorkflow.IDStr() {
+			nodeSchema := &schema.NodeSchema{
 				Key:  vo.NodeKey(n.ID),
 				Type: entity.NodeTypeSubWorkflow,
 				Name: n.Data.Meta.Title,
 			}
-			err := adaptor.SetInputsForNodeSchema(n, nodeSchema)
-			if err != nil {
-				return nil, err
-			}
-			blockType, err := entityNodeTypeToBlockType(nodeSchema.Type)
+			err := convert.SetInputsForNodeSchema(n, nodeSchema)
 			if err != nil {
 				return nil, err
 			}
 			prop := &vo.NodeProperty{
-				Type:                string(blockType),
-				IsEnableUserQuery:   nodeSchema.IsEnableUserQuery(),
-				IsEnableChatHistory: nodeSchema.IsEnableChatHistory(),
-				IsRefGlobalVariable: nodeSchema.IsRefGlobalVariable(),
+				Type:                nodeSchema.Type.IDStr(),
+				IsEnableUserQuery:   isEnableUserQuery(nodeSchema),
+				IsEnableChatHistory: isEnableChatHistory(nodeSchema),
+				IsRefGlobalVariable: isRefGlobalVariable(nodeSchema),
 			}
 			nodePropertyMap[string(nodeSchema.Key)] = prop
 			wid, err := strconv.ParseInt(n.Data.Inputs.WorkflowID, 10, 64)
@@ -477,26 +470,76 @@ func (i *impl) collectNodePropertyMap(ctx context.Context, canvas *vo.Canvas) (m
 			prop.SubWorkflow = ret
 
 		} else {
-			nodeSchemas, _, err := adaptor.NodeToNodeSchema(ctx, n)
+			nodeSchemas, _, err := adaptor.NodeToNodeSchema(ctx, n, canvas)
 			if err != nil {
 				return nil, err
 			}
 			for _, nodeSchema := range nodeSchemas {
-				blockType, err := entityNodeTypeToBlockType(nodeSchema.Type)
-				if err != nil {
-					return nil, err
-				}
 				nodePropertyMap[string(nodeSchema.Key)] = &vo.NodeProperty{
-					Type:                string(blockType),
-					IsEnableUserQuery:   nodeSchema.IsEnableUserQuery(),
-					IsEnableChatHistory: nodeSchema.IsEnableChatHistory(),
-					IsRefGlobalVariable: nodeSchema.IsRefGlobalVariable(),
+					Type:                nodeSchema.Type.IDStr(),
+					IsEnableUserQuery:   isEnableUserQuery(nodeSchema),
+					IsEnableChatHistory: isEnableChatHistory(nodeSchema),
+					IsRefGlobalVariable: isRefGlobalVariable(nodeSchema),
 				}
 			}
 
 		}
 	}
 	return nodePropertyMap, nil
+}
+
+func isEnableUserQuery(s *schema.NodeSchema) bool {
+	if s == nil {
+		return false
+	}
+	if s.Type != entity.NodeTypeEntry {
+		return false
+	}
+
+	if len(s.OutputSources) == 0 {
+		return false
+	}
+
+	for _, source := range s.OutputSources {
+		fieldPath := source.Path
+		if len(fieldPath) == 1 && (fieldPath[0] == "BOT_USER_INPUT" || fieldPath[0] == "USER_INPUT") {
+			return true
+		}
+	}
+
+	return false
+}
+
+func isEnableChatHistory(s *schema.NodeSchema) bool {
+	if s == nil {
+		return false
+	}
+
+	switch s.Type {
+
+	case entity.NodeTypeLLM:
+		llmParam := s.Configs.(*llm.Config).LLMParams
+		return llmParam.EnableChatHistory
+	case entity.NodeTypeIntentDetector:
+		llmParam := s.Configs.(*intentdetector.Config).LLMParams
+		return llmParam.EnableChatHistory
+	default:
+		return false
+	}
+}
+
+func isRefGlobalVariable(s *schema.NodeSchema) bool {
+	for _, source := range s.InputSources {
+		if source.IsRefGlobalVariable() {
+			return true
+		}
+	}
+	for _, source := range s.OutputSources {
+		if source.IsRefGlobalVariable() {
+			return true
+		}
+	}
+	return false
 }
 
 func canvasToRefs(referringID int64, canvasStr string) (map[entity.WorkflowReferenceKey]struct{}, error) {
@@ -509,7 +552,7 @@ func canvasToRefs(referringID int64, canvasStr string) (map[entity.WorkflowRefer
 	var getRefFn func([]*vo.Node) error
 	getRefFn = func(nodes []*vo.Node) error {
 		for _, node := range nodes {
-			if node.Type == vo.BlockTypeBotSubWorkflow {
+			if node.Type == entity.NodeTypeSubWorkflow.IDStr() {
 				referredID, err := strconv.ParseInt(node.Data.Inputs.WorkflowID, 10, 64)
 				if err != nil {
 					return vo.WrapError(errno.ErrSchemaConversionFail, err)
@@ -520,19 +563,21 @@ func canvasToRefs(referringID int64, canvasStr string) (map[entity.WorkflowRefer
 					ReferType:        vo.ReferTypeSubWorkflow,
 					ReferringBizType: vo.ReferringBizTypeWorkflow,
 				}] = struct{}{}
-			} else if node.Type == vo.BlockTypeBotLLM {
-				if node.Data.Inputs.FCParam != nil && node.Data.Inputs.FCParam.WorkflowFCParam != nil {
-					for _, w := range node.Data.Inputs.FCParam.WorkflowFCParam.WorkflowList {
-						referredID, err := strconv.ParseInt(w.WorkflowID, 10, 64)
-						if err != nil {
-							return vo.WrapError(errno.ErrSchemaConversionFail, err)
+			} else if node.Type == entity.NodeTypeLLM.IDStr() {
+				if node.Data.Inputs.LLM != nil {
+					if node.Data.Inputs.FCParam != nil && node.Data.Inputs.FCParam.WorkflowFCParam != nil {
+						for _, w := range node.Data.Inputs.FCParam.WorkflowFCParam.WorkflowList {
+							referredID, err := strconv.ParseInt(w.WorkflowID, 10, 64)
+							if err != nil {
+								return vo.WrapError(errno.ErrSchemaConversionFail, err)
+							}
+							wfRefs[entity.WorkflowReferenceKey{
+								ReferredID:       referredID,
+								ReferringID:      referringID,
+								ReferType:        vo.ReferTypeTool,
+								ReferringBizType: vo.ReferringBizTypeWorkflow,
+							}] = struct{}{}
 						}
-						wfRefs[entity.WorkflowReferenceKey{
-							ReferredID:       referredID,
-							ReferringID:      referringID,
-							ReferType:        vo.ReferTypeTool,
-							ReferringBizType: vo.ReferringBizTypeWorkflow,
-						}] = struct{}{}
 					}
 				}
 			} else if len(node.Blocks) > 0 {
@@ -606,32 +651,11 @@ func (i *impl) Publish(ctx context.Context, policy *vo.PublishPolicy) (err error
 		return err
 	}
 
-	now := time.Now().UnixMilli()
-	if err = search.GetNotifier().PublishWorkflowResource(ctx, search.Updated, &search.Resource{
-		WorkflowID:    policy.ID,
-		PublishStatus: ptr.Of(search.Published),
-		UpdatedAt:     ptr.Of(now),
-		PublishedAt:   ptr.Of(now),
-	}); err != nil {
-		return vo.WrapError(errno.ErrNotifyWorkflowResourceChangeErr, err)
-	}
-
 	return nil
 }
 
 func (i *impl) UpdateMeta(ctx context.Context, id int64, metaUpdate *vo.MetaUpdate) (err error) {
 	err = i.repo.UpdateMeta(ctx, id, metaUpdate)
-	if err != nil {
-		return err
-	}
-
-	err = search.GetNotifier().PublishWorkflowResource(ctx, search.Updated, &search.Resource{
-		WorkflowID: id,
-		URI:        metaUpdate.IconURI,
-		Name:       metaUpdate.Name,
-		Desc:       metaUpdate.Desc,
-		UpdatedAt:  ptr.Of(time.Now().UnixMilli()),
-	})
 	if err != nil {
 		return err
 	}
@@ -645,22 +669,6 @@ func (i *impl) CopyWorkflow(ctx context.Context, workflowID int64, policy vo.Cop
 		return nil, err
 	}
 
-	// TODO(zhuangjie): publish workflow resource logic should move to application
-	err = search.GetNotifier().PublishWorkflowResource(ctx, search.Created, &search.Resource{
-		WorkflowID:    wf.ID,
-		URI:           &wf.IconURI,
-		Name:          &wf.Name,
-		Desc:          &wf.Desc,
-		APPID:         wf.AppID,
-		SpaceID:       &wf.SpaceID,
-		OwnerID:       &wf.CreatorID,
-		PublishStatus: ptr.Of(search.UnPublished),
-		CreatedAt:     ptr.Of(time.Now().UnixMilli()),
-	})
-
-	if err != nil {
-		return nil, err
-	}
 	return wf, nil
 
 }
@@ -674,13 +682,13 @@ func (i *impl) ReleaseApplicationWorkflows(ctx context.Context, appID int64, con
 		MetaQuery: vo.MetaQuery{
 			AppID: &appID,
 		},
-		QType: vo.FromDraft,
+		QType: workflowModel.FromDraft,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	relatedPlugins := make(map[int64]*vo.PluginEntity, len(config.PluginIDs))
+	relatedPlugins := make(map[int64]*plugin.PluginEntity, len(config.PluginIDs))
 	relatedWorkflow := make(map[int64]entity.IDVersionPair, len(wfs))
 
 	for _, wf := range wfs {
@@ -690,7 +698,7 @@ func (i *impl) ReleaseApplicationWorkflows(ctx context.Context, appID int64, con
 		}
 	}
 	for _, id := range config.PluginIDs {
-		relatedPlugins[id] = &vo.PluginEntity{
+		relatedPlugins[id] = &plugin.PluginEntity{
 			PluginID:      id,
 			PluginVersion: &config.Version,
 		}
@@ -790,8 +798,7 @@ func (i *impl) ReleaseApplicationWorkflows(ctx context.Context, appID int64, con
 	return nil, nil
 }
 
-func (i *impl) CopyWorkflowFromAppToLibrary(ctx context.Context, workflowID int64, appID int64, related vo.ExternalResourceRelated) (map[int64]entity.IDVersionPair, []*vo.ValidateIssue, error) {
-
+func (i *impl) CopyWorkflowFromAppToLibrary(ctx context.Context, workflowID int64, appID int64, related vo.ExternalResourceRelated) (*entity.CopyWorkflowFromAppToLibraryResult, error) {
 	type copiedWorkflow struct {
 		id        int64
 		draftInfo *vo.DraftInfo
@@ -806,7 +813,7 @@ func (i *impl) CopyWorkflowFromAppToLibrary(ctx context.Context, workflowID int6
 
 	draftVersion, err = i.repo.DraftV2(ctx, workflowID, "")
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	issues, err := validateWorkflowTree(ctx, vo.ValidateTreeConfig{
@@ -814,12 +821,12 @@ func (i *impl) CopyWorkflowFromAppToLibrary(ctx context.Context, workflowID int6
 		AppID:        ptr.Of(appID),
 	})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	draftWorkflows, wid2Named, err := i.repo.GetDraftWorkflowsByAppID(ctx, appID)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	if len(issues) > 0 {
@@ -831,7 +838,7 @@ func (i *impl) CopyWorkflowFromAppToLibrary(ctx context.Context, workflowID int6
 
 	validateAndBuildWorkflowReference = func(nodes []*vo.Node, wf *copiedWorkflow) error {
 		for _, node := range nodes {
-			if node.Type == vo.BlockTypeBotSubWorkflow {
+			if node.Type == entity.NodeTypeSubWorkflow.IDStr() {
 				var (
 					v    *vo.DraftInfo
 					wfID int64
@@ -882,7 +889,7 @@ func (i *impl) CopyWorkflowFromAppToLibrary(ctx context.Context, workflowID int6
 
 			}
 
-			if node.Type == vo.BlockTypeBotLLM {
+			if node.Type == entity.NodeTypeLLM.IDStr() {
 				if node.Data.Inputs.FCParam != nil && node.Data.Inputs.FCParam.WorkflowFCParam != nil {
 					for _, w := range node.Data.Inputs.FCParam.WorkflowFCParam.WorkflowList {
 						var (
@@ -958,22 +965,24 @@ func (i *impl) CopyWorkflowFromAppToLibrary(ctx context.Context, workflowID int6
 	draftCanvas := &vo.Canvas{}
 	err = sonic.UnmarshalString(draftVersion.Canvas, &draftCanvas)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	err = validateAndBuildWorkflowReference(draftCanvas.Nodes, copiedWf)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	if len(vIssues) > 0 {
-		return nil, vIssues, nil
+		return &entity.CopyWorkflowFromAppToLibraryResult{
+			ValidateIssues: vIssues,
+		}, nil
 	}
 
 	var copyAndPublishWorkflowProcess func(wf *copiedWorkflow) error
 
 	hasPublishedWorkflows := make(map[int64]entity.IDVersionPair)
-
+	copiedWorkflowArray := make([]*entity.Workflow, 0)
 	copyAndPublishWorkflowProcess = func(wf *copiedWorkflow) error {
 		for _, refWorkflow := range wf.refWfs {
 			err := copyAndPublishWorkflowProcess(refWorkflow)
@@ -1033,19 +1042,7 @@ func (i *impl) CopyWorkflowFromAppToLibrary(ctx context.Context, workflowID int6
 				return err
 			}
 
-			err = search.GetNotifier().PublishWorkflowResource(ctx, search.Created, &search.Resource{
-				WorkflowID:    cwf.ID,
-				URI:           &cwf.IconURI,
-				Name:          &cwf.Name,
-				Desc:          &cwf.Desc,
-				SpaceID:       &cwf.SpaceID,
-				OwnerID:       &cwf.CreatorID,
-				PublishStatus: ptr.Of(search.Published),
-				CreatedAt:     ptr.Of(time.Now().UnixMilli()),
-			})
-			if err != nil {
-				return err
-			}
+			copiedWorkflowArray = append(copiedWorkflowArray, cwf)
 
 			hasPublishedWorkflows[wf.id] = entity.IDVersionPair{
 				ID:      cwf.ID,
@@ -1057,14 +1054,17 @@ func (i *impl) CopyWorkflowFromAppToLibrary(ctx context.Context, workflowID int6
 
 	err = copyAndPublishWorkflowProcess(copiedWf)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return hasPublishedWorkflows, nil, nil
+	return &entity.CopyWorkflowFromAppToLibraryResult{
+		WorkflowIDVersionMap: hasPublishedWorkflows,
+		CopiedWorkflows:      copiedWorkflowArray,
+	}, nil
 
 }
 
-func (i *impl) DuplicateWorkflowsByAppID(ctx context.Context, sourceAppID, targetAppID int64, related vo.ExternalResourceRelated) error {
+func (i *impl) DuplicateWorkflowsByAppID(ctx context.Context, sourceAppID, targetAppID int64, related vo.ExternalResourceRelated) ([]*entity.Workflow, error) {
 
 	type copiedWorkflow struct {
 		id           int64
@@ -1076,7 +1076,7 @@ func (i *impl) DuplicateWorkflowsByAppID(ctx context.Context, sourceAppID, targe
 
 	draftWorkflows, _, err := i.repo.GetDraftWorkflowsByAppID(ctx, sourceAppID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var duplicateWorkflowProcess func(workflowID int64, info *vo.DraftInfo) error
@@ -1085,7 +1085,7 @@ func (i *impl) DuplicateWorkflowsByAppID(ctx context.Context, sourceAppID, targe
 	var buildWorkflowReference func(nodes []*vo.Node, wf *copiedWorkflow) error
 	buildWorkflowReference = func(nodes []*vo.Node, wf *copiedWorkflow) error {
 		for _, node := range nodes {
-			if node.Type == vo.BlockTypeBotSubWorkflow {
+			if node.Type == entity.NodeTypeSubWorkflow.IDStr() {
 				var (
 					v    *vo.DraftInfo
 					wfID int64
@@ -1120,7 +1120,7 @@ func (i *impl) DuplicateWorkflowsByAppID(ctx context.Context, sourceAppID, targe
 				}
 
 			}
-			if node.Type == vo.BlockTypeBotLLM {
+			if node.Type == entity.NodeTypeLLM.IDStr() {
 				if node.Data.Inputs.FCParam != nil && node.Data.Inputs.FCParam.WorkflowFCParam != nil {
 					for _, w := range node.Data.Inputs.FCParam.WorkflowFCParam.WorkflowList {
 						var (
@@ -1171,6 +1171,8 @@ func (i *impl) DuplicateWorkflowsByAppID(ctx context.Context, sourceAppID, targe
 		}
 		return nil
 	}
+
+	copiedWorkflowArray := make([]*entity.Workflow, 0)
 	var duplicateWorkflow func(wf *copiedWorkflow) error
 	duplicateWorkflow = func(wf *copiedWorkflow) error {
 		for _, refWorkflow := range wf.refWfs {
@@ -1204,9 +1206,7 @@ func (i *impl) DuplicateWorkflowsByAppID(ctx context.Context, sourceAppID, targe
 				return err
 			}
 
-			if err != nil {
-				return err
-			}
+			copiedWorkflowArray = append(copiedWorkflowArray, cwf)
 
 			hasCopiedWorkflows[wf.id] = entity.IDVersionPair{
 				ID: cwf.ID,
@@ -1243,11 +1243,11 @@ func (i *impl) DuplicateWorkflowsByAppID(ctx context.Context, sourceAppID, targe
 		}
 		err = duplicateWorkflowProcess(workflowID, draftVersion)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	return copiedWorkflowArray, nil
 
 }
 
@@ -1303,7 +1303,7 @@ func (i *impl) SyncRelatedWorkflowResources(ctx context.Context, appID int64, re
 func (i *impl) GetWorkflowDependenceResource(ctx context.Context, workflowID int64) (*vo.DependenceResource, error) {
 	wf, err := i.Get(ctx, &vo.GetPolicy{
 		ID:    workflowID,
-		QType: vo.FromDraft,
+		QType: workflowModel.FromDraft,
 	})
 	if err != nil {
 		return nil, err
@@ -1322,8 +1322,8 @@ func (i *impl) GetWorkflowDependenceResource(ctx context.Context, workflowID int
 	var collectDependence func(nodes []*vo.Node) error
 	collectDependence = func(nodes []*vo.Node) error {
 		for _, node := range nodes {
-			switch node.Type {
-			case vo.BlockTypeBotAPI:
+			switch entity.IDStrToNodeType(node.Type) {
+			case entity.NodeTypePlugin:
 				apiParams := slices.ToMap(node.Data.Inputs.APIParams, func(e *vo.Param) (string, *vo.Param) {
 					return e.Name, e
 				})
@@ -1346,7 +1346,7 @@ func (i *impl) GetWorkflowDependenceResource(ctx context.Context, workflowID int
 					ds.PluginIDs = append(ds.PluginIDs, pID)
 				}
 
-			case vo.BlockTypeBotDatasetWrite, vo.BlockTypeBotDataset:
+			case entity.NodeTypeKnowledgeIndexer, entity.NodeTypeKnowledgeRetriever:
 				datasetListInfoParam := node.Data.Inputs.DatasetParam[0]
 				datasetIDs := datasetListInfoParam.Input.Value.Content.([]any)
 				for _, id := range datasetIDs {
@@ -1356,7 +1356,7 @@ func (i *impl) GetWorkflowDependenceResource(ctx context.Context, workflowID int
 					}
 					ds.KnowledgeIDs = append(ds.KnowledgeIDs, k)
 				}
-			case vo.BlockTypeDatabase, vo.BlockTypeDatabaseSelect, vo.BlockTypeDatabaseInsert, vo.BlockTypeDatabaseDelete, vo.BlockTypeDatabaseUpdate:
+			case entity.NodeTypeDatabaseCustomSQL, entity.NodeTypeDatabaseQuery, entity.NodeTypeDatabaseInsert, entity.NodeTypeDatabaseDelete, entity.NodeTypeDatabaseUpdate:
 				dsList := node.Data.Inputs.DatabaseInfoList
 				if len(dsList) == 0 {
 					return fmt.Errorf("database info is requird")
@@ -1368,17 +1368,17 @@ func (i *impl) GetWorkflowDependenceResource(ctx context.Context, workflowID int
 					}
 					ds.DatabaseIDs = append(ds.DatabaseIDs, dsID)
 				}
-			case vo.BlockTypeBotLLM:
+			case entity.NodeTypeLLM:
 				if node.Data.Inputs.FCParam != nil && node.Data.Inputs.FCParam.PluginFCParam != nil {
 					for idx := range node.Data.Inputs.FCParam.PluginFCParam.PluginList {
-						pl := node.Data.Inputs.FCParam.PluginFCParam.PluginList[idx]
-						pluginID, err := strconv.ParseInt(pl.PluginID, 10, 64)
-						if err != nil {
-							return err
-						}
-
-						if pl.PluginVersion == "0" {
+						if node.Data.Inputs.FCParam.PluginFCParam.PluginList[idx].IsDraft {
+							pl := node.Data.Inputs.FCParam.PluginFCParam.PluginList[idx]
+							pluginID, err := strconv.ParseInt(pl.PluginID, 10, 64)
+							if err != nil {
+								return err
+							}
 							ds.PluginIDs = append(ds.PluginIDs, pluginID)
+
 						}
 
 					}
@@ -1395,29 +1395,63 @@ func (i *impl) GetWorkflowDependenceResource(ctx context.Context, workflowID int
 					}
 				}
 
-			case vo.BlockTypeBotSubWorkflow:
-				wfID, err := strconv.ParseInt(node.Data.Inputs.WorkflowID, 10, 64)
-				if err != nil {
-					return err
+				if node.Data.Inputs.FCParam != nil && node.Data.Inputs.FCParam.WorkflowFCParam != nil {
+					for idx := range node.Data.Inputs.FCParam.WorkflowFCParam.WorkflowList {
+						if node.Data.Inputs.FCParam.WorkflowFCParam.WorkflowList[idx].IsDraft {
+							wID, err := strconv.ParseInt(node.Data.Inputs.FCParam.WorkflowFCParam.WorkflowList[idx].WorkflowID, 10, 64)
+							if err != nil {
+								return err
+							}
+
+							wfe, err := i.repo.GetEntity(ctx, &vo.GetPolicy{
+								ID:    wID,
+								QType: workflowModel.FromDraft,
+							})
+							if err != nil {
+								return err
+							}
+
+							workflowToolCanvas := &vo.Canvas{}
+							err = sonic.UnmarshalString(wfe.Canvas, workflowToolCanvas)
+							if err != nil {
+								return err
+							}
+
+							err = collectDependence(workflowToolCanvas.Nodes)
+							if err != nil {
+								return err
+							}
+						}
+
+					}
+
 				}
 
-				subWorkflow, err := i.repo.GetEntity(ctx, &vo.GetPolicy{
-					ID:    wfID,
-					QType: vo.FromDraft,
-				})
-				if err != nil {
-					return err
-				}
+			case entity.NodeTypeSubWorkflow:
+				if node.Data.Inputs.WorkflowVersion == "" {
+					wfID, err := strconv.ParseInt(node.Data.Inputs.WorkflowID, 10, 64)
+					if err != nil {
+						return err
+					}
 
-				subCanvas := &vo.Canvas{}
-				err = sonic.UnmarshalString(subWorkflow.Canvas, subCanvas)
-				if err != nil {
-					return err
-				}
+					subWorkflow, err := i.repo.GetEntity(ctx, &vo.GetPolicy{
+						ID:    wfID,
+						QType: workflowModel.FromDraft,
+					})
+					if err != nil {
+						return err
+					}
 
-				err = collectDependence(subCanvas.Nodes)
-				if err != nil {
-					return err
+					subCanvas := &vo.Canvas{}
+					err = sonic.UnmarshalString(subWorkflow.Canvas, subCanvas)
+					if err != nil {
+						return err
+					}
+
+					err = collectDependence(subCanvas.Nodes)
+					if err != nil {
+						return err
+					}
 				}
 
 			}
@@ -1478,9 +1512,9 @@ func (i *impl) MGet(ctx context.Context, policy *vo.MGetPolicy) ([]*entity.Workf
 	}
 
 	switch policy.QType {
-	case vo.FromDraft:
+	case workflowModel.FromDraft:
 		return i.repo.MGetDrafts(ctx, policy)
-	case vo.FromSpecificVersion:
+	case workflowModel.FromSpecificVersion:
 		if len(policy.IDs) == 0 || len(policy.Versions) != len(policy.IDs) {
 			return nil, 0, fmt.Errorf("ids and versions are required when MGet from specific versions")
 		}
@@ -1522,7 +1556,7 @@ func (i *impl) MGet(ctx context.Context, policy *vo.MGetPolicy) ([]*entity.Workf
 		}
 
 		return result, total, nil
-	case vo.FromLatestVersion:
+	case workflowModel.FromLatestVersion:
 		return i.repo.MGetLatestVersion(ctx, policy)
 	default:
 		panic("not implemented")
@@ -1566,9 +1600,9 @@ func replaceRelatedWorkflowOrExternalResourceInWorkflowNodes(nodes []*vo.Node, r
 	)
 
 	for _, node := range nodes {
-		switch node.Type {
-		case vo.BlockTypeBotSubWorkflow:
-			if !hasWorkflowRelated {
+		switch entity.IDStrToNodeType(node.Type) {
+		case entity.NodeTypeSubWorkflow:
+			if !hasWorkflowRelated || node.Data.Inputs.SubWorkflow == nil {
 				continue
 			}
 			workflowID, err := strconv.ParseInt(node.Data.Inputs.WorkflowID, 10, 64)
@@ -1579,8 +1613,8 @@ func replaceRelatedWorkflowOrExternalResourceInWorkflowNodes(nodes []*vo.Node, r
 				node.Data.Inputs.WorkflowID = strconv.FormatInt(wf.ID, 10)
 				node.Data.Inputs.WorkflowVersion = wf.Version
 			}
-		case vo.BlockTypeBotAPI:
-			if !hasPluginRelated {
+		case entity.NodeTypePlugin:
+			if !hasPluginRelated || node.Data.Inputs.PluginAPIParam == nil {
 				continue
 			}
 			apiParams := slices.ToMap(node.Data.Inputs.APIParams, func(e *vo.Param) (string, *vo.Param) {
@@ -1622,7 +1656,10 @@ func replaceRelatedWorkflowOrExternalResourceInWorkflowNodes(nodes []*vo.Node, r
 				apiIDParam.Input.Value.Content = strconv.FormatInt(refApiID, 10)
 			}
 
-		case vo.BlockTypeBotLLM:
+		case entity.NodeTypeLLM:
+			if node.Data.Inputs.LLM == nil {
+				continue
+			}
 			if hasWorkflowRelated && node.Data.Inputs.FCParam != nil && node.Data.Inputs.FCParam.WorkflowFCParam != nil {
 				for idx := range node.Data.Inputs.FCParam.WorkflowFCParam.WorkflowList {
 					wf := node.Data.Inputs.FCParam.WorkflowFCParam.WorkflowList[idx]
@@ -1634,6 +1671,7 @@ func replaceRelatedWorkflowOrExternalResourceInWorkflowNodes(nodes []*vo.Node, r
 						wf.WorkflowID = strconv.FormatInt(refWf.ID, 10)
 						wf.WorkflowVersion = refWf.Version
 					}
+					node.Data.Inputs.FCParam.WorkflowFCParam.WorkflowList[idx] = wf
 				}
 
 			}
@@ -1644,13 +1682,26 @@ func replaceRelatedWorkflowOrExternalResourceInWorkflowNodes(nodes []*vo.Node, r
 					if err != nil {
 						return err
 					}
+
+					toolID, err := strconv.ParseInt(pl.ApiId, 10, 64)
+					if err != nil {
+						return err
+					}
+
 					if refPlugin, ok := related.PluginMap[pluginID]; ok {
+						tID, ok := related.PluginToolMap[toolID]
+						if ok {
+							pl.ApiId = strconv.FormatInt(tID, 10)
+						}
 						pl.PluginID = strconv.FormatInt(refPlugin.PluginID, 10)
 						if refPlugin.PluginVersion != nil {
 							pl.PluginVersion = *refPlugin.PluginVersion
+
+							pl.IsDraft = false
 						}
 
 					}
+					node.Data.Inputs.FCParam.PluginFCParam.PluginList[idx] = pl
 
 				}
 			}
@@ -1668,8 +1719,8 @@ func replaceRelatedWorkflowOrExternalResourceInWorkflowNodes(nodes []*vo.Node, r
 				}
 			}
 
-		case vo.BlockTypeBotDataset, vo.BlockTypeBotDatasetWrite:
-			if !hasKnowledgeRelated {
+		case entity.NodeTypeKnowledgeIndexer, entity.NodeTypeKnowledgeRetriever:
+			if !hasKnowledgeRelated || node.Data.Inputs.Knowledge == nil {
 				continue
 			}
 			datasetListInfoParam := node.Data.Inputs.DatasetParam[0]
@@ -1684,8 +1735,8 @@ func replaceRelatedWorkflowOrExternalResourceInWorkflowNodes(nodes []*vo.Node, r
 				}
 			}
 
-		case vo.BlockTypeDatabase, vo.BlockTypeDatabaseSelect, vo.BlockTypeDatabaseInsert, vo.BlockTypeDatabaseDelete, vo.BlockTypeDatabaseUpdate:
-			if !hasDatabaseRelated {
+		case entity.NodeTypeDatabaseCustomSQL, entity.NodeTypeDatabaseQuery, entity.NodeTypeDatabaseInsert, entity.NodeTypeDatabaseDelete, entity.NodeTypeDatabaseUpdate:
+			if !hasDatabaseRelated || node.Data.Inputs.DatabaseNode == nil {
 				continue
 			}
 			dsList := node.Data.Inputs.DatabaseInfoList
@@ -1711,4 +1762,8 @@ func replaceRelatedWorkflowOrExternalResourceInWorkflowNodes(nodes []*vo.Node, r
 
 	}
 	return nil
+}
+
+func RegisterAllNodeAdaptors() {
+	adaptor.RegisterAllNodeAdaptors()
 }

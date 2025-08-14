@@ -23,13 +23,14 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 
+	workflowModel "github.com/coze-dev/coze-studio/backend/api/model/crossdomain/workflow"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/entity/vo"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/internal/repo/dal/model"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/internal/repo/dal/query"
+	"github.com/coze-dev/coze-studio/backend/infra/contract/cache"
 	"github.com/coze-dev/coze-studio/backend/pkg/lang/ptr"
 	"github.com/coze-dev/coze-studio/backend/pkg/lang/slices"
 	"github.com/coze-dev/coze-studio/backend/pkg/lang/ternary"
@@ -40,7 +41,7 @@ import (
 
 type executeHistoryStoreImpl struct {
 	query *query.Query
-	redis *redis.Client
+	redis cache.Cmdable
 }
 
 func (e *executeHistoryStoreImpl) CreateWorkflowExecution(ctx context.Context, execution *entity.WorkflowExecution) (err error) {
@@ -51,21 +52,21 @@ func (e *executeHistoryStoreImpl) CreateWorkflowExecution(ctx context.Context, e
 	}()
 
 	var mode int32
-	if execution.Mode == vo.ExecuteModeDebug {
+	if execution.Mode == workflowModel.ExecuteModeDebug {
 		mode = 1
-	} else if execution.Mode == vo.ExecuteModeRelease {
+	} else if execution.Mode == workflowModel.ExecuteModeRelease {
 		mode = 2
-	} else if execution.Mode == vo.ExecuteModeNodeDebug {
+	} else if execution.Mode == workflowModel.ExecuteModeNodeDebug {
 		mode = 3
 	}
 
 	var syncPattern int32
 	switch execution.SyncPattern {
-	case vo.SyncPatternSync:
+	case workflowModel.SyncPatternSync:
 		syncPattern = 1
-	case vo.SyncPatternAsync:
+	case workflowModel.SyncPatternAsync:
 		syncPattern = 2
-	case vo.SyncPatternStream:
+	case workflowModel.SyncPatternStream:
 		syncPattern = 3
 	default:
 	}
@@ -211,23 +212,23 @@ func (e *executeHistoryStoreImpl) GetWorkflowExecution(ctx context.Context, id i
 	}
 
 	rootExe := rootExes[0]
-	var exeMode vo.ExecuteMode
+	var exeMode workflowModel.ExecuteMode
 	if rootExe.Mode == 1 {
-		exeMode = vo.ExecuteModeDebug
+		exeMode = workflowModel.ExecuteModeDebug
 	} else if rootExe.Mode == 2 {
-		exeMode = vo.ExecuteModeRelease
+		exeMode = workflowModel.ExecuteModeRelease
 	} else {
-		exeMode = vo.ExecuteModeNodeDebug
+		exeMode = workflowModel.ExecuteModeNodeDebug
 	}
 
-	var syncPattern vo.SyncPattern
+	var syncPattern workflowModel.SyncPattern
 	switch rootExe.SyncPattern {
 	case 1:
-		syncPattern = vo.SyncPatternSync
+		syncPattern = workflowModel.SyncPatternSync
 	case 2:
-		syncPattern = vo.SyncPatternAsync
+		syncPattern = workflowModel.SyncPatternAsync
 	case 3:
-		syncPattern = vo.SyncPatternStream
+		syncPattern = workflowModel.SyncPatternStream
 	default:
 	}
 
@@ -236,7 +237,7 @@ func (e *executeHistoryStoreImpl) GetWorkflowExecution(ctx context.Context, id i
 		WorkflowID: rootExe.WorkflowID,
 		Version:    rootExe.Version,
 		SpaceID:    rootExe.SpaceID,
-		ExecuteConfig: vo.ExecuteConfig{
+		ExecuteConfig: workflowModel.ExecuteConfig{
 			Operator:     rootExe.OperatorID,
 			Mode:         exeMode,
 			AppID:        ternary.IFElse(rootExe.AppID > 0, ptr.Of(rootExe.AppID), nil),
@@ -303,7 +304,7 @@ func (e *executeHistoryStoreImpl) UpdateNodeExecutionStreaming(ctx context.Conte
 
 	key := fmt.Sprintf(nodeExecOutputKey, execution.ID)
 
-	if err := e.redis.Set(ctx, key, execution.Output, nodeExecDataExpiry).Err(); err != nil {
+	if err := e.redis.Set(ctx, key, *execution.Output, nodeExecDataExpiry).Err(); err != nil {
 		return vo.WrapError(errno.ErrRedisError, err)
 	}
 
@@ -457,7 +458,7 @@ func (e *executeHistoryStoreImpl) loadNodeExecutionFromRedis(ctx context.Context
 
 	result, err := e.redis.Get(ctx, key).Result()
 	if err != nil {
-		if errors.Is(err, redis.Nil) {
+		if errors.Is(err, cache.Nil) {
 			return nil
 		}
 		return vo.WrapError(errno.ErrRedisError, err)
@@ -523,7 +524,7 @@ func (e *executeHistoryStoreImpl) GetTestRunLatestExeID(ctx context.Context, wfI
 	key := fmt.Sprintf(testRunLastExeKey, wfID, uID)
 	exeIDStr, err := e.redis.Get(ctx, key).Result()
 	if err != nil {
-		if errors.Is(err, redis.Nil) {
+		if errors.Is(err, cache.Nil) {
 			return 0, nil
 		}
 		return 0, vo.WrapError(errno.ErrRedisError, err)
@@ -548,7 +549,7 @@ func (e *executeHistoryStoreImpl) GetNodeDebugLatestExeID(ctx context.Context, w
 	key := fmt.Sprintf(nodeDebugLastExeKey, wfID, nodeID, uID)
 	exeIDStr, err := e.redis.Get(ctx, key).Result()
 	if err != nil {
-		if errors.Is(err, redis.Nil) {
+		if errors.Is(err, cache.Nil) {
 			return 0, nil
 		}
 		return 0, vo.WrapError(errno.ErrRedisError, err)

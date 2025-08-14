@@ -27,13 +27,16 @@ import (
 	"strings"
 	"time"
 
+	"github.com/coze-dev/coze-studio/backend/pkg/sonic"
+
 	"github.com/cloudwego/eino/callbacks"
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/compose"
 	"github.com/cloudwego/eino/schema"
 	callbacks2 "github.com/cloudwego/eino/utils/callbacks"
 
-	workflow2 "github.com/coze-dev/coze-studio/backend/api/model/ocean/cloud/workflow"
+	workflowModel "github.com/coze-dev/coze-studio/backend/api/model/crossdomain/workflow"
+	workflow2 "github.com/coze-dev/coze-studio/backend/api/model/workflow"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/entity/vo"
@@ -62,7 +65,7 @@ type WorkflowHandler struct {
 	nodeCount          int32
 	requireCheckpoint  bool
 	resumeEvent        *entity.InterruptEvent
-	exeCfg             vo.ExecuteConfig
+	exeCfg             workflowModel.ExecuteConfig
 	rootTokenCollector *TokenCollector
 }
 
@@ -72,7 +75,7 @@ type ToolHandler struct {
 }
 
 func NewRootWorkflowHandler(wb *entity.WorkflowBasic, executeID int64, requireCheckpoint bool,
-	ch chan<- *Event, resumedEvent *entity.InterruptEvent, exeCfg vo.ExecuteConfig, nodeCount int32,
+	ch chan<- *Event, resumedEvent *entity.InterruptEvent, exeCfg workflowModel.ExecuteConfig, nodeCount int32,
 ) callbacks.Handler {
 	return &WorkflowHandler{
 		ch:                ch,
@@ -496,48 +499,49 @@ func (w *WorkflowHandler) OnEndWithStreamOutput(ctx context.Context, info *callb
 		return ctx
 	}
 
-	// consumes the stream synchronously because the Exit node has already processed this stream synchronously.
-	defer output.Close()
-	fullOutput := make(map[string]any)
-	for {
-		chunk, e := output.Recv()
-		if e != nil {
-			if e == io.EOF {
-				break
+	safego.Go(ctx, func() {
+		defer output.Close()
+		fullOutput := make(map[string]any)
+		for {
+			chunk, e := output.Recv()
+			if e != nil {
+				if e == io.EOF {
+					break
+				}
+
+				if _, ok := schema.GetSourceName(e); ok {
+					continue
+				}
+
+				logs.Errorf("workflow OnEndWithStreamOutput failed to receive stream output: %v", e)
+				_ = w.OnError(ctx, info, e)
+				return
 			}
-
-			if _, ok := schema.GetSourceName(e); ok {
-				continue
+			fullOutput, e = nodes.ConcatTwoMaps(fullOutput, chunk.(map[string]any))
+			if e != nil {
+				logs.Errorf("failed to concat two maps: %v", e)
+				return
 			}
-
-			logs.Errorf("workflow OnEndWithStreamOutput failed to receive stream output: %v", e)
-			_ = w.OnError(ctx, info, e)
-			return ctx
 		}
-		fullOutput, e = nodes.ConcatTwoMaps(fullOutput, chunk.(map[string]any))
-		if e != nil {
-			logs.Errorf("failed to concat two maps: %v", e)
-			return ctx
-		}
-	}
 
-	c := GetExeCtx(ctx)
-	e := &Event{
-		Type:     WorkflowSuccess,
-		Context:  c,
-		Duration: time.Since(time.UnixMilli(c.StartTime)),
-		Output:   fullOutput,
-	}
-
-	if c.TokenCollector != nil {
-		usage := c.TokenCollector.wait()
-		e.Token = &TokenInfo{
-			InputToken:  int64(usage.PromptTokens),
-			OutputToken: int64(usage.CompletionTokens),
-			TotalToken:  int64(usage.TotalTokens),
+		c := GetExeCtx(ctx)
+		e := &Event{
+			Type:     WorkflowSuccess,
+			Context:  c,
+			Duration: time.Since(time.UnixMilli(c.StartTime)),
+			Output:   fullOutput,
 		}
-	}
-	w.ch <- e
+
+		if c.TokenCollector != nil {
+			usage := c.TokenCollector.wait()
+			e.Token = &TokenInfo{
+				InputToken:  int64(usage.PromptTokens),
+				OutputToken: int64(usage.CompletionTokens),
+				TotalToken:  int64(usage.TotalTokens),
+			}
+		}
+		w.ch <- e
+	})
 
 	return ctx
 }
@@ -1270,13 +1274,21 @@ func (t *ToolHandler) OnStart(ctx context.Context, info *callbacks.RunInfo,
 		return ctx
 	}
 
+	var args map[string]any
+	if input.ArgumentsInJSON != "" {
+		if err := sonic.UnmarshalString(input.ArgumentsInJSON, &args); err != nil {
+			logs.Errorf("failed to unmarshal arguments: %v", err)
+			return ctx
+		}
+	}
+
 	t.ch <- &Event{
 		Type:    FunctionCall,
 		Context: GetExeCtx(ctx),
 		functionCall: &entity.FunctionCallInfo{
 			FunctionInfo: t.info,
 			CallID:       compose.GetToolCallID(ctx),
-			Arguments:    input.ArgumentsInJSON,
+			Arguments:    args,
 		},
 	}
 

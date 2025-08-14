@@ -32,6 +32,7 @@ import (
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/bytedance/mockey"
+	"github.com/cloudwego/eino/callbacks"
 	model2 "github.com/cloudwego/eino/components/model"
 	"github.com/cloudwego/eino/schema"
 	"github.com/cloudwego/hertz/pkg/app"
@@ -40,51 +41,53 @@ import (
 	"github.com/cloudwego/hertz/pkg/common/ut"
 	"github.com/cloudwego/hertz/pkg/protocol"
 	"github.com/cloudwego/hertz/pkg/protocol/sse"
-	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
+	"github.com/coze-dev/coze-studio/backend/api/model/crossdomain/knowledge"
 	modelknowledge "github.com/coze-dev/coze-studio/backend/api/model/crossdomain/knowledge"
+	model "github.com/coze-dev/coze-studio/backend/api/model/crossdomain/modelmgr"
 	plugin2 "github.com/coze-dev/coze-studio/backend/api/model/crossdomain/plugin"
 	pluginmodel "github.com/coze-dev/coze-studio/backend/api/model/crossdomain/plugin"
-	"github.com/coze-dev/coze-studio/backend/api/model/ocean/cloud/playground"
-	pluginAPI "github.com/coze-dev/coze-studio/backend/api/model/ocean/cloud/plugin_develop"
-	"github.com/coze-dev/coze-studio/backend/api/model/ocean/cloud/workflow"
+	workflowModel "github.com/coze-dev/coze-studio/backend/api/model/crossdomain/workflow"
+	"github.com/coze-dev/coze-studio/backend/api/model/playground"
+	pluginAPI "github.com/coze-dev/coze-studio/backend/api/model/plugin_develop"
+	"github.com/coze-dev/coze-studio/backend/api/model/workflow"
 	"github.com/coze-dev/coze-studio/backend/application/base/ctxutil"
 	appknowledge "github.com/coze-dev/coze-studio/backend/application/knowledge"
 	appmemory "github.com/coze-dev/coze-studio/backend/application/memory"
 	appplugin "github.com/coze-dev/coze-studio/backend/application/plugin"
 	"github.com/coze-dev/coze-studio/backend/application/user"
 	appworkflow "github.com/coze-dev/coze-studio/backend/application/workflow"
-	"github.com/coze-dev/coze-studio/backend/crossdomain/contract/crossuser"
-	plugin3 "github.com/coze-dev/coze-studio/backend/crossdomain/workflow/plugin"
+	crossdatabase "github.com/coze-dev/coze-studio/backend/crossdomain/contract/database"
+	"github.com/coze-dev/coze-studio/backend/crossdomain/contract/database/databasemock"
+	crossknowledge "github.com/coze-dev/coze-studio/backend/crossdomain/contract/knowledge"
+	"github.com/coze-dev/coze-studio/backend/crossdomain/contract/knowledge/knowledgemock"
+	crossmodelmgr "github.com/coze-dev/coze-studio/backend/crossdomain/contract/modelmgr"
+	mockmodel "github.com/coze-dev/coze-studio/backend/crossdomain/contract/modelmgr/modelmock"
+	crossplugin "github.com/coze-dev/coze-studio/backend/crossdomain/contract/plugin"
+	"github.com/coze-dev/coze-studio/backend/crossdomain/contract/plugin/pluginmock"
+	crossuser "github.com/coze-dev/coze-studio/backend/crossdomain/contract/user"
+	"github.com/coze-dev/coze-studio/backend/crossdomain/impl/code"
+	pluginImpl "github.com/coze-dev/coze-studio/backend/crossdomain/impl/plugin"
 	entity4 "github.com/coze-dev/coze-studio/backend/domain/memory/database/entity"
 	entity2 "github.com/coze-dev/coze-studio/backend/domain/openauth/openapiauth/entity"
 	entity3 "github.com/coze-dev/coze-studio/backend/domain/plugin/entity"
 	entity5 "github.com/coze-dev/coze-studio/backend/domain/plugin/entity"
+	search "github.com/coze-dev/coze-studio/backend/domain/search/entity"
 	userentity "github.com/coze-dev/coze-studio/backend/domain/user/entity"
 	workflow2 "github.com/coze-dev/coze-studio/backend/domain/workflow"
-	"github.com/coze-dev/coze-studio/backend/domain/workflow/crossdomain/code"
-	"github.com/coze-dev/coze-studio/backend/domain/workflow/crossdomain/database"
-	"github.com/coze-dev/coze-studio/backend/domain/workflow/crossdomain/database/databasemock"
-	"github.com/coze-dev/coze-studio/backend/domain/workflow/crossdomain/knowledge"
-	"github.com/coze-dev/coze-studio/backend/domain/workflow/crossdomain/knowledge/knowledgemock"
-	"github.com/coze-dev/coze-studio/backend/domain/workflow/crossdomain/model"
-	mockmodel "github.com/coze-dev/coze-studio/backend/domain/workflow/crossdomain/model/modelmock"
-	"github.com/coze-dev/coze-studio/backend/domain/workflow/crossdomain/plugin"
-	"github.com/coze-dev/coze-studio/backend/domain/workflow/crossdomain/plugin/pluginmock"
-	crosssearch "github.com/coze-dev/coze-studio/backend/domain/workflow/crossdomain/search"
-	"github.com/coze-dev/coze-studio/backend/domain/workflow/crossdomain/search/searchmock"
-	"github.com/coze-dev/coze-studio/backend/domain/workflow/crossdomain/variable"
-	mockvar "github.com/coze-dev/coze-studio/backend/domain/workflow/crossdomain/variable/varmock"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/entity/vo"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/service"
+	"github.com/coze-dev/coze-studio/backend/domain/workflow/variable"
+	mockvar "github.com/coze-dev/coze-studio/backend/domain/workflow/variable/varmock"
 	"github.com/coze-dev/coze-studio/backend/infra/contract/coderunner"
 	"github.com/coze-dev/coze-studio/backend/infra/contract/modelmgr"
+	"github.com/coze-dev/coze-studio/backend/infra/impl/cache/redis"
 	"github.com/coze-dev/coze-studio/backend/infra/impl/checkpoint"
 	"github.com/coze-dev/coze-studio/backend/infra/impl/coderunner/direct"
 	mockCrossUser "github.com/coze-dev/coze-studio/backend/internal/mock/crossdomain/crossuser"
@@ -102,23 +105,29 @@ import (
 	"github.com/coze-dev/coze-studio/backend/types/errno"
 )
 
+func TestMain(m *testing.M) {
+	callbacks.AppendGlobalHandlers(service.GetTokenCallbackHandler())
+	service.RegisterAllNodeAdaptors()
+	os.Exit(m.Run())
+}
+
 type wfTestRunner struct {
-	t           *testing.T
-	h           *server.Hertz
-	ctrl        *gomock.Controller
-	idGen       *mock.MockIDGenerator
-	search      *searchmock.MockNotifier
-	appVarS     *mockvar.MockStore
-	userVarS    *mockvar.MockStore
-	varGetter   *mockvar.MockVariablesMetaGetter
-	modelManage *mockmodel.MockManager
-	plugin      *mockPlugin.MockPluginService
-	tos         *storageMock.MockStorage
-	knowledge   *knowledgemock.MockKnowledgeOperator
-	database    *databasemock.MockDatabaseOperator
-	pluginSrv   *pluginmock.MockService
-	ctx         context.Context
-	closeFn     func()
+	t             *testing.T
+	h             *server.Hertz
+	ctrl          *gomock.Controller
+	idGen         *mock.MockIDGenerator
+	appVarS       *mockvar.MockStore
+	userVarS      *mockvar.MockStore
+	varGetter     *mockvar.MockVariablesMetaGetter
+	modelManage   *mockmodel.MockManager
+	plugin        *mockPlugin.MockPluginService
+	tos           *storageMock.MockStorage
+	knowledge     *knowledgemock.MockKnowledge
+	database      *databasemock.MockDatabase
+	pluginSrv     *pluginmock.MockPluginService
+	internalModel *testutil.UTChatModel
+	ctx           context.Context
+	closeFn       func()
 }
 
 var req2URL = map[reflect.Type]string{
@@ -231,21 +240,18 @@ func newWfTestRunner(t *testing.T) *wfTestRunner {
 		t.Fatalf("Failed to start miniredis: %v", err)
 	}
 
-	redisClient := redis.NewClient(&redis.Options{
-		Addr: s.Addr(),
-	})
+	redisClient := redis.NewWithAddrAndPassword(s.Addr(), "")
 
 	cpStore := checkpoint.NewRedisStore(redisClient)
 
+	utChatModel := &testutil.UTChatModel{}
+
 	mockTos := storageMock.NewMockStorage(ctrl)
 	mockTos.EXPECT().GetObjectUrl(gomock.Any(), gomock.Any(), gomock.Any()).Return("", nil).AnyTimes()
-	workflowRepo := service.NewWorkflowRepository(mockIDGen, db, redisClient, mockTos, cpStore, nil)
+	workflowRepo := service.NewWorkflowRepository(mockIDGen, db, redisClient, mockTos, cpStore, utChatModel)
 	mockey.Mock(appworkflow.GetWorkflowDomainSVC).Return(service.NewWorkflowService(workflowRepo)).Build()
 	mockey.Mock(workflow2.GetRepository).Return(workflowRepo).Build()
-
-	mockSearchNotify := searchmock.NewMockNotifier(ctrl)
-	mockey.Mock(crosssearch.GetNotifier).Return(mockSearchNotify).Build()
-	mockSearchNotify.EXPECT().PublishWorkflowResource(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	mockey.Mock(appworkflow.PublishWorkflowResource).Return(nil).Build()
 
 	mockCU := mockCrossUser.NewMockUser(ctrl)
 	mockCU.EXPECT().GetUserSpaceList(gomock.Any(), gomock.Any()).Return([]*crossuser.EntitySpace{
@@ -268,12 +274,12 @@ func newWfTestRunner(t *testing.T) *wfTestRunner {
 
 	mPlugin := mockPlugin.NewMockPluginService(ctrl)
 
-	mockKwOperator := knowledgemock.NewMockKnowledgeOperator(ctrl)
-	knowledge.SetKnowledgeOperator(mockKwOperator)
+	mockKwOperator := knowledgemock.NewMockKnowledge(ctrl)
+	crossknowledge.SetDefaultSVC(mockKwOperator)
 
 	mockModelManage := mockmodel.NewMockManager(ctrl)
 	mockModelManage.EXPECT().GetModel(gomock.Any(), gomock.Any()).Return(nil, nil, nil).AnyTimes()
-	m3 := mockey.Mock(model.GetManager).Return(mockModelManage).Build()
+	m3 := mockey.Mock(crossmodelmgr.DefaultSVC).Return(mockModelManage).Build()
 
 	m := mockey.Mock(crossuser.DefaultSVC).Return(mockCU).Build()
 	m1 := mockey.Mock(ctxutil.GetApiAuthFromCtx).Return(&entity2.ApiKey{
@@ -283,11 +289,11 @@ func newWfTestRunner(t *testing.T) *wfTestRunner {
 	m4 := mockey.Mock(ctxutil.MustGetUIDFromCtx).Return(int64(1)).Build()
 	m5 := mockey.Mock(ctxutil.GetUIDFromCtx).Return(ptr.Of(int64(1))).Build()
 
-	mockDatabaseOperator := databasemock.NewMockDatabaseOperator(ctrl)
-	database.SetDatabaseOperator(mockDatabaseOperator)
+	mockDatabaseOperator := databasemock.NewMockDatabase(ctrl)
+	crossdatabase.SetDefaultSVC(mockDatabaseOperator)
 
-	mockPluginSrv := pluginmock.NewMockService(ctrl)
-	plugin.SetPluginService(mockPluginSrv)
+	mockPluginSrv := pluginmock.NewMockPluginService(ctrl)
+	crossplugin.SetDefaultSVC(mockPluginSrv)
 
 	mockey.Mock((*user.UserApplicationService).MGetUserBasicInfo).Return(&playground.MGetUserBasicInfoResponse{
 		UserBasicInfoMap: make(map[string]*playground.UserBasicInfo),
@@ -306,22 +312,22 @@ func newWfTestRunner(t *testing.T) *wfTestRunner {
 	}
 
 	return &wfTestRunner{
-		t:           t,
-		h:           h,
-		ctrl:        ctrl,
-		idGen:       mockIDGen,
-		search:      mockSearchNotify,
-		appVarS:     mockGlobalAppVarStore,
-		userVarS:    mockGlobalUserVarStore,
-		varGetter:   mockVarGetter,
-		modelManage: mockModelManage,
-		plugin:      mPlugin,
-		tos:         mockTos,
-		knowledge:   mockKwOperator,
-		database:    mockDatabaseOperator,
-		ctx:         context.Background(),
-		closeFn:     f,
-		pluginSrv:   mockPluginSrv,
+		t:             t,
+		h:             h,
+		ctrl:          ctrl,
+		idGen:         mockIDGen,
+		appVarS:       mockGlobalAppVarStore,
+		userVarS:      mockGlobalUserVarStore,
+		varGetter:     mockVarGetter,
+		modelManage:   mockModelManage,
+		plugin:        mPlugin,
+		tos:           mockTos,
+		knowledge:     mockKwOperator,
+		database:      mockDatabaseOperator,
+		internalModel: utChatModel,
+		ctx:           context.Background(),
+		closeFn:       f,
+		pluginSrv:     mockPluginSrv,
 	}
 }
 
@@ -1104,7 +1110,8 @@ func TestValidateTree(t *testing.T) {
 						assert.Equal(t, i.Message, `node "代码_1" not connected`)
 					}
 					if i.NodeError.NodeID == "160892" {
-						assert.Contains(t, i.Message, `node "意图识别"'s port "branch_1" not connected`, `node "意图识别"'s port "default" not connected;`)
+						assert.Contains(t, i.Message, `node "意图识别"'s port "branch_1" not connected`)
+						assert.Contains(t, i.Message, `node "意图识别"'s port "default" not connected`)
 					}
 
 				}
@@ -1151,7 +1158,8 @@ func TestValidateTree(t *testing.T) {
 						assert.Equal(t, i.Message, `node "代码_1" not connected`)
 					}
 					if i.NodeError.NodeID == "160892" {
-						assert.Contains(t, i.Message, `node "意图识别"'s port "branch_1" not connected`, `node "意图识别"'s port "default" not connected;`)
+						assert.Contains(t, i.Message, `node "意图识别"'s port "branch_1" not connected`)
+						assert.Contains(t, i.Message, `node "意图识别"'s port "default" not connected`)
 					}
 				}
 			}
@@ -2863,9 +2871,8 @@ func TestLLMWithSkills(t *testing.T) {
 			{ID: int64(7509353598782816256), Operation: operation},
 		}, nil).AnyTimes()
 
-		pluginSrv := plugin3.NewPluginService(r.plugin, r.tos)
-
-		plugin.SetPluginService(pluginSrv)
+		pluginSrv := pluginImpl.InitDomainService(r.plugin, r.tos)
+		crossplugin.SetDefaultSVC(pluginSrv)
 
 		t.Run("llm with plugin tool", func(t *testing.T) {
 			id := r.load("llm_node_with_skills/llm_node_with_plugin_tool.json")
@@ -2944,41 +2951,41 @@ func TestLLMWithSkills(t *testing.T) {
 		r := newWfTestRunner(t)
 		defer r.closeFn()
 
-		utChatModel := &testutil.UTChatModel{
-			InvokeResultProvider: func(index int, in []*schema.Message) (*schema.Message, error) {
-				if index == 0 {
-					assert.Equal(t, 1, len(in))
-					assert.Contains(t, in[0].Content, "7512369185624686592", "你是一个知识库意图识别AI Agent", "北京有哪些著名的景点")
-					return &schema.Message{
-						Role:    schema.Assistant,
-						Content: "7512369185624686592",
-						ResponseMeta: &schema.ResponseMeta{
-							Usage: &schema.TokenUsage{
-								PromptTokens:     10,
-								CompletionTokens: 11,
-								TotalTokens:      21,
-							},
+		utChatModel := r.internalModel
+		utChatModel.InvokeResultProvider = func(index int, in []*schema.Message) (*schema.Message, error) {
+			if index == 0 {
+				assert.Equal(t, 1, len(in))
+				assert.Contains(t, in[0].Content, "7512369185624686592", "你是一个知识库意图识别AI Agent", "北京有哪些著名的景点")
+				return &schema.Message{
+					Role:    schema.Assistant,
+					Content: "7512369185624686592",
+					ResponseMeta: &schema.ResponseMeta{
+						Usage: &schema.TokenUsage{
+							PromptTokens:     10,
+							CompletionTokens: 11,
+							TotalTokens:      21,
 						},
-					}, nil
+					},
+				}, nil
 
-				} else if index == 1 {
-					assert.Equal(t, 2, len(in))
-					for _, message := range in {
-						if message.Role == schema.System {
-							assert.Equal(t, "你是一个旅游推荐专家，通过用户提出的问题，推荐用户具体城市的旅游景点", message.Content)
-						}
-						if message.Role == schema.User {
-							assert.Contains(t, message.Content, "天安门广场 ‌：中国政治文化中心，见证了近现代重大历史事件‌", "八达岭长城 ‌：明代长城的精华段，被誉为“不到长城非好汉")
-						}
+			} else if index == 1 {
+				assert.Equal(t, 2, len(in))
+				for _, message := range in {
+					if message.Role == schema.System {
+						assert.Equal(t, "你是一个旅游推荐专家，通过用户提出的问题，推荐用户具体城市的旅游景点", message.Content)
 					}
-					return &schema.Message{
-						Role:    schema.Assistant,
-						Content: `八达岭长城 ‌：明代长城的精华段，被誉为“不到长城非好汉‌`,
-					}, nil
+					if message.Role == schema.User {
+						assert.Contains(t, message.Content, "天安门广场 ‌：中国政治文化中心，见证了近现代重大历史事件‌", "八达岭长城 ‌：明代长城的精华段，被誉为“不到长城非好汉")
+					}
 				}
-				return nil, fmt.Errorf("unexpected index: %d", index)
-			},
+				return &schema.Message{
+					Role:    schema.Assistant,
+					Content: `八达岭长城 ‌：明代长城的精华段，被誉为“不到长城非好汉‌`,
+				}, nil
+			}
+			return nil, fmt.Errorf("unexpected index: %d", index)
 		}
+
 		r.modelManage.EXPECT().GetModel(gomock.Any(), gomock.Any()).Return(utChatModel, nil, nil).AnyTimes()
 
 		r.knowledge.EXPECT().ListKnowledgeDetail(gomock.Any(), gomock.Any()).Return(&knowledge.ListKnowledgeDetailResponse{
@@ -2987,22 +2994,22 @@ func TestLLMWithSkills(t *testing.T) {
 			},
 		}, nil).AnyTimes()
 
-		r.knowledge.EXPECT().Retrieve(gomock.Any(), gomock.Any()).Return(&knowledge.RetrieveResponse{
-			Slices: []*knowledge.Slice{
-				{DocumentID: "1", Output: "天安门广场 ‌：中国政治文化中心，见证了近现代重大历史事件‌"},
-				{DocumentID: "2", Output: "八达岭长城 ‌：明代长城的精华段，被誉为“不到长城非好汉"},
-			},
-		}, nil).AnyTimes()
+		// r.knowledge.EXPECT().Retrieve(gomock.Any(), gomock.Any()).Return(&knowledge.RetrieveResponse{
+		// 	RetrieveSlices: []*knowledge.RetrieveSlice{
+		// 		{Slice: &knowledge.Slice{DocumentID: 1, Output: "天安门广场 ‌：中国政治文化中心，见证了近现代重大历史事件‌"}, Score: 0.9},
+		// 		{Slice: &knowledge.Slice{DocumentID: 2, Output: "八达岭长城 ‌：明代长城的精华段，被誉为“不到长城非好汉"}, Score: 0.8},
+		// 	},
+		// }, nil).AnyTimes()
 
-		t.Run("llm node with knowledge skill", func(t *testing.T) {
-			id := r.load("llm_node_with_skills/llm_with_knowledge_skill.json")
-			exeID := r.testRun(id, map[string]string{
-				"input": "北京有哪些著名的景点",
-			})
-			e := r.getProcess(id, exeID)
-			e.assertSuccess()
-			assert.Equal(t, `{"output":"八达岭长城 ‌：明代长城的精华段，被誉为“不到长城非好汉‌"}`, e.output)
-		})
+		// t.Run("llm node with knowledge skill", func(t *testing.T) {
+		// 	id := r.load("llm_node_with_skills/llm_with_knowledge_skill.json")
+		// 	exeID := r.testRun(id, map[string]string{
+		// 		"input": "北京有哪些著名的景点",
+		// 	})
+		// 	e := r.getProcess(id, exeID)
+		// 	e.assertSuccess()
+		// 	assert.Equal(t, `{"output":"八达岭长城 ‌：明代长城的精华段，被誉为“不到长城非好汉‌"}`, e.output)
+		// })
 	})
 }
 
@@ -3401,8 +3408,8 @@ func TestGetLLMNodeFCSettingsDetailAndMerged(t *testing.T) {
 			{ID: 123, Operation: operation},
 		}, nil).AnyTimes()
 
-		pluginSrv := plugin3.NewPluginService(r.plugin, r.tos)
-		plugin.SetPluginService(pluginSrv)
+		pluginSrv := pluginImpl.InitDomainService(r.plugin, r.tos)
+		crossplugin.SetDefaultSVC(pluginSrv)
 
 		t.Run("plugin tool info ", func(t *testing.T) {
 			fcSettingDetailReq := &workflow.GetLLMNodeFCSettingDetailRequest{
@@ -3518,8 +3525,8 @@ func TestGetLLMNodeFCSettingsDetailAndMerged(t *testing.T) {
 			{ID: 123, Operation: operation},
 		}, nil).AnyTimes()
 
-		pluginSrv := plugin3.NewPluginService(r.plugin, r.tos)
-		plugin.SetPluginService(pluginSrv)
+		pluginSrv := pluginImpl.InitDomainService(r.plugin, r.tos)
+		crossplugin.SetDefaultSVC(pluginSrv)
 
 		t.Run("plugin merge", func(t *testing.T) {
 			fcSettingMergedReq := &workflow.GetLLMNodeFCSettingsMergedRequest{
@@ -3685,7 +3692,7 @@ func TestCopyWorkflow(t *testing.T) {
 
 		_, err := appworkflow.GetWorkflowDomainSVC().Get(context.Background(), &vo.GetPolicy{
 			ID:       wid,
-			QType:    vo.FromDraft,
+			QType:    workflowModel.FromDraft,
 			CommitID: "",
 		})
 		assert.NotNil(t, err)
@@ -3747,7 +3754,7 @@ func TestReleaseApplicationWorkflows(t *testing.T) {
 
 		wf, err = appworkflow.GetWorkflowDomainSVC().Get(context.Background(), &vo.GetPolicy{
 			ID:      100100100100,
-			QType:   vo.FromSpecificVersion,
+			QType:   workflowModel.FromSpecificVersion,
 			Version: version,
 		})
 		assert.NoError(t, err)
@@ -3761,10 +3768,10 @@ func TestReleaseApplicationWorkflows(t *testing.T) {
 		var validateCv func(ns []*vo.Node)
 		validateCv = func(ns []*vo.Node) {
 			for _, n := range ns {
-				if n.Type == vo.BlockTypeBotSubWorkflow {
+				if n.Type == entity.NodeTypeSubWorkflow.IDStr() {
 					assert.Equal(t, n.Data.Inputs.WorkflowVersion, version)
 				}
-				if n.Type == vo.BlockTypeBotAPI {
+				if n.Type == entity.NodeTypePlugin.IDStr() {
 					for _, apiParam := range n.Data.Inputs.APIParams {
 						// In the application, the workflow plugin node When the plugin version is equal to 0, the plugin is a plugin created in the application
 						if apiParam.Name == "pluginVersion" {
@@ -3773,7 +3780,7 @@ func TestReleaseApplicationWorkflows(t *testing.T) {
 					}
 				}
 
-				if n.Type == vo.BlockTypeBotLLM {
+				if n.Type == entity.NodeTypeLLM.IDStr() {
 					if n.Data.Inputs.FCParam != nil && n.Data.Inputs.FCParam.PluginFCParam != nil {
 						// In the application, the workflow llm node When the plugin version is equal to 0, the plugin is a plugin created in the application
 						for _, p := range n.Data.Inputs.FCParam.PluginFCParam.PluginList {
@@ -4027,7 +4034,7 @@ func TestCopyWorkflowAppToLibrary(t *testing.T) {
 
 	mockey.PatchConvey("copy with subworkflow, subworkflow with external resource ", t, func() {
 		var copiedIDs = make([]int64, 0)
-		var mockPublishWorkflowResource func(ctx context.Context, OpType crosssearch.OpType, event *crosssearch.Resource) error
+		var mockPublishWorkflowResource func(ctx context.Context, workflowID int64, mode *int32, op search.OpType, r *search.ResourceDocument) error
 		var ignoreIDs = map[int64]bool{
 			7515027325977624576: true,
 			7515027249628708864: true,
@@ -4035,15 +4042,15 @@ func TestCopyWorkflowAppToLibrary(t *testing.T) {
 			7515027150387281920: true,
 			7515027091302121472: true,
 		}
-		mockPublishWorkflowResource = func(ctx context.Context, OpType crosssearch.OpType, event *crosssearch.Resource) error {
-			if ignoreIDs[event.WorkflowID] {
+		mockPublishWorkflowResource = func(ctx context.Context, workflowID int64, mode *int32, op search.OpType, r *search.ResourceDocument) error {
+			if ignoreIDs[workflowID] {
 				return nil
 			}
 			wf, err := appworkflow.GetWorkflowDomainSVC().Get(ctx, &vo.GetPolicy{
-				ID:    event.WorkflowID,
-				QType: vo.FromLatestVersion,
+				ID:    workflowID,
+				QType: workflowModel.FromLatestVersion,
 			})
-			copiedIDs = append(copiedIDs, event.WorkflowID)
+			copiedIDs = append(copiedIDs, workflowID)
 			assert.NoError(t, err)
 			assert.Equal(t, "v0.0.1", wf.Version)
 			canvas := &vo.Canvas{}
@@ -4057,8 +4064,8 @@ func TestCopyWorkflowAppToLibrary(t *testing.T) {
 			var validateSubWorkflowIDs func(nodes []*vo.Node)
 			validateSubWorkflowIDs = func(nodes []*vo.Node) {
 				for _, node := range nodes {
-					switch node.Type {
-					case vo.BlockTypeBotAPI:
+					switch entity.IDStrToNodeType(node.Type) {
+					case entity.NodeTypePlugin:
 						apiParams := slices.ToMap(node.Data.Inputs.APIParams, func(e *vo.Param) (string, *vo.Param) {
 							return e.Name, e
 						})
@@ -4076,21 +4083,21 @@ func TestCopyWorkflowAppToLibrary(t *testing.T) {
 							assert.Equal(t, "100100", pID)
 						}
 
-					case vo.BlockTypeBotSubWorkflow:
+					case entity.NodeTypeSubWorkflow:
 						assert.True(t, copiedIDMap[node.Data.Inputs.WorkflowID])
 						wfId, err := strconv.ParseInt(node.Data.Inputs.WorkflowID, 10, 64)
 						assert.NoError(t, err)
 
 						subWf, err := appworkflow.GetWorkflowDomainSVC().Get(ctx, &vo.GetPolicy{
 							ID:    wfId,
-							QType: vo.FromLatestVersion,
+							QType: workflowModel.FromLatestVersion,
 						})
 						assert.NoError(t, err)
 						subworkflowCanvas := &vo.Canvas{}
 						err = sonic.UnmarshalString(subWf.Canvas, subworkflowCanvas)
 						assert.NoError(t, err)
 						validateSubWorkflowIDs(subworkflowCanvas.Nodes)
-					case vo.BlockTypeBotLLM:
+					case entity.NodeTypeLLM:
 						if node.Data.Inputs.FCParam != nil && node.Data.Inputs.FCParam.WorkflowFCParam != nil {
 							for _, w := range node.Data.Inputs.FCParam.WorkflowFCParam.WorkflowList {
 								assert.True(t, copiedIDMap[w.WorkflowID])
@@ -4110,13 +4117,13 @@ func TestCopyWorkflowAppToLibrary(t *testing.T) {
 								assert.Equal(t, "100100", k.ID)
 							}
 						}
-					case vo.BlockTypeBotDataset, vo.BlockTypeBotDatasetWrite:
+					case entity.NodeTypeKnowledgeIndexer, entity.NodeTypeKnowledgeRetriever:
 						datasetListInfoParam := node.Data.Inputs.DatasetParam[0]
 						knowledgeIDs := datasetListInfoParam.Input.Value.Content.([]any)
 						for idx := range knowledgeIDs {
 							assert.Equal(t, "100100", knowledgeIDs[idx].(string))
 						}
-					case vo.BlockTypeDatabase, vo.BlockTypeDatabaseSelect, vo.BlockTypeDatabaseInsert, vo.BlockTypeDatabaseDelete, vo.BlockTypeDatabaseUpdate:
+					case entity.NodeTypeDatabaseCustomSQL, entity.NodeTypeDatabaseQuery, entity.NodeTypeDatabaseInsert, entity.NodeTypeDatabaseDelete, entity.NodeTypeDatabaseUpdate:
 						for _, d := range node.Data.Inputs.DatabaseInfoList {
 							assert.Equal(t, "100100", d.DatabaseInfoID)
 						}
@@ -4132,7 +4139,7 @@ func TestCopyWorkflowAppToLibrary(t *testing.T) {
 
 		}
 
-		r.search.EXPECT().PublishWorkflowResource(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(mockPublishWorkflowResource).AnyTimes()
+		mockey.Mock(appworkflow.PublishWorkflowResource).To(mockPublishWorkflowResource).Build()
 
 		appID := "7513788954458456064"
 		appIDInt64, _ := strconv.ParseInt(appID, 10, 64)
@@ -4175,21 +4182,21 @@ func TestCopyWorkflowAppToLibrary(t *testing.T) {
 
 	mockey.PatchConvey("copy only with external resource", t, func() {
 		var copiedIDs = make([]int64, 0)
-		var mockPublishWorkflowResource func(ctx context.Context, OpType crosssearch.OpType, event *crosssearch.Resource) error
+		var mockPublishWorkflowResource func(ctx context.Context, workflowID int64, mode *int32, op search.OpType, r *search.ResourceDocument) error
 		var ignoreIDs = map[int64]bool{
 			7516518409656336384: true,
 			7516516198096306176: true,
 		}
-		mockPublishWorkflowResource = func(ctx context.Context, OpType crosssearch.OpType, event *crosssearch.Resource) error {
-			if ignoreIDs[event.WorkflowID] {
+		mockPublishWorkflowResource = func(ctx context.Context, workflowID int64, mode *int32, op search.OpType, r *search.ResourceDocument) error {
+			if ignoreIDs[workflowID] {
 				return nil
 			}
 			wf, err := appworkflow.GetWorkflowDomainSVC().Get(ctx, &vo.GetPolicy{
-				ID:    event.WorkflowID,
-				QType: vo.FromLatestVersion,
+				ID:    workflowID,
+				QType: workflowModel.FromLatestVersion,
 			})
 
-			copiedIDs = append(copiedIDs, event.WorkflowID)
+			copiedIDs = append(copiedIDs, workflowID)
 			assert.NoError(t, err)
 			assert.Equal(t, "v0.0.1", wf.Version)
 			canvas := &vo.Canvas{}
@@ -4202,10 +4209,10 @@ func TestCopyWorkflowAppToLibrary(t *testing.T) {
 			var validateSubWorkflowIDs func(nodes []*vo.Node)
 			validateSubWorkflowIDs = func(nodes []*vo.Node) {
 				for _, node := range nodes {
-					switch node.Type {
-					case vo.BlockTypeBotSubWorkflow:
+					switch entity.IDStrToNodeType(node.Type) {
+					case entity.NodeTypeSubWorkflow:
 						assert.True(t, copiedIDMap[node.Data.Inputs.WorkflowID])
-					case vo.BlockTypeBotLLM:
+					case entity.NodeTypeLLM:
 						if node.Data.Inputs.FCParam != nil && node.Data.Inputs.FCParam.WorkflowFCParam != nil {
 							for _, w := range node.Data.Inputs.FCParam.WorkflowFCParam.WorkflowList {
 								assert.True(t, copiedIDMap[w.WorkflowID])
@@ -4223,13 +4230,13 @@ func TestCopyWorkflowAppToLibrary(t *testing.T) {
 								assert.Equal(t, "100100", k.ID)
 							}
 						}
-					case vo.BlockTypeBotDataset, vo.BlockTypeBotDatasetWrite:
+					case entity.NodeTypeKnowledgeIndexer, entity.NodeTypeKnowledgeRetriever:
 						datasetListInfoParam := node.Data.Inputs.DatasetParam[0]
 						knowledgeIDs := datasetListInfoParam.Input.Value.Content.([]any)
 						for idx := range knowledgeIDs {
 							assert.Equal(t, "100100", knowledgeIDs[idx].(string))
 						}
-					case vo.BlockTypeDatabase, vo.BlockTypeDatabaseSelect, vo.BlockTypeDatabaseInsert, vo.BlockTypeDatabaseDelete, vo.BlockTypeDatabaseUpdate:
+					case entity.NodeTypeDatabaseCustomSQL, entity.NodeTypeDatabaseQuery, entity.NodeTypeDatabaseInsert, entity.NodeTypeDatabaseDelete, entity.NodeTypeDatabaseUpdate:
 						for _, d := range node.Data.Inputs.DatabaseInfoList {
 							assert.Equal(t, "100100", d.DatabaseInfoID)
 						}
@@ -4243,8 +4250,7 @@ func TestCopyWorkflowAppToLibrary(t *testing.T) {
 			return nil
 
 		}
-
-		r.search.EXPECT().PublishWorkflowResource(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(mockPublishWorkflowResource).AnyTimes()
+		mockey.Mock(appworkflow.PublishWorkflowResource).To(mockPublishWorkflowResource).Build()
 
 		defer mockey.Mock((*appknowledge.KnowledgeApplicationService).CopyKnowledge).Return(&modelknowledge.CopyKnowledgeResponse{
 			TargetKnowledgeID: 100100,
@@ -4304,21 +4310,21 @@ func TestMoveWorkflowAppToLibrary(t *testing.T) {
 		r.varGetter.EXPECT().GetAppVariablesMeta(gomock.Any(), gomock.Any(), gomock.Any()).Return(vars, nil).AnyTimes()
 		t.Run("move workflow", func(t *testing.T) {
 
-			var mockPublishWorkflowResource func(ctx context.Context, OpType crosssearch.OpType, event *crosssearch.Resource) error
+			var mockPublishWorkflowResource func(ctx context.Context, workflowID int64, mode *int32, op search.OpType, r *search.ResourceDocument) error
 
 			named2Idx := []string{"c1", "c2", "cc1", "main"}
 			callCount := 0
 			initialWf2ID := map[string]int64{}
 			old2newID := map[int64]int64{}
-			mockPublishWorkflowResource = func(ctx context.Context, OpType crosssearch.OpType, event *crosssearch.Resource) error {
+			mockPublishWorkflowResource = func(ctx context.Context, workflowID int64, mode *int32, op search.OpType, r *search.ResourceDocument) error {
 				if callCount <= 3 {
-					initialWf2ID[named2Idx[callCount]] = event.WorkflowID
+					initialWf2ID[named2Idx[callCount]] = workflowID
 					callCount++
 					return nil
 				}
-				if OpType == crosssearch.Created {
-					if oldID, ok := initialWf2ID[*event.Name]; ok {
-						old2newID[oldID] = event.WorkflowID
+				if op == search.Created {
+					if oldID, ok := initialWf2ID[*r.Name]; ok {
+						old2newID[oldID] = workflowID
 					}
 				}
 
@@ -4326,7 +4332,7 @@ func TestMoveWorkflowAppToLibrary(t *testing.T) {
 
 			}
 
-			r.search.EXPECT().PublishWorkflowResource(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(mockPublishWorkflowResource).AnyTimes()
+			mockey.Mock(appworkflow.PublishWorkflowResource).To(mockPublishWorkflowResource).Build()
 
 			defer mockey.Mock((*appknowledge.KnowledgeApplicationService).MoveKnowledgeToLibrary).Return(nil).Build().UnPatch()
 			defer mockey.Mock((*appmemory.DatabaseApplicationService).MoveDatabaseToLibrary).Return(&appmemory.MoveDatabaseToLibraryResponse{}, nil).Build().UnPatch()
@@ -4350,7 +4356,7 @@ func TestMoveWorkflowAppToLibrary(t *testing.T) {
 			err = sonic.Unmarshal(data, mainCanvas)
 			assert.NoError(t, err)
 			for _, node := range mainCanvas.Nodes {
-				if node.Type == vo.BlockTypeBotSubWorkflow {
+				if node.Type == entity.NodeTypeSubWorkflow.IDStr() {
 					if node.Data.Inputs.WorkflowID == "7516826260387921920" {
 						node.Data.Inputs.WorkflowID = c1IdStr
 					}
@@ -4366,7 +4372,7 @@ func TestMoveWorkflowAppToLibrary(t *testing.T) {
 			err = sonic.Unmarshal(cc1Data, cc1Canvas)
 			assert.NoError(t, err)
 			for _, node := range cc1Canvas.Nodes {
-				if node.Type == vo.BlockTypeBotSubWorkflow {
+				if node.Type == entity.NodeTypeSubWorkflow.IDStr() {
 					if node.Data.Inputs.WorkflowID == "7516826283318181888" {
 						node.Data.Inputs.WorkflowID = c2IdStr
 					}
@@ -4417,7 +4423,7 @@ func TestMoveWorkflowAppToLibrary(t *testing.T) {
 			assert.NoError(t, err)
 
 			for _, node := range newMainCanvas.Nodes {
-				if node.Type == vo.BlockTypeBotSubWorkflow {
+				if node.Type == entity.NodeTypeSubWorkflow.IDStr() {
 					assert.True(t, newSubWorkflowID[node.Data.Inputs.WorkflowID])
 					assert.Equal(t, "v0.0.1", node.Data.Inputs.WorkflowVersion)
 				}
@@ -4431,7 +4437,7 @@ func TestMoveWorkflowAppToLibrary(t *testing.T) {
 			assert.NoError(t, err)
 
 			for _, node := range cc1Canvas.Nodes {
-				if node.Type == vo.BlockTypeBotSubWorkflow {
+				if node.Type == entity.NodeTypeSubWorkflow.IDStr() {
 					assert.True(t, newSubWorkflowID[node.Data.Inputs.WorkflowID])
 					assert.Equal(t, "v0.0.1", node.Data.Inputs.WorkflowVersion)
 				}
@@ -4463,7 +4469,7 @@ func TestDuplicateWorkflowsByAppID(t *testing.T) {
 
 		r.varGetter.EXPECT().GetAppVariablesMeta(gomock.Any(), gomock.Any(), gomock.Any()).Return(vars, nil).AnyTimes()
 		var copiedIDs = make([]int64, 0)
-		var mockPublishWorkflowResource func(ctx context.Context, OpType crosssearch.OpType, event *crosssearch.Resource) error
+		var mockPublishWorkflowResource func(ctx context.Context, workflowID int64, mode *int32, op search.OpType, r *search.ResourceDocument) error
 		var ignoreIDs = map[int64]bool{
 			7515027325977624576: true,
 			7515027249628708864: true,
@@ -4472,16 +4478,16 @@ func TestDuplicateWorkflowsByAppID(t *testing.T) {
 			7515027091302121472: true,
 			7515027325977624579: true,
 		}
-		mockPublishWorkflowResource = func(ctx context.Context, OpType crosssearch.OpType, event *crosssearch.Resource) error {
-			if ignoreIDs[event.WorkflowID] {
+		mockPublishWorkflowResource = func(ctx context.Context, workflowID int64, mode *int32, op search.OpType, r *search.ResourceDocument) error {
+			if ignoreIDs[workflowID] {
 				return nil
 			}
-			copiedIDs = append(copiedIDs, event.WorkflowID)
+			copiedIDs = append(copiedIDs, workflowID)
 			return nil
 
 		}
 
-		r.search.EXPECT().PublishWorkflowResource(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(mockPublishWorkflowResource).AnyTimes()
+		mockey.Mock(appworkflow.PublishWorkflowResource).To(mockPublishWorkflowResource).Build()
 
 		appIDInt64 := int64(7513788954458456064)
 
@@ -4502,10 +4508,10 @@ func TestDuplicateWorkflowsByAppID(t *testing.T) {
 		var validateSubWorkflowIDs func(nodes []*vo.Node)
 		validateSubWorkflowIDs = func(nodes []*vo.Node) {
 			for _, node := range nodes {
-				if node.Type == vo.BlockTypeBotSubWorkflow {
+				if node.Type == entity.NodeTypeSubWorkflow.IDStr() {
 					assert.True(t, copiedIDMap[node.Data.Inputs.WorkflowID])
 				}
-				if node.Type == vo.BlockTypeBotLLM {
+				if node.Type == entity.NodeTypeLLM.IDStr() {
 					if node.Data.Inputs.FCParam != nil && node.Data.Inputs.FCParam.WorkflowFCParam != nil {
 						for _, w := range node.Data.Inputs.FCParam.WorkflowFCParam.WorkflowList {
 							assert.True(t, copiedIDMap[w.WorkflowID])

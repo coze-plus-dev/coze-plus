@@ -22,12 +22,14 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 
+	"github.com/coze-dev/coze-studio/backend/api/model/app/bot_common"
 	knowledgeModel "github.com/coze-dev/coze-studio/backend/api/model/crossdomain/knowledge"
 	"github.com/coze-dev/coze-studio/backend/api/model/crossdomain/plugin"
-	"github.com/coze-dev/coze-studio/backend/api/model/ocean/cloud/bot_common"
-	"github.com/coze-dev/coze-studio/backend/api/model/ocean/cloud/playground"
-	"github.com/coze-dev/coze-studio/backend/api/model/ocean/cloud/workflow"
-	"github.com/coze-dev/coze-studio/backend/api/model/plugin_develop_common"
+	workflowModel "github.com/coze-dev/coze-studio/backend/api/model/crossdomain/workflow"
+	"github.com/coze-dev/coze-studio/backend/api/model/playground"
+	"github.com/coze-dev/coze-studio/backend/api/model/plugin_develop/common"
+	plugin_develop_common "github.com/coze-dev/coze-studio/backend/api/model/plugin_develop/common"
+	"github.com/coze-dev/coze-studio/backend/api/model/workflow"
 	"github.com/coze-dev/coze-studio/backend/domain/agent/singleagent/entity"
 	knowledge "github.com/coze-dev/coze-studio/backend/domain/knowledge/service"
 	pluginEntity "github.com/coze-dev/coze-studio/backend/domain/plugin/entity"
@@ -239,7 +241,7 @@ func (s *SingleAgentApplicationService) fetchWorkflowDetails(ctx context.Context
 				return a.GetWorkflowId()
 			}),
 		},
-		QType: vo.FromLatestVersion,
+		QType: workflowModel.FromLatestVersion,
 	}
 	ret, _, err := s.appContext.WorkflowDomainSVC.MGet(ctx, policy)
 	if err != nil {
@@ -318,7 +320,7 @@ func (s *SingleAgentApplicationService) pluginInfoDo2Vo(ctx context.Context, plu
 			Description:  ptr.Of(e.GetDesc()),
 			PluginType:   (*int64)(&e.PluginType),
 			IconURL:      &iconURL,
-			PluginStatus: (*int64)(ptr.Of(plugin_develop_common.PluginStatus_PUBLISHED)),
+			PluginStatus: (*int64)(ptr.Of(common.PluginStatus_PUBLISHED)),
 			IsOfficial: func() *bool {
 				if e.SpaceID == 0 {
 					return ptr.Of(true)

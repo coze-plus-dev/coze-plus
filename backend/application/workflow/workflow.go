@@ -25,28 +25,31 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cloudwego/eino/schema"
 	xmaps "golang.org/x/exp/maps"
 
-	"github.com/cloudwego/eino/schema"
-
+	"github.com/coze-dev/coze-studio/backend/api/model/app/bot_common"
 	model "github.com/coze-dev/coze-studio/backend/api/model/crossdomain/knowledge"
+	"github.com/coze-dev/coze-studio/backend/api/model/crossdomain/plugin"
 	pluginmodel "github.com/coze-dev/coze-studio/backend/api/model/crossdomain/plugin"
-	"github.com/coze-dev/coze-studio/backend/api/model/ocean/cloud/bot_common"
-	"github.com/coze-dev/coze-studio/backend/api/model/ocean/cloud/playground"
-	pluginAPI "github.com/coze-dev/coze-studio/backend/api/model/ocean/cloud/plugin_develop"
-	"github.com/coze-dev/coze-studio/backend/api/model/ocean/cloud/workflow"
-	common "github.com/coze-dev/coze-studio/backend/api/model/plugin_develop_common"
-	"github.com/coze-dev/coze-studio/backend/api/model/table"
+	workflowModel "github.com/coze-dev/coze-studio/backend/api/model/crossdomain/workflow"
+	"github.com/coze-dev/coze-studio/backend/api/model/data/database/table"
+	"github.com/coze-dev/coze-studio/backend/api/model/playground"
+	pluginAPI "github.com/coze-dev/coze-studio/backend/api/model/plugin_develop"
+	common "github.com/coze-dev/coze-studio/backend/api/model/plugin_develop/common"
+	resource "github.com/coze-dev/coze-studio/backend/api/model/resource/common"
+	"github.com/coze-dev/coze-studio/backend/api/model/workflow"
 	"github.com/coze-dev/coze-studio/backend/application/base/ctxutil"
 	appknowledge "github.com/coze-dev/coze-studio/backend/application/knowledge"
 	appmemory "github.com/coze-dev/coze-studio/backend/application/memory"
 	appplugin "github.com/coze-dev/coze-studio/backend/application/plugin"
 	"github.com/coze-dev/coze-studio/backend/application/user"
-	"github.com/coze-dev/coze-studio/backend/crossdomain/contract/crossuser"
+	crossknowledge "github.com/coze-dev/coze-studio/backend/crossdomain/contract/knowledge"
+	crossplugin "github.com/coze-dev/coze-studio/backend/crossdomain/contract/plugin"
+	crossuser "github.com/coze-dev/coze-studio/backend/crossdomain/contract/user"
+	search "github.com/coze-dev/coze-studio/backend/domain/search/entity"
 	domainWorkflow "github.com/coze-dev/coze-studio/backend/domain/workflow"
 	workflowDomain "github.com/coze-dev/coze-studio/backend/domain/workflow"
-	crossknowledge "github.com/coze-dev/coze-studio/backend/domain/workflow/crossdomain/knowledge"
-	crossplugin "github.com/coze-dev/coze-studio/backend/domain/workflow/crossdomain/plugin"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/entity/vo"
 	"github.com/coze-dev/coze-studio/backend/infra/contract/idgen"
@@ -54,6 +57,7 @@ import (
 	"github.com/coze-dev/coze-studio/backend/infra/contract/storage"
 	"github.com/coze-dev/coze-studio/backend/pkg/errorx"
 	"github.com/coze-dev/coze-studio/backend/pkg/i18n"
+	"github.com/coze-dev/coze-studio/backend/pkg/lang/conv"
 	"github.com/coze-dev/coze-studio/backend/pkg/lang/maps"
 	"github.com/coze-dev/coze-studio/backend/pkg/lang/ptr"
 	"github.com/coze-dev/coze-studio/backend/pkg/lang/slices"
@@ -93,8 +97,8 @@ func (w *ApplicationService) GetNodeTemplateList(ctx context.Context, req *workf
 
 	toQueryTypes := make(map[entity.NodeType]bool)
 	for _, t := range req.NodeTypes {
-		entityType, err := nodeType2EntityNodeType(t)
-		if err != nil {
+		entityType := entity.IDStrToNodeType(t)
+		if len(entityType) == 0 {
 			logs.Warnf("get node type %v failed, err:=%v", t, err)
 			continue
 		}
@@ -116,23 +120,19 @@ func (w *ApplicationService) GetNodeTemplateList(ctx context.Context, req *workf
 			Name: category,
 		}
 		for _, nodeMeta := range nodeMetaList {
-			tplType, err := entityNodeTypeToAPINodeTemplateType(nodeMeta.Type)
-			if err != nil {
-				return nil, err
-			}
 			tpl := &workflow.NodeTemplate{
 				ID:           fmt.Sprintf("%d", nodeMeta.ID),
-				Type:         tplType,
+				Type:         workflow.NodeTemplateType(nodeMeta.ID),
 				Name:         ternary.IFElse(i18n.GetLocale(ctx) == i18n.LocaleEN, nodeMeta.EnUSName, nodeMeta.Name),
 				Desc:         ternary.IFElse(i18n.GetLocale(ctx) == i18n.LocaleEN, nodeMeta.EnUSDescription, nodeMeta.Desc),
 				IconURL:      nodeMeta.IconURL,
 				SupportBatch: ternary.IFElse(nodeMeta.SupportBatch, workflow.SupportBatch_SUPPORT, workflow.SupportBatch_NOT_SUPPORT),
-				NodeType:     fmt.Sprintf("%d", tplType),
+				NodeType:     fmt.Sprintf("%d", nodeMeta.ID),
 				Color:        nodeMeta.Color,
 			}
 
 			resp.Data.TemplateList = append(resp.Data.TemplateList, tpl)
-			categoryMap[category].NodeTypeList = append(categoryMap[category].NodeTypeList, fmt.Sprintf("%d", tplType))
+			categoryMap[category].NodeTypeList = append(categoryMap[category].NodeTypeList, fmt.Sprintf("%d", nodeMeta.ID))
 		}
 	}
 
@@ -178,12 +178,24 @@ func (w *ApplicationService) CreateWorkflow(ctx context.Context, req *workflow.C
 		IconURI:          req.IconURI,
 		AppID:            parseInt64(req.ProjectID),
 		Mode:             ternary.IFElse(req.IsSetFlowMode(), req.GetFlowMode(), workflow.WorkflowMode_Workflow),
-		InitCanvasSchema: entity.GetDefaultInitCanvasJsonSchema(i18n.GetLocale(ctx)),
+		InitCanvasSchema: vo.GetDefaultInitCanvasJsonSchema(i18n.GetLocale(ctx)),
 	}
 
 	id, err := GetWorkflowDomainSVC().Create(ctx, wf)
 	if err != nil {
 		return nil, err
+	}
+
+	err = PublishWorkflowResource(ctx, id, ptr.Of(int32(wf.Mode)), search.Created, &search.ResourceDocument{
+		Name:          &wf.Name,
+		APPID:         wf.AppID,
+		SpaceID:       &wf.SpaceID,
+		OwnerID:       &wf.CreatorID,
+		PublishStatus: ptr.Of(resource.PublishStatus_UnPublished),
+		CreateTimeMS:  ptr.Of(time.Now().UnixMilli()),
+	})
+	if err != nil {
+		return nil, vo.WrapError(errno.ErrNotifyWorkflowResourceChangeErr, err)
 	}
 
 	return &workflow.CreateWorkflowResponse{
@@ -236,7 +248,8 @@ func (w *ApplicationService) UpdateWorkflowMeta(ctx context.Context, req *workfl
 		return nil, err
 	}
 
-	err = GetWorkflowDomainSVC().UpdateMeta(ctx, mustParseInt64(req.GetWorkflowID()), &vo.MetaUpdate{
+	workflowID := mustParseInt64(req.GetWorkflowID())
+	err = GetWorkflowDomainSVC().UpdateMeta(ctx, workflowID, &vo.MetaUpdate{
 		Name:    req.Name,
 		Desc:    req.Desc,
 		IconURI: req.IconURI,
@@ -244,33 +257,31 @@ func (w *ApplicationService) UpdateWorkflowMeta(ctx context.Context, req *workfl
 	if err != nil {
 		return nil, err
 	}
+
+	safego.Go(ctx, func() {
+		err := PublishWorkflowResource(ctx, workflowID, nil, search.Updated, &search.ResourceDocument{
+			Name:         req.Name,
+			UpdateTimeMS: ptr.Of(time.Now().UnixMilli()),
+		})
+		if err != nil {
+			logs.CtxErrorf(ctx, "publish update workflow resource failed, workflowID: %d, err: %v", workflowID, err)
+		}
+	})
+
 	return &workflow.UpdateWorkflowMetaResponse{}, nil
 }
 
 func (w *ApplicationService) DeleteWorkflow(ctx context.Context, req *workflow.DeleteWorkflowRequest) (
 	_ *workflow.DeleteWorkflowResponse, err error,
 ) {
-	defer func() {
-		if panicErr := recover(); panicErr != nil {
-			err = safego.NewPanicErr(panicErr, debug.Stack())
-		}
+	_, err = w.BatchDeleteWorkflow(ctx, &workflow.BatchDeleteWorkflowRequest{
+		WorkflowIDList: []string{req.GetWorkflowID()},
+		SpaceID:        req.SpaceID,
+		Action:         req.Action,
+	})
 
-		if err != nil {
-			err = vo.WrapIfNeeded(errno.ErrWorkflowOperationFail, err, errorx.KV("cause", vo.UnwrapRootErr(err).Error()))
-		}
-	}()
-
-	if err := checkUserSpace(ctx, ctxutil.MustGetUIDFromCtx(ctx), mustParseInt64(req.GetSpaceID())); err != nil {
-		return nil, err
-	}
-
-	err = GetWorkflowDomainSVC().Delete(ctx, &vo.DeletePolicy{ID: ptr.Of(mustParseInt64(req.GetWorkflowID()))})
 	if err != nil {
-		return &workflow.DeleteWorkflowResponse{
-			Data: &workflow.DeleteWorkflowData{
-				Status: workflow.DeleteStatus_FAIL,
-			},
-		}, err
+		return nil, err
 	}
 
 	return &workflow.DeleteWorkflowResponse{
@@ -280,19 +291,25 @@ func (w *ApplicationService) DeleteWorkflow(ctx context.Context, req *workflow.D
 	}, nil
 }
 
+func (w *ApplicationService) deleteWorkflowResource(ctx context.Context, policy *vo.DeletePolicy) error {
+	ids, err := w.DomainSVC.Delete(ctx, policy)
+	if err != nil {
+		return err
+	}
+
+	safego.Go(ctx, func() {
+		for _, id := range ids {
+			if err = PublishWorkflowResource(ctx, id, nil, search.Deleted, &search.ResourceDocument{}); err != nil {
+				logs.CtxErrorf(ctx, "publish delete workflow event resource failed, workflowID: %d, err: %v", id, err)
+			}
+		}
+	})
+
+	return nil
+}
+
 func (w *ApplicationService) BatchDeleteWorkflow(ctx context.Context, req *workflow.BatchDeleteWorkflowRequest) (
-	_ *workflow.BatchDeleteWorkflowResponse, err error,
-) {
-	defer func() {
-		if panicErr := recover(); panicErr != nil {
-			err = safego.NewPanicErr(panicErr, debug.Stack())
-		}
-
-		if err != nil {
-			err = vo.WrapIfNeeded(errno.ErrWorkflowOperationFail, err, errorx.KV("cause", vo.UnwrapRootErr(err).Error()))
-		}
-	}()
-
+	_ *workflow.BatchDeleteWorkflowResponse, err error) {
 	if err := checkUserSpace(ctx, ctxutil.MustGetUIDFromCtx(ctx), mustParseInt64(req.GetSpaceID())); err != nil {
 		return nil, err
 	}
@@ -304,7 +321,7 @@ func (w *ApplicationService) BatchDeleteWorkflow(ctx context.Context, req *workf
 		return nil, err
 	}
 
-	err = GetWorkflowDomainSVC().Delete(ctx, &vo.DeletePolicy{
+	err = w.deleteWorkflowResource(ctx, &vo.DeletePolicy{
 		IDs: ids,
 	})
 	if err != nil {
@@ -339,7 +356,7 @@ func (w *ApplicationService) GetCanvasInfo(ctx context.Context, req *workflow.Ge
 
 	wf, err := GetWorkflowDomainSVC().Get(ctx, &vo.GetPolicy{
 		ID:    mustParseInt64(req.GetWorkflowID()),
-		QType: vo.FromDraft,
+		QType: workflowModel.FromDraft,
 	})
 	if err != nil {
 		return nil, err
@@ -435,19 +452,19 @@ func (w *ApplicationService) TestRun(ctx context.Context, req *workflow.WorkFlow
 		agentID = ptr.Of(mustParseInt64(req.GetBotID()))
 	}
 
-	exeCfg := vo.ExecuteConfig{
+	exeCfg := workflowModel.ExecuteConfig{
 		ID:           mustParseInt64(req.GetWorkflowID()),
-		From:         vo.FromDraft,
+		From:         workflowModel.FromDraft,
 		CommitID:     req.GetCommitID(),
 		Operator:     uID,
-		Mode:         vo.ExecuteModeDebug,
+		Mode:         workflowModel.ExecuteModeDebug,
 		AppID:        appID,
 		AgentID:      agentID,
 		ConnectorID:  consts.CozeConnectorID,
 		ConnectorUID: strconv.FormatInt(uID, 10),
-		TaskType:     vo.TaskTypeForeground,
-		SyncPattern:  vo.SyncPatternAsync,
-		BizType:      vo.BizTypeWorkflow,
+		TaskType:     workflowModel.TaskTypeForeground,
+		SyncPattern:  workflowModel.SyncPatternAsync,
+		BizType:      workflowModel.BizTypeWorkflow,
 		Cancellable:  true,
 	}
 
@@ -507,18 +524,18 @@ func (w *ApplicationService) NodeDebug(ctx context.Context, req *workflow.Workfl
 		agentID = ptr.Of(mustParseInt64(req.GetBotID()))
 	}
 
-	exeCfg := vo.ExecuteConfig{
+	exeCfg := workflowModel.ExecuteConfig{
 		ID:           mustParseInt64(req.GetWorkflowID()),
-		From:         vo.FromDraft,
+		From:         workflowModel.FromDraft,
 		Operator:     uID,
-		Mode:         vo.ExecuteModeNodeDebug,
+		Mode:         workflowModel.ExecuteModeNodeDebug,
 		AppID:        appID,
 		AgentID:      agentID,
 		ConnectorID:  consts.CozeConnectorID,
 		ConnectorUID: strconv.FormatInt(uID, 10),
-		TaskType:     vo.TaskTypeForeground,
-		SyncPattern:  vo.SyncPatternAsync,
-		BizType:      vo.BizTypeWorkflow,
+		TaskType:     workflowModel.TaskTypeForeground,
+		SyncPattern:  workflowModel.SyncPatternAsync,
+		BizType:      workflowModel.BizTypeWorkflow,
 		Cancellable:  true,
 	}
 
@@ -836,17 +853,7 @@ func (w *ApplicationService) GetNodeExecuteHistory(ctx context.Context, req *wor
 }
 
 func (w *ApplicationService) DeleteWorkflowsByAppID(ctx context.Context, appID int64) (err error) {
-	defer func() {
-		if panicErr := recover(); panicErr != nil {
-			err = safego.NewPanicErr(panicErr, debug.Stack())
-		}
-
-		if err != nil {
-			err = vo.WrapIfNeeded(errno.ErrWorkflowOperationFail, err, errorx.KV("cause", vo.UnwrapRootErr(err).Error()))
-		}
-	}()
-
-	return GetWorkflowDomainSVC().Delete(ctx, &vo.DeletePolicy{
+	return w.deleteWorkflowResource(ctx, &vo.DeletePolicy{
 		AppID: ptr.Of(appID),
 	})
 }
@@ -870,7 +877,7 @@ func (w *ApplicationService) CheckWorkflowsExistByAppID(ctx context.Context, app
 				Page: 0,
 			},
 		},
-		QType:    vo.FromDraft,
+		QType:    workflowModel.FromDraft,
 		MetaOnly: true,
 	})
 
@@ -878,8 +885,7 @@ func (w *ApplicationService) CheckWorkflowsExistByAppID(ctx context.Context, app
 }
 
 func (w *ApplicationService) CopyWorkflowFromAppToLibrary(ctx context.Context, workflowID int64, spaceID, appID int64) (
-	_ int64, _ []*vo.ValidateIssue, err error,
-) {
+	_ int64, _ []*vo.ValidateIssue, err error) {
 	defer func() {
 		if panicErr := recover(); panicErr != nil {
 			err = safego.NewPanicErr(panicErr, debug.Stack())
@@ -895,7 +901,7 @@ func (w *ApplicationService) CopyWorkflowFromAppToLibrary(ctx context.Context, w
 		return 0, nil, err
 	}
 
-	pluginMap := make(map[int64]*vo.PluginEntity)
+	pluginMap := make(map[int64]*plugin.PluginEntity)
 	pluginToolMap := make(map[int64]int64)
 
 	if len(ds.PluginIDs) > 0 {
@@ -910,7 +916,7 @@ func (w *ApplicationService) CopyWorkflowFromAppToLibrary(ctx context.Context, w
 				return 0, nil, err
 			}
 			pInfo := response.Plugin
-			pluginMap[id] = &vo.PluginEntity{
+			pluginMap[id] = &plugin.PluginEntity{
 				PluginID:      pInfo.ID,
 				PluginVersion: pInfo.Version,
 			}
@@ -962,7 +968,7 @@ func (w *ApplicationService) CopyWorkflowFromAppToLibrary(ctx context.Context, w
 
 	}
 
-	relatedWorkflows, vIssues, err := GetWorkflowDomainSVC().CopyWorkflowFromAppToLibrary(ctx, workflowID, appID, vo.ExternalResourceRelated{
+	relatedWorkflows, vIssues, err := w.copyWorkflowFromAppToLibrary(ctx, workflowID, appID, vo.ExternalResourceRelated{
 		PluginMap:     pluginMap,
 		PluginToolMap: pluginToolMap,
 		KnowledgeMap:  relatedKnowledgeMap,
@@ -984,6 +990,32 @@ func (w *ApplicationService) CopyWorkflowFromAppToLibrary(ctx context.Context, w
 	return copiedWf.ID, vIssues, nil
 }
 
+func (w *ApplicationService) copyWorkflowFromAppToLibrary(ctx context.Context, workflowID int64, appID int64, related vo.ExternalResourceRelated) (map[int64]entity.IDVersionPair, []*vo.ValidateIssue, error) {
+	resp, err := w.DomainSVC.CopyWorkflowFromAppToLibrary(ctx, workflowID, appID, related)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	for index := range resp.CopiedWorkflows {
+		wf := resp.CopiedWorkflows[index]
+
+		err = PublishWorkflowResource(ctx, wf.ID, ptr.Of(int32(wf.Meta.Mode)), search.Created, &search.ResourceDocument{
+			Name:    &wf.Name,
+			SpaceID: &wf.SpaceID,
+			OwnerID: &wf.CreatorID,
+
+			PublishStatus: ptr.Of(resource.PublishStatus_UnPublished),
+			CreateTimeMS:  ptr.Of(time.Now().UnixMilli()),
+		})
+		if err != nil {
+			logs.CtxErrorf(ctx, "failed to publish workflow resource, workflow id=%d, err=%v", wf.ID, err)
+			return nil, nil, err
+		}
+	}
+
+	return resp.WorkflowIDVersionMap, resp.ValidateIssues, nil
+}
+
 type ExternalResource struct {
 	PluginMap     map[int64]int64
 	PluginToolMap map[int64]int64
@@ -1002,9 +1034,9 @@ func (w *ApplicationService) DuplicateWorkflowsByAppID(ctx context.Context, sour
 		}
 	}()
 
-	pluginMap := make(map[int64]*vo.PluginEntity)
+	pluginMap := make(map[int64]*plugin.PluginEntity)
 	for o, n := range externalResource.PluginMap {
-		pluginMap[o] = &vo.PluginEntity{
+		pluginMap[o] = &plugin.PluginEntity{
 			PluginID: n,
 		}
 	}
@@ -1015,7 +1047,29 @@ func (w *ApplicationService) DuplicateWorkflowsByAppID(ctx context.Context, sour
 		DatabaseMap:   externalResource.DatabaseMap,
 	}
 
-	return GetWorkflowDomainSVC().DuplicateWorkflowsByAppID(ctx, sourceAppID, targetAppID, externalResourceRelated)
+	copiedWorkflowArray, err := GetWorkflowDomainSVC().DuplicateWorkflowsByAppID(ctx, sourceAppID, targetAppID, externalResourceRelated)
+	if err != nil {
+		return err
+	}
+
+	logs.CtxInfof(ctx, "[DuplicateWorkflowsByAppID] %s", conv.DebugJsonToStr(copiedWorkflowArray))
+
+	for index := range copiedWorkflowArray {
+		wf := copiedWorkflowArray[index]
+		err = PublishWorkflowResource(ctx, wf.ID, ptr.Of(int32(wf.Meta.Mode)), search.Created, &search.ResourceDocument{
+			Name:          &wf.Name,
+			SpaceID:       &wf.SpaceID,
+			OwnerID:       &wf.CreatorID,
+			APPID:         &targetAppID,
+			PublishStatus: ptr.Of(resource.PublishStatus_UnPublished),
+			CreateTimeMS:  ptr.Of(time.Now().UnixMilli()),
+		})
+		if err != nil {
+			logs.CtxErrorf(ctx, "failed to publish workflow resource, workflow id=%d, err=%v", wf.ID, err)
+		}
+	}
+
+	return nil
 }
 
 func (w *ApplicationService) CopyWorkflowFromLibraryToApp(ctx context.Context, workflowID int64, appID int64) (
@@ -1031,7 +1085,7 @@ func (w *ApplicationService) CopyWorkflowFromLibraryToApp(ctx context.Context, w
 		}
 	}()
 
-	wf, err := GetWorkflowDomainSVC().CopyWorkflow(ctx, workflowID, vo.CopyWorkflowPolicy{
+	wf, err := w.copyWorkflow(ctx, workflowID, vo.CopyWorkflowPolicy{
 		TargetAppID: &appID,
 	})
 	if err != nil {
@@ -1041,7 +1095,30 @@ func (w *ApplicationService) CopyWorkflowFromLibraryToApp(ctx context.Context, w
 	return wf.ID, nil
 }
 
-func (w *ApplicationService) MoveWorkflowFromAppToLibrary(ctx context.Context, workflowID int64, spaceID, appID int64) (_ int64, _ []*vo.ValidateIssue, err error) {
+func (w *ApplicationService) copyWorkflow(ctx context.Context, workflowID int64, policy vo.CopyWorkflowPolicy) (*entity.Workflow, error) {
+	wf, err := w.DomainSVC.CopyWorkflow(ctx, workflowID, policy)
+	if err != nil {
+		return nil, err
+	}
+
+	err = PublishWorkflowResource(ctx, wf.ID, ptr.Of(int32(wf.Meta.Mode)), search.Created, &search.ResourceDocument{
+		Name:          &wf.Name,
+		APPID:         wf.AppID,
+		SpaceID:       &wf.SpaceID,
+		OwnerID:       &wf.CreatorID,
+		PublishStatus: ptr.Of(resource.PublishStatus_UnPublished),
+		CreateTimeMS:  ptr.Of(time.Now().UnixMilli()),
+	})
+	if err != nil {
+		logs.CtxErrorf(ctx, "public copy workflow event failed, workflowID=%d, err=%v", wf.ID, err)
+		return nil, err
+	}
+
+	return wf, nil
+}
+
+func (w *ApplicationService) MoveWorkflowFromAppToLibrary(ctx context.Context, workflowID int64, spaceID, /*not used for now*/
+	appID int64) (_ int64, _ []*vo.ValidateIssue, err error) {
 	defer func() {
 		if panicErr := recover(); panicErr != nil {
 			err = safego.NewPanicErr(panicErr, debug.Stack())
@@ -1057,7 +1134,7 @@ func (w *ApplicationService) MoveWorkflowFromAppToLibrary(ctx context.Context, w
 		return 0, nil, err
 	}
 
-	pluginMap := make(map[int64]*vo.PluginEntity)
+	pluginMap := make(map[int64]*plugin.PluginEntity)
 	if len(ds.PluginIDs) > 0 {
 		for idx := range ds.PluginIDs {
 			id := ds.PluginIDs[idx]
@@ -1065,7 +1142,7 @@ func (w *ApplicationService) MoveWorkflowFromAppToLibrary(ctx context.Context, w
 			if err != nil {
 				return 0, nil, err
 			}
-			pluginMap[id] = &vo.PluginEntity{
+			pluginMap[id] = &plugin.PluginEntity{
 				PluginID:      pInfo.ID,
 				PluginVersion: pInfo.Version,
 			}
@@ -1094,7 +1171,7 @@ func (w *ApplicationService) MoveWorkflowFromAppToLibrary(ctx context.Context, w
 		}
 	}
 
-	relatedWorkflows, vIssues, err := GetWorkflowDomainSVC().CopyWorkflowFromAppToLibrary(ctx, workflowID, appID, vo.ExternalResourceRelated{
+	relatedWorkflows, vIssues, err := w.copyWorkflowFromAppToLibrary(ctx, workflowID, appID, vo.ExternalResourceRelated{
 		PluginMap: pluginMap,
 	})
 	if err != nil {
@@ -1112,7 +1189,7 @@ func (w *ApplicationService) MoveWorkflowFromAppToLibrary(ctx context.Context, w
 	}
 
 	deleteWorkflowIDs := xmaps.Keys(relatedWorkflows)
-	err = GetWorkflowDomainSVC().Delete(ctx, &vo.DeletePolicy{
+	err = w.deleteWorkflowResource(ctx, &vo.DeletePolicy{
 		IDs: deleteWorkflowIDs,
 	})
 	if err != nil {
@@ -1127,15 +1204,10 @@ func (w *ApplicationService) MoveWorkflowFromAppToLibrary(ctx context.Context, w
 }
 
 func convertNodeExecution(nodeExe *entity.NodeExecution) (*workflow.NodeResult, error) {
-	nType, err := entityNodeTypeToAPINodeTemplateType(nodeExe.NodeType)
-	if err != nil {
-		return nil, err
-	}
-
 	nr := &workflow.NodeResult{
 		NodeId:      nodeExe.NodeID,
 		NodeName:    nodeExe.NodeName,
-		NodeType:    nType.String(),
+		NodeType:    entity.NodeMetaByNodeType(nodeExe.NodeType).GetDisplayKey(),
 		NodeStatus:  workflow.NodeExeStatus(nodeExe.Status),
 		ErrorInfo:   ptr.FromOrDefault(nodeExe.ErrorInfo, ""),
 		Input:       ptr.FromOrDefault(nodeExe.Input, ""),
@@ -1258,7 +1330,7 @@ func convertStreamRunEvent(workflowID int64) func(msg *entity.Message) (res *wor
 				return &workflow.OpenAPIStreamRunFlowResponse{
 					ID:       strconv.Itoa(messageID),
 					Event:    string(DoneEvent),
-					DebugUrl: ptr.Of(fmt.Sprintf(vo.DebugURLTpl, executeID, spaceID, workflowID)),
+					DebugUrl: ptr.Of(fmt.Sprintf(workflowModel.DebugURLTpl, executeID, spaceID, workflowID)),
 				}, nil
 			case entity.WorkflowFailed, entity.WorkflowCancel:
 				var wfe vo.WorkflowError
@@ -1268,7 +1340,7 @@ func convertStreamRunEvent(workflowID int64) func(msg *entity.Message) (res *wor
 				return &workflow.OpenAPIStreamRunFlowResponse{
 					ID:           strconv.Itoa(messageID),
 					Event:        string(ErrEvent),
-					DebugUrl:     ptr.Of(fmt.Sprintf(vo.DebugURLTpl, executeID, spaceID, workflowID)),
+					DebugUrl:     ptr.Of(fmt.Sprintf(workflowModel.DebugURLTpl, executeID, spaceID, workflowID)),
 					ErrorCode:    ptr.Of(int64(wfe.Code())),
 					ErrorMessage: ptr.Of(wfe.Msg()),
 				}, nil
@@ -1277,7 +1349,7 @@ func convertStreamRunEvent(workflowID int64) func(msg *entity.Message) (res *wor
 					return &workflow.OpenAPIStreamRunFlowResponse{
 						ID:       strconv.Itoa(messageID),
 						Event:    string(InterruptEvent),
-						DebugUrl: ptr.Of(fmt.Sprintf(vo.DebugURLTpl, executeID, spaceID, workflowID)),
+						DebugUrl: ptr.Of(fmt.Sprintf(workflowModel.DebugURLTpl, executeID, spaceID, workflowID)),
 						InterruptData: &workflow.Interrupt{
 							EventID: fmt.Sprintf("%d/%d", executeID, msg.InterruptEvent.ID),
 							Type:    workflow.InterruptType(msg.InterruptEvent.EventType),
@@ -1289,7 +1361,7 @@ func convertStreamRunEvent(workflowID int64) func(msg *entity.Message) (res *wor
 				return &workflow.OpenAPIStreamRunFlowResponse{
 					ID:       strconv.Itoa(messageID),
 					Event:    string(InterruptEvent),
-					DebugUrl: ptr.Of(fmt.Sprintf(vo.DebugURLTpl, executeID, spaceID, workflowID)),
+					DebugUrl: ptr.Of(fmt.Sprintf(workflowModel.DebugURLTpl, executeID, spaceID, workflowID)),
 					InterruptData: &workflow.Interrupt{
 						EventID: fmt.Sprintf("%d/%d", executeID, msg.InterruptEvent.ID),
 						Type:    workflow.InterruptType(msg.InterruptEvent.ToolInterruptEvent.EventType),
@@ -1316,13 +1388,6 @@ func convertStreamRunEvent(workflowID int64) func(msg *entity.Message) (res *wor
 				return nil, schema.ErrNoValue
 			}
 
-			var nodeType workflow.NodeTemplateType
-			nodeType, err = entityNodeTypeToAPINodeTemplateType(msg.NodeType)
-			if err != nil {
-				logs.Errorf("convert node type %v failed, err:=%v", msg.NodeType, err)
-				nodeType = workflow.NodeTemplateType(0)
-			}
-
 			res = &workflow.OpenAPIStreamRunFlowResponse{
 				ID:           strconv.Itoa(messageID),
 				Event:        string(MessageEvent),
@@ -1330,7 +1395,7 @@ func convertStreamRunEvent(workflowID int64) func(msg *entity.Message) (res *wor
 				Content:      ptr.Of(msg.Content),
 				ContentType:  ptr.Of("text"),
 				NodeIsFinish: ptr.Of(msg.Last),
-				NodeType:     ptr.Of(nodeType.String()),
+				NodeType:     ptr.Of(entity.NodeMetaByNodeType(msg.NodeType).GetDisplayKey()),
 				NodeID:       ptr.Of(msg.NodeID),
 			}
 
@@ -1394,7 +1459,9 @@ func (w *ApplicationService) OpenAPIStreamRun(ctx context.Context, req *workflow
 	}
 
 	var appID, agentID *int64
-	if req.IsSetProjectID() {
+	if req.IsSetAppID() {
+		appID = ptr.Of(mustParseInt64(req.GetAppID()))
+	} else if req.IsSetProjectID() {
 		appID = ptr.Of(mustParseInt64(req.GetProjectID()))
 	}
 	if req.IsSetBotID() {
@@ -1410,20 +1477,20 @@ func (w *ApplicationService) OpenAPIStreamRun(ctx context.Context, req *workflow
 		connectorID = apiKeyInfo.ConnectorID
 	}
 
-	exeCfg := vo.ExecuteConfig{
+	exeCfg := workflowModel.ExecuteConfig{
 		ID:            meta.ID,
-		From:          vo.FromSpecificVersion,
+		From:          workflowModel.FromSpecificVersion,
 		Version:       *meta.LatestPublishedVersion,
 		Operator:      userID,
-		Mode:          vo.ExecuteModeRelease,
+		Mode:          workflowModel.ExecuteModeRelease,
 		AppID:         appID,
 		AgentID:       agentID,
 		ConnectorID:   connectorID,
 		ConnectorUID:  strconv.FormatInt(userID, 10),
-		TaskType:      vo.TaskTypeForeground,
-		SyncPattern:   vo.SyncPatternStream,
+		TaskType:      workflowModel.TaskTypeForeground,
+		SyncPattern:   workflowModel.SyncPatternStream,
 		InputFailFast: true,
-		BizType:       vo.BizTypeWorkflow,
+		BizType:       workflowModel.BizTypeWorkflow,
 	}
 
 	if exeCfg.AppID != nil && exeCfg.AgentID != nil {
@@ -1484,12 +1551,12 @@ func (w *ApplicationService) OpenAPIStreamResume(ctx context.Context, req *workf
 		connectorID = mustParseInt64(req.GetConnectorID())
 	}
 
-	sr, err := GetWorkflowDomainSVC().StreamResume(ctx, resumeReq, vo.ExecuteConfig{
+	sr, err := GetWorkflowDomainSVC().StreamResume(ctx, resumeReq, workflowModel.ExecuteConfig{
 		Operator:     userID,
-		Mode:         vo.ExecuteModeRelease,
+		Mode:         workflowModel.ExecuteModeRelease,
 		ConnectorID:  connectorID,
 		ConnectorUID: strconv.FormatInt(userID, 10),
-		BizType:      vo.BizTypeWorkflow,
+		BizType:      workflowModel.BizTypeWorkflow,
 	})
 	if err != nil {
 		return nil, err
@@ -1541,7 +1608,9 @@ func (w *ApplicationService) OpenAPIRun(ctx context.Context, req *workflow.OpenA
 	}
 
 	var appID, agentID *int64
-	if req.IsSetProjectID() {
+	if req.IsSetAppID() {
+		appID = ptr.Of(mustParseInt64(req.GetAppID()))
+	} else if req.IsSetProjectID() {
 		appID = ptr.Of(mustParseInt64(req.GetProjectID()))
 	}
 	if req.IsSetBotID() {
@@ -1557,19 +1626,18 @@ func (w *ApplicationService) OpenAPIRun(ctx context.Context, req *workflow.OpenA
 		connectorID = apiKeyInfo.ConnectorID
 	}
 
-	exeCfg := vo.ExecuteConfig{
+	exeCfg := workflowModel.ExecuteConfig{
 		ID:            meta.ID,
-		From:          vo.FromSpecificVersion,
+		From:          workflowModel.FromSpecificVersion,
 		Version:       *meta.LatestPublishedVersion,
 		Operator:      userID,
-		Mode:          vo.ExecuteModeRelease,
+		Mode:          workflowModel.ExecuteModeRelease,
 		AppID:         appID,
 		AgentID:       agentID,
 		ConnectorID:   connectorID,
 		ConnectorUID:  strconv.FormatInt(userID, 10),
-		TaskType:      vo.TaskTypeForeground,
 		InputFailFast: true,
-		BizType:       vo.BizTypeWorkflow,
+		BizType:       workflowModel.BizTypeWorkflow,
 	}
 
 	if exeCfg.AppID != nil && exeCfg.AgentID != nil {
@@ -1577,7 +1645,8 @@ func (w *ApplicationService) OpenAPIRun(ctx context.Context, req *workflow.OpenA
 	}
 
 	if req.GetIsAsync() {
-		exeCfg.SyncPattern = vo.SyncPatternAsync
+		exeCfg.SyncPattern = workflowModel.SyncPatternAsync
+		exeCfg.TaskType = workflowModel.TaskTypeBackground
 		exeID, err := GetWorkflowDomainSVC().AsyncExecute(ctx, exeCfg, parameters)
 		if err != nil {
 			return nil, err
@@ -1585,11 +1654,12 @@ func (w *ApplicationService) OpenAPIRun(ctx context.Context, req *workflow.OpenA
 
 		return &workflow.OpenAPIRunFlowResponse{
 			ExecuteID: ptr.Of(strconv.FormatInt(exeID, 10)),
-			DebugUrl:  ptr.Of(fmt.Sprintf(vo.DebugURLTpl, exeID, meta.SpaceID, meta.ID)),
+			DebugUrl:  ptr.Of(fmt.Sprintf(workflowModel.DebugURLTpl, exeID, meta.SpaceID, meta.ID)),
 		}, nil
 	}
 
-	exeCfg.SyncPattern = vo.SyncPatternSync
+	exeCfg.SyncPattern = workflowModel.SyncPatternSync
+	exeCfg.TaskType = workflowModel.TaskTypeForeground
 	wfExe, tPlan, err := GetWorkflowDomainSVC().SyncExecute(ctx, exeCfg, parameters)
 	if err != nil {
 		return nil, err
@@ -1620,7 +1690,7 @@ func (w *ApplicationService) OpenAPIRun(ctx context.Context, req *workflow.OpenA
 	return &workflow.OpenAPIRunFlowResponse{
 		Data:      data,
 		ExecuteID: ptr.Of(strconv.FormatInt(wfExe.ID, 10)),
-		DebugUrl:  ptr.Of(fmt.Sprintf(vo.DebugURLTpl, wfExe.ID, wfExe.SpaceID, meta.ID)),
+		DebugUrl:  ptr.Of(fmt.Sprintf(workflowModel.DebugURLTpl, wfExe.ID, wfExe.SpaceID, meta.ID)),
 		Token:     ptr.Of(wfExe.TokenInfo.InputTokens + wfExe.TokenInfo.OutputTokens),
 		Cost:      ptr.Of("0.00000"),
 	}, nil
@@ -1660,11 +1730,11 @@ func (w *ApplicationService) OpenAPIGetWorkflowRunHistory(ctx context.Context, r
 
 	var runMode *workflow.WorkflowRunMode
 	switch exe.SyncPattern {
-	case vo.SyncPatternSync:
+	case workflowModel.SyncPatternSync:
 		runMode = ptr.Of(workflow.WorkflowRunMode_Sync)
-	case vo.SyncPatternAsync:
+	case workflowModel.SyncPatternAsync:
 		runMode = ptr.Of(workflow.WorkflowRunMode_Async)
-	case vo.SyncPatternStream:
+	case workflowModel.SyncPatternStream:
 		runMode = ptr.Of(workflow.WorkflowRunMode_Stream)
 	default:
 	}
@@ -1681,7 +1751,7 @@ func (w *ApplicationService) OpenAPIGetWorkflowRunHistory(ctx context.Context, r
 				LogID:         ptr.Of(exe.LogID),
 				CreateTime:    ptr.Of(exe.CreatedAt.Unix()),
 				UpdateTime:    updateTime,
-				DebugUrl:      ptr.Of(fmt.Sprintf(vo.DebugURLTpl, exe.ID, exe.SpaceID, exe.WorkflowID)),
+				DebugUrl:      ptr.Of(fmt.Sprintf(workflowModel.DebugURLTpl, exe.ID, exe.SpaceID, exe.WorkflowID)),
 				Input:         exe.Input,
 				Output:        exe.Output,
 				Token:         ptr.Of(exe.TokenInfo.InputTokens + exe.TokenInfo.OutputTokens),
@@ -1815,10 +1885,10 @@ func (w *ApplicationService) TestResume(ctx context.Context, req *workflow.Workf
 		EventID:    mustParseInt64(req.GetEventID()),
 		ResumeData: req.GetData(),
 	}
-	err = GetWorkflowDomainSVC().AsyncResume(ctx, resumeReq, vo.ExecuteConfig{
+	err = GetWorkflowDomainSVC().AsyncResume(ctx, resumeReq, workflowModel.ExecuteConfig{
 		Operator:    ptr.FromOrDefault(ctxutil.GetUIDFromCtx(ctx), 0),
-		Mode:        vo.ExecuteModeDebug, // at this stage it could be debug or node debug, we will decide it within AsyncResume
-		BizType:     vo.BizTypeWorkflow,
+		Mode:        workflowModel.ExecuteModeDebug, // at this stage it could be debug or node debug, we will decide it within AsyncResume
+		BizType:     workflowModel.BizTypeWorkflow,
 		Cancellable: true,
 	})
 	if err != nil {
@@ -1958,7 +2028,7 @@ func (w *ApplicationService) PublishWorkflow(ctx context.Context, req *workflow.
 		Force:              req.GetForce(),
 	}
 
-	err = GetWorkflowDomainSVC().Publish(ctx, info)
+	err = w.publishWorkflowResource(ctx, info)
 	if err != nil {
 		return nil, err
 	}
@@ -2013,13 +2083,13 @@ func (w *ApplicationService) ListWorkflow(ctx context.Context, req *workflow.Get
 	}
 
 	status := req.GetStatus()
-	var qType vo.Locator
+	var qType workflowModel.Locator
 	if status == workflow.WorkFlowListStatus_UnPublished {
 		option.PublishStatus = ptr.Of(vo.UnPublished)
-		qType = vo.FromDraft
+		qType = workflowModel.FromDraft
 	} else if status == workflow.WorkFlowListStatus_HadPublished {
 		option.PublishStatus = ptr.Of(vo.HasPublished)
-		qType = vo.FromLatestVersion
+		qType = workflowModel.FromLatestVersion
 	}
 
 	if len(req.GetName()) > 0 {
@@ -2087,9 +2157,9 @@ func (w *ApplicationService) ListWorkflow(ctx context.Context, req *workflow.Get
 			},
 		}
 
-		if qType == vo.FromDraft {
+		if qType == workflowModel.FromDraft {
 			ww.UpdateTime = w.DraftMeta.Timestamp.Unix()
-		} else if qType == vo.FromLatestVersion || qType == vo.FromSpecificVersion {
+		} else if qType == workflowModel.FromLatestVersion || qType == workflowModel.FromSpecificVersion {
 			ww.UpdateTime = w.VersionMeta.VersionCreatedAt.Unix()
 		} else if w.UpdatedAt != nil {
 			ww.UpdateTime = w.UpdatedAt.Unix()
@@ -2174,7 +2244,7 @@ func (w *ApplicationService) GetWorkflowDetail(ctx context.Context, req *workflo
 		MetaQuery: vo.MetaQuery{
 			IDs: ids,
 		},
-		QType:    vo.FromDraft,
+		QType:    workflowModel.FromDraft,
 		MetaOnly: false,
 	})
 	if err != nil {
@@ -2280,7 +2350,7 @@ func (w *ApplicationService) GetWorkflowDetailInfo(ctx context.Context, req *wor
 			MetaQuery: vo.MetaQuery{
 				IDs: draftIDs,
 			},
-			QType:    vo.FromDraft,
+			QType:    workflowModel.FromDraft,
 			MetaOnly: false,
 		})
 		if err != nil {
@@ -2293,7 +2363,7 @@ func (w *ApplicationService) GetWorkflowDetailInfo(ctx context.Context, req *wor
 			MetaQuery: vo.MetaQuery{
 				IDs: versionIDs,
 			},
-			QType:    vo.FromSpecificVersion,
+			QType:    workflowModel.FromSpecificVersion,
 			MetaOnly: false,
 			Versions: id2Version,
 		})
@@ -2494,8 +2564,8 @@ func (w *ApplicationService) GetApiDetail(ctx context.Context, req *workflow.Get
 		return nil, err
 	}
 
-	toolInfoResponse, err := crossplugin.GetPluginService().GetPluginToolsInfo(ctx, &crossplugin.ToolsInfoRequest{
-		PluginEntity: crossplugin.Entity{
+	toolInfoResponse, err := crossplugin.DefaultSVC().GetPluginToolsInfo(ctx, &plugin.ToolsInfoRequest{
+		PluginEntity: plugin.PluginEntity{
 			PluginID:      pluginID,
 			PluginVersion: req.PluginVersion,
 		},
@@ -2561,8 +2631,8 @@ func (w *ApplicationService) GetLLMNodeFCSettingDetail(ctx context.Context, req 
 	}
 
 	var (
-		pluginSvc           = crossplugin.GetPluginService()
-		pluginToolsInfoReqs = make(map[int64]*crossplugin.ToolsInfoRequest)
+		pluginSvc           = crossplugin.DefaultSVC()
+		pluginToolsInfoReqs = make(map[int64]*plugin.ToolsInfoRequest)
 		pluginDetailMap     = make(map[string]*workflow.PluginDetail)
 		toolsDetailInfo     = make(map[string]*workflow.APIDetail)
 		workflowDetailMap   = make(map[string]*workflow.WorkflowDetail)
@@ -2584,8 +2654,8 @@ func (w *ApplicationService) GetLLMNodeFCSettingDetail(ctx context.Context, req 
 			if r, ok := pluginToolsInfoReqs[pluginID]; ok {
 				r.ToolIDs = append(r.ToolIDs, toolID)
 			} else {
-				pluginToolsInfoReqs[pluginID] = &crossplugin.ToolsInfoRequest{
-					PluginEntity: crossplugin.Entity{
+				pluginToolsInfoReqs[pluginID] = &plugin.ToolsInfoRequest{
+					PluginEntity: plugin.PluginEntity{
 						PluginID:      pluginID,
 						PluginVersion: pl.PluginVersion,
 					},
@@ -2666,7 +2736,7 @@ func (w *ApplicationService) GetLLMNodeFCSettingDetail(ctx context.Context, req 
 				MetaQuery: vo.MetaQuery{
 					IDs: draftIDs,
 				},
-				QType:    vo.FromDraft,
+				QType:    workflowModel.FromDraft,
 				MetaOnly: false,
 			})
 			if err != nil {
@@ -2679,7 +2749,7 @@ func (w *ApplicationService) GetLLMNodeFCSettingDetail(ctx context.Context, req 
 				MetaQuery: vo.MetaQuery{
 					IDs: versionIDs,
 				},
-				QType:    vo.FromSpecificVersion,
+				QType:    workflowModel.FromSpecificVersion,
 				MetaOnly: false,
 				Versions: id2Version,
 			})
@@ -2715,18 +2785,18 @@ func (w *ApplicationService) GetLLMNodeFCSettingDetail(ctx context.Context, req 
 	}
 
 	if len(req.GetDatasetList()) > 0 {
-		knowledgeOperator := crossknowledge.GetKnowledgeOperator()
+		knowledgeOperator := crossknowledge.DefaultSVC()
 		knowledgeIDs, err := slices.TransformWithErrorCheck(req.GetDatasetList(), func(a *workflow.DatasetFCItem) (int64, error) {
 			return strconv.ParseInt(a.GetDatasetID(), 10, 64)
 		})
 		if err != nil {
 			return nil, err
 		}
-		details, err := knowledgeOperator.ListKnowledgeDetail(ctx, &crossknowledge.ListKnowledgeDetailRequest{KnowledgeIDs: knowledgeIDs})
+		details, err := knowledgeOperator.ListKnowledgeDetail(ctx, &model.ListKnowledgeDetailRequest{KnowledgeIDs: knowledgeIDs})
 		if err != nil {
 			return nil, err
 		}
-		knowledgeDetailMap = slices.ToMap(details.KnowledgeDetails, func(kd *crossknowledge.KnowledgeDetail) (string, *workflow.DatasetDetail) {
+		knowledgeDetailMap = slices.ToMap(details.KnowledgeDetails, func(kd *model.KnowledgeDetail) (string, *workflow.DatasetDetail) {
 			return strconv.FormatInt(kd.ID, 10), &workflow.DatasetDetail{
 				ID:         strconv.FormatInt(kd.ID, 10),
 				Name:       kd.Name,
@@ -2769,7 +2839,7 @@ func (w *ApplicationService) GetLLMNodeFCSettingsMerged(ctx context.Context, req
 	var fcPluginSetting *workflow.FCPluginSetting
 	if req.GetPluginFcSetting() != nil {
 		var (
-			pluginSvc       = crossplugin.GetPluginService()
+			pluginSvc       = crossplugin.DefaultSVC()
 			pluginFcSetting = req.GetPluginFcSetting()
 			isDraft         = pluginFcSetting.GetIsDraft()
 		)
@@ -2784,8 +2854,8 @@ func (w *ApplicationService) GetLLMNodeFCSettingsMerged(ctx context.Context, req
 			return nil, err
 		}
 
-		pluginReq := &crossplugin.ToolsInfoRequest{
-			PluginEntity: vo.PluginEntity{
+		pluginReq := &plugin.ToolsInfoRequest{
+			PluginEntity: plugin.PluginEntity{
 				PluginID: pluginID,
 			},
 			ToolIDs: []int64{toolID},
@@ -2826,7 +2896,7 @@ func (w *ApplicationService) GetLLMNodeFCSettingsMerged(ctx context.Context, req
 
 		policy := &vo.GetPolicy{
 			ID:      wID,
-			QType:   ternary.IFElse(len(setting.WorkflowVersion) == 0, vo.FromDraft, vo.FromSpecificVersion),
+			QType:   ternary.IFElse(len(setting.WorkflowVersion) == 0, workflowModel.FromDraft, workflowModel.FromSpecificVersion),
 			Version: setting.WorkflowVersion,
 		}
 
@@ -2901,7 +2971,7 @@ func (w *ApplicationService) GetPlaygroundPluginList(ctx context.Context, req *p
 				SpaceID:       ptr.Of(req.GetSpaceID()),
 				PublishStatus: ptr.Of(vo.HasPublished),
 			},
-			QType: vo.FromLatestVersion,
+			QType: workflowModel.FromLatestVersion,
 		})
 	} else if req.GetPage() > 0 && req.GetSize() > 0 {
 		wfs, _, err = GetWorkflowDomainSVC().MGet(ctx, &vo.MGetPolicy{
@@ -2913,7 +2983,7 @@ func (w *ApplicationService) GetPlaygroundPluginList(ctx context.Context, req *p
 				SpaceID:       ptr.Of(req.GetSpaceID()),
 				PublishStatus: ptr.Of(vo.HasPublished),
 			},
-			QType: vo.FromLatestVersion,
+			QType: workflowModel.FromLatestVersion,
 		})
 	}
 
@@ -2987,7 +3057,7 @@ func (w *ApplicationService) CopyWorkflow(ctx context.Context, req *workflow.Cop
 		return nil, err
 	}
 
-	wf, err := GetWorkflowDomainSVC().CopyWorkflow(ctx, workflowID, vo.CopyWorkflowPolicy{
+	wf, err := w.copyWorkflow(ctx, workflowID, vo.CopyWorkflowPolicy{
 		ShouldModifyWorkflowName: true,
 	})
 	if err != nil {
@@ -3053,7 +3123,7 @@ func (w *ApplicationService) GetHistorySchema(ctx context.Context, req *workflow
 	// get the workflow entity for that workflowID and commitID
 	policy := &vo.GetPolicy{
 		ID:       workflowID,
-		QType:    ternary.IFElse(len(exe.Version) > 0, vo.FromSpecificVersion, vo.FromDraft),
+		QType:    ternary.IFElse(len(exe.Version) > 0, workflowModel.FromSpecificVersion, workflowModel.FromDraft),
 		Version:  exe.Version,
 		CommitID: exe.CommitID,
 	}
@@ -3111,7 +3181,7 @@ func (w *ApplicationService) GetExampleWorkFlowList(ctx context.Context, req *wo
 
 	wfs, _, err := GetWorkflowDomainSVC().MGet(ctx, &vo.MGetPolicy{
 		MetaQuery: option,
-		QType:     vo.FromDraft,
+		QType:     workflowModel.FromDraft,
 		MetaOnly:  false,
 	})
 	if err != nil {
@@ -3190,7 +3260,7 @@ func (w *ApplicationService) CopyWkTemplateApi(ctx context.Context, req *workflo
 		if err != nil {
 			return nil, err
 		}
-		wf, err := GetWorkflowDomainSVC().CopyWorkflow(ctx, wid, vo.CopyWorkflowPolicy{
+		wf, err := w.copyWorkflow(ctx, wid, vo.CopyWorkflowPolicy{
 			ShouldModifyWorkflowName: true,
 			TargetSpaceID:            ptr.Of(req.GetTargetSpaceID()),
 			TargetAppID:              ptr.Of(int64(0)),
@@ -3199,7 +3269,7 @@ func (w *ApplicationService) CopyWkTemplateApi(ctx context.Context, req *workflo
 			return nil, err
 		}
 
-		err = GetWorkflowDomainSVC().Publish(ctx, &vo.PublishPolicy{
+		err = w.publishWorkflowResource(ctx, &vo.PublishPolicy{
 			ID:        wf.ID,
 			Version:   "v0.0.0",
 			CommitID:  wf.CommitID,
@@ -3280,6 +3350,26 @@ func (w *ApplicationService) CopyWkTemplateApi(ctx context.Context, req *workflo
 	return resp, err
 }
 
+func (w *ApplicationService) publishWorkflowResource(ctx context.Context, policy *vo.PublishPolicy) error {
+	err := w.DomainSVC.Publish(ctx, policy)
+	if err != nil {
+		return err
+	}
+
+	safego.Go(ctx, func() {
+		now := time.Now().UnixMilli()
+		if err := PublishWorkflowResource(ctx, policy.ID, nil, search.Updated, &search.ResourceDocument{
+			PublishStatus: ptr.Of(resource.PublishStatus_Published),
+			UpdateTimeMS:  ptr.Of(now),
+			PublishTimeMS: ptr.Of(now),
+		}); err != nil {
+			logs.CtxErrorf(ctx, "publish workflow resource failed workflowID = %d, err: %v", policy.ID, err)
+		}
+	})
+
+	return nil
+}
+
 func mustParseInt64(s string) int64 {
 	i, err := strconv.ParseInt(s, 10, 64)
 	if err != nil {
@@ -3336,178 +3426,6 @@ func toWorkflowParameter(nType *vo.NamedTypeInfo) (*workflow.Parameter, error) {
 	}
 
 	return wp, nil
-}
-
-func nodeType2EntityNodeType(t string) (entity.NodeType, error) {
-	i, err := strconv.Atoi(t)
-	if err != nil {
-		return "", fmt.Errorf("invalid node type string '%s': %w", t, err)
-	}
-
-	switch i {
-	case 1:
-		return entity.NodeTypeEntry, nil
-	case 2:
-		return entity.NodeTypeExit, nil
-	case 3:
-		return entity.NodeTypeLLM, nil
-	case 4:
-		return entity.NodeTypePlugin, nil
-	case 5:
-		return entity.NodeTypeCodeRunner, nil
-	case 6:
-		return entity.NodeTypeKnowledgeRetriever, nil
-	case 8:
-		return entity.NodeTypeSelector, nil
-	case 9:
-		return entity.NodeTypeSubWorkflow, nil
-	case 12:
-		return entity.NodeTypeDatabaseCustomSQL, nil
-	case 13:
-		return entity.NodeTypeOutputEmitter, nil
-	case 15:
-		return entity.NodeTypeTextProcessor, nil
-	case 18:
-		return entity.NodeTypeQuestionAnswer, nil
-	case 19:
-		return entity.NodeTypeBreak, nil
-	case 20:
-		return entity.NodeTypeVariableAssignerWithinLoop, nil
-	case 21:
-		return entity.NodeTypeLoop, nil
-	case 22:
-		return entity.NodeTypeIntentDetector, nil
-	case 27:
-		return entity.NodeTypeKnowledgeIndexer, nil
-	case 28:
-		return entity.NodeTypeBatch, nil
-	case 29:
-		return entity.NodeTypeContinue, nil
-	case 30:
-		return entity.NodeTypeInputReceiver, nil
-	case 32:
-		return entity.NodeTypeVariableAggregator, nil
-	case 37:
-		return entity.NodeTypeMessageList, nil
-	case 38:
-		return entity.NodeTypeClearMessage, nil
-	case 39:
-		return entity.NodeTypeCreateConversation, nil
-	case 40:
-		return entity.NodeTypeVariableAssigner, nil
-	case 42:
-		return entity.NodeTypeDatabaseUpdate, nil
-	case 43:
-		return entity.NodeTypeDatabaseQuery, nil
-	case 44:
-		return entity.NodeTypeDatabaseDelete, nil
-	case 45:
-		return entity.NodeTypeHTTPRequester, nil
-	case 46:
-		return entity.NodeTypeDatabaseInsert, nil
-	case 58:
-		return entity.NodeTypeJsonSerialization, nil
-	case 59:
-		return entity.NodeTypeJsonDeserialization, nil
-	case 60:
-		return entity.NodeTypeKnowledgeDeleter, nil
-	default:
-		// Handle all unknown or unsupported types here
-		return "", fmt.Errorf("unsupported or unknown node type ID: %d", i)
-	}
-}
-
-// entityNodeTypeToAPINodeTemplateType converts an entity.NodeType to the corresponding workflow.NodeTemplateType.
-func entityNodeTypeToAPINodeTemplateType(nodeType entity.NodeType) (workflow.NodeTemplateType, error) {
-	switch nodeType {
-	case entity.NodeTypeEntry:
-		return workflow.NodeTemplateType_Start, nil
-	case entity.NodeTypeExit:
-		return workflow.NodeTemplateType_End, nil
-	case entity.NodeTypeLLM:
-		return workflow.NodeTemplateType_LLM, nil
-	case entity.NodeTypePlugin:
-		// Maps to Api type in the API model
-		return workflow.NodeTemplateType_Api, nil
-	case entity.NodeTypeCodeRunner:
-		return workflow.NodeTemplateType_Code, nil
-	case entity.NodeTypeKnowledgeRetriever:
-		// Maps to Dataset type in the API model
-		return workflow.NodeTemplateType_Dataset, nil
-	case entity.NodeTypeSelector:
-		// Maps to If type in the API model
-		return workflow.NodeTemplateType_If, nil
-	case entity.NodeTypeSubWorkflow:
-		return workflow.NodeTemplateType_SubWorkflow, nil
-	case entity.NodeTypeDatabaseCustomSQL:
-		// Maps to the generic Database type in the API model
-		return workflow.NodeTemplateType_Database, nil
-	case entity.NodeTypeOutputEmitter:
-		// Maps to Message type in the API model
-		return workflow.NodeTemplateType_Message, nil
-	case entity.NodeTypeTextProcessor:
-		return workflow.NodeTemplateType_Text, nil
-	case entity.NodeTypeQuestionAnswer:
-		return workflow.NodeTemplateType_Question, nil
-	case entity.NodeTypeBreak:
-		return workflow.NodeTemplateType_Break, nil
-	case entity.NodeTypeVariableAssigner:
-		return workflow.NodeTemplateType_AssignVariable, nil
-	case entity.NodeTypeVariableAssignerWithinLoop:
-		return workflow.NodeTemplateType_LoopSetVariable, nil
-	case entity.NodeTypeLoop:
-		return workflow.NodeTemplateType_Loop, nil
-	case entity.NodeTypeIntentDetector:
-		return workflow.NodeTemplateType_Intent, nil
-	case entity.NodeTypeKnowledgeIndexer:
-		// Maps to DatasetWrite type in the API model
-		return workflow.NodeTemplateType_DatasetWrite, nil
-	case entity.NodeTypeBatch:
-		return workflow.NodeTemplateType_Batch, nil
-	case entity.NodeTypeContinue:
-		return workflow.NodeTemplateType_Continue, nil
-	case entity.NodeTypeInputReceiver:
-		return workflow.NodeTemplateType_Input, nil
-	case entity.NodeTypeMessageList:
-		return workflow.NodeTemplateType(37), nil
-	case entity.NodeTypeVariableAggregator:
-		return workflow.NodeTemplateType(32), nil
-	case entity.NodeTypeClearMessage:
-		return workflow.NodeTemplateType(38), nil
-	case entity.NodeTypeCreateConversation:
-		return workflow.NodeTemplateType(39), nil
-	// Note: entity.NodeTypeVariableAggregator (ID 32) has no direct mapping in NodeTemplateType
-	// Note: entity.NodeTypeMessageList (ID 37) has no direct mapping in NodeTemplateType
-	// Note: entity.NodeTypeClearMessage (ID 38) has no direct mapping in NodeTemplateType
-	// Note: entity.NodeTypeCreateConversation (ID 39) has no direct mapping in NodeTemplateType
-	case entity.NodeTypeDatabaseUpdate:
-		return workflow.NodeTemplateType_DatabaseUpdate, nil
-	case entity.NodeTypeDatabaseQuery:
-		// Maps to DatabasesELECT (ID 43) in the API model (note potential typo)
-		return workflow.NodeTemplateType_DatabasesELECT, nil
-	case entity.NodeTypeDatabaseDelete:
-		return workflow.NodeTemplateType_DatabaseDelete, nil
-
-	// Note: entity.NodeTypeHTTPRequester (ID 45) has no direct mapping in NodeTemplateType
-	case entity.NodeTypeHTTPRequester:
-		return workflow.NodeTemplateType(45), nil
-
-	case entity.NodeTypeDatabaseInsert:
-		// Maps to DatabaseInsert (ID 41) in the API model, despite entity ID being 46.
-		// return workflow.NodeTemplateType_DatabaseInsert, nil
-		return workflow.NodeTemplateType(46), nil
-	case entity.NodeTypeJsonSerialization:
-		return workflow.NodeTemplateType(58), nil
-	case entity.NodeTypeJsonDeserialization:
-		return workflow.NodeTemplateType_JsonDeserialization, nil
-	case entity.NodeTypeKnowledgeDeleter:
-		return workflow.NodeTemplateType_DatasetDelete, nil
-	case entity.NodeTypeLambda:
-		return 0, nil
-	default:
-		// Handle entity types that don't have a corresponding NodeTemplateType
-		return workflow.NodeTemplateType(0), fmt.Errorf("cannot map entity node type '%s' to a workflow.NodeTemplateType", nodeType)
-	}
 }
 
 func i64PtrToStringPtr(i *int64) *string {
@@ -3700,7 +3618,13 @@ func toVariable(p *workflow.APIParameter) (*vo.Variable, error) {
 		v.Type = vo.VariableTypeBoolean
 	case workflow.ParameterType_Array:
 		v.Type = vo.VariableTypeList
-		if len(p.SubParameters) > 0 {
+		if len(p.SubParameters) == 1 {
+			av, err := toVariable(p.SubParameters[0])
+			if err != nil {
+				return nil, err
+			}
+			v.Schema = &av
+		} else if len(p.SubParameters) > 1 {
 			subVs := make([]any, 0)
 			for _, ap := range p.SubParameters {
 				av, err := toVariable(ap)
@@ -3714,7 +3638,6 @@ func toVariable(p *workflow.APIParameter) (*vo.Variable, error) {
 				Schema: subVs,
 			}
 		}
-
 	case workflow.ParameterType_Object:
 		v.Type = vo.VariableTypeObject
 		vs := make([]*vo.Variable, 0)
@@ -3755,7 +3678,7 @@ func mergeWorkflowAPIParameters(latestAPIParameters []*workflow.APIParameter, ex
 func parseWorkflowTerminatePlanType(c *vo.Canvas) (int32, error) {
 	var endNode *vo.Node
 	for _, n := range c.Nodes {
-		if n.Type == vo.BlockTypeBotEnd {
+		if n.Type == entity.NodeTypeExit.IDStr() {
 			endNode = n
 			break
 		}

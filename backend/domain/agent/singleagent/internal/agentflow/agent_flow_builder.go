@@ -94,8 +94,9 @@ func BuildAgent(ctx context.Context, conf *Config) (r *AgentRunner, err error) {
 	}
 
 	chatModel, err := newChatModel(ctx, &config{
-		modelFactory: conf.ModelFactory,
-		modelInfo:    modelInfo,
+		modelFactory:      conf.ModelFactory,
+		modelInfo:         modelInfo,
+		agentModelSetting: conf.Agent.ModelInfo,
 	})
 	if err != nil {
 		return nil, err
@@ -113,7 +114,7 @@ func BuildAgent(ctx context.Context, conf *Config) (r *AgentRunner, err error) {
 	}
 	tr := newPreToolRetriever(&toolPreCallConf{})
 
-	wfTools, toolsReturnDirectly, err := newWorkflowTools(ctx, &workflowConfig{
+	wfTools, returnDirectlyTools, err := newWorkflowTools(ctx, &workflowConfig{
 		wfInfos: conf.Agent.Workflow,
 	})
 	if err != nil {
@@ -176,7 +177,7 @@ func BuildAgent(ctx context.Context, conf *Config) (r *AgentRunner, err error) {
 			ToolsConfig: compose.ToolsNodeConfig{
 				Tools: agentTools,
 			},
-			ToolReturnDirectly: toolsReturnDirectly,
+			ToolReturnDirectly: returnDirectlyTools,
 			ModelNodeName:      keyOfReActAgentChatModel,
 			ToolsNodeName:      keyOfReActAgentToolsNode,
 		})
@@ -273,10 +274,11 @@ func BuildAgent(ctx context.Context, conf *Config) (r *AgentRunner, err error) {
 	}
 
 	return &AgentRunner{
-		runner:            runner,
-		requireCheckpoint: requireCheckpoint,
-		modelInfo:         modelInfo,
-		containWfTool:     containWfTool,
+		runner:              runner,
+		requireCheckpoint:   requireCheckpoint,
+		modelInfo:           modelInfo,
+		containWfTool:       containWfTool,
+		returnDirectlyTools: returnDirectlyTools,
 	}, nil
 }
 

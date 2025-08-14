@@ -25,13 +25,13 @@ import (
 
 	einoCompose "github.com/cloudwego/eino/compose"
 	"github.com/cloudwego/eino/schema"
-	"github.com/redis/go-redis/v9"
 	"golang.org/x/exp/maps"
 	"gorm.io/gen"
 	"gorm.io/gen/field"
 	"gorm.io/gorm"
 
-	workflow3 "github.com/coze-dev/coze-studio/backend/api/model/ocean/cloud/workflow"
+	workflowModel "github.com/coze-dev/coze-studio/backend/api/model/crossdomain/workflow"
+	workflow3 "github.com/coze-dev/coze-studio/backend/api/model/workflow"
 	"github.com/coze-dev/coze-studio/backend/application/base/ctxutil"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/entity"
@@ -41,6 +41,7 @@ import (
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/internal/execute"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/internal/repo/dal/model"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/internal/repo/dal/query"
+	"github.com/coze-dev/coze-studio/backend/infra/contract/cache"
 	cm "github.com/coze-dev/coze-studio/backend/infra/contract/chatmodel"
 	"github.com/coze-dev/coze-studio/backend/infra/contract/idgen"
 	"github.com/coze-dev/coze-studio/backend/infra/contract/storage"
@@ -61,7 +62,7 @@ const (
 type RepositoryImpl struct {
 	idgen.IDGenerator
 	query *query.Query
-	redis *redis.Client
+	redis cache.Cmdable
 	tos   storage.Storage
 	einoCompose.CheckPointStore
 	workflow.InterruptEventStore
@@ -70,7 +71,7 @@ type RepositoryImpl struct {
 	builtinModel cm.BaseChatModel
 }
 
-func NewRepository(idgen idgen.IDGenerator, db *gorm.DB, redis *redis.Client, tos storage.Storage,
+func NewRepository(idgen idgen.IDGenerator, db *gorm.DB, redis cache.Cmdable, tos storage.Storage,
 	cpStore einoCompose.CheckPointStore, chatModel cm.BaseChatModel) workflow.Repository {
 	return &RepositoryImpl{
 		IDGenerator:     idgen,
@@ -536,7 +537,7 @@ func (r *RepositoryImpl) GetEntity(ctx context.Context, policy *vo.GetPolicy) (_
 		commitID                          string
 	)
 	switch policy.QType {
-	case vo.FromDraft:
+	case workflowModel.FromDraft:
 		draft, err := r.DraftV2(ctx, policy.ID, policy.CommitID)
 		if err != nil {
 			return nil, err
@@ -547,7 +548,7 @@ func (r *RepositoryImpl) GetEntity(ctx context.Context, policy *vo.GetPolicy) (_
 		outputParams = draft.OutputParamsStr
 		draftMeta = draft.DraftMeta
 		commitID = draft.CommitID
-	case vo.FromSpecificVersion:
+	case workflowModel.FromSpecificVersion:
 		v, err := r.GetVersion(ctx, policy.ID, policy.Version)
 		if err != nil {
 			return nil, err
@@ -557,7 +558,7 @@ func (r *RepositoryImpl) GetEntity(ctx context.Context, policy *vo.GetPolicy) (_
 		outputParams = v.OutputParamsStr
 		versionMeta = v.VersionMeta
 		commitID = v.CommitID
-	case vo.FromLatestVersion:
+	case workflowModel.FromLatestVersion:
 		v, err := r.GetLatestVersion(ctx, policy.ID)
 		if err != nil {
 			return nil, err
@@ -1313,7 +1314,8 @@ func (r *RepositoryImpl) WorkflowAsTool(ctx context.Context, policy vo.GetPolicy
 	}
 
 	var opts []compose.WorkflowOption
-	opts = append(opts, compose.WithIDAsName(policy.ID))
+	opts = append(opts, compose.WithIDAsName(policy.ID),
+		compose.WithParentRequireCheckpoint()) // always assumes the 'parent' may pass a checkpoint ID
 	if s := execute.GetStaticConfig(); s != nil && s.MaxNodeCountPerWorkflow > 0 {
 		opts = append(opts, compose.WithMaxNodeCount(s.MaxNodeCountPerWorkflow))
 	}

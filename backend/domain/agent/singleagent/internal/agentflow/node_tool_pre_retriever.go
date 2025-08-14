@@ -26,11 +26,11 @@ import (
 
 	"github.com/coze-dev/coze-studio/backend/api/model/crossdomain/agentrun"
 	"github.com/coze-dev/coze-studio/backend/api/model/crossdomain/plugin"
-	"github.com/coze-dev/coze-studio/backend/crossdomain/contract/crossplugin"
-	"github.com/coze-dev/coze-studio/backend/crossdomain/contract/crossworkflow"
+	workflowModel "github.com/coze-dev/coze-studio/backend/api/model/crossdomain/workflow"
+	crossplugin "github.com/coze-dev/coze-studio/backend/crossdomain/contract/plugin"
+	crossworkflow "github.com/coze-dev/coze-studio/backend/crossdomain/contract/workflow"
 	pluginEntity "github.com/coze-dev/coze-studio/backend/domain/plugin/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/plugin/service"
-	"github.com/coze-dev/coze-studio/backend/domain/workflow/entity/vo"
 	"github.com/coze-dev/coze-studio/backend/pkg/lang/ptr"
 	"github.com/coze-dev/coze-studio/backend/pkg/logs"
 )
@@ -69,6 +69,7 @@ func (pr *toolPreCallConf) toolPreRetrieve(ctx context.Context, ar *AgentRequest
 			}
 
 			opts := []pluginEntity.ExecuteToolOpt{
+				plugin.WithInvalidRespProcessStrategy(plugin.InvalidResponseProcessStrategyOfReturnDefault),
 				plugin.WithProjectInfo(&plugin.ProjectInfo{
 					ProjectID:      ar.Identity.AgentID,
 					ProjectType:    plugin.ProjectTypeOfAgent,
@@ -88,7 +89,7 @@ func (pr *toolPreCallConf) toolPreRetrieve(ctx context.Context, ar *AgentRequest
 				logs.CtxErrorf(ctx, "Failed to unmarshal json arguments: %s", item.Arguments)
 				return nil, err
 			}
-			execResp, _, err := crossworkflow.DefaultSVC().SyncExecuteWorkflow(ctx, vo.ExecuteConfig{
+			execResp, _, err := crossworkflow.DefaultSVC().SyncExecuteWorkflow(ctx, workflowModel.ExecuteConfig{
 				ID:           item.PluginID,
 				ConnectorID:  ar.Identity.ConnectorID,
 				ConnectorUID: ar.UserID,

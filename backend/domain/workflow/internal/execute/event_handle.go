@@ -27,6 +27,7 @@ import (
 	"github.com/bytedance/sonic"
 	"github.com/cloudwego/eino/schema"
 
+	workflowModel "github.com/coze-dev/coze-studio/backend/api/model/crossdomain/workflow"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/entity/vo"
@@ -63,7 +64,7 @@ func setRootWorkflowSuccess(ctx context.Context, event *Event, repo workflow.Rep
 
 	rootWkID := event.RootWorkflowBasic.ID
 	exeCfg := event.ExeCfg
-	if exeCfg.Mode == vo.ExecuteModeDebug {
+	if exeCfg.Mode == workflowModel.ExecuteModeDebug {
 		if err := repo.UpdateWorkflowDraftTestRunSuccess(ctx, rootWkID); err != nil {
 			return fmt.Errorf("failed to save workflow draft test run success: %v", err)
 		}
@@ -725,7 +726,7 @@ func HandleExecuteEvent(ctx context.Context,
 	timeoutFn context.CancelFunc,
 	repo workflow.Repository,
 	sw *schema.StreamWriter[*entity.Message],
-	exeCfg vo.ExecuteConfig,
+	exeCfg workflowModel.ExecuteConfig,
 ) (event *Event) {
 	var (
 		wfSuccessEvent *Event
@@ -760,7 +761,7 @@ func HandleExecuteEvent(ctx context.Context,
 			return event
 		case workflowSuccess: // workflow success, wait for exit node to be done
 			wfSuccessEvent = event
-			if lastNodeIsDone || exeCfg.Mode == vo.ExecuteModeNodeDebug {
+			if lastNodeIsDone || exeCfg.Mode == workflowModel.ExecuteModeNodeDebug {
 				if err = setRootWorkflowSuccess(ctx, wfSuccessEvent, repo, sw); err != nil {
 					logs.CtxErrorf(ctx, "failed to set root workflow success for workflow %d: %v",
 						wfSuccessEvent.RootWorkflowBasic.ID, err)
@@ -887,7 +888,12 @@ func getFCInfos(ctx context.Context, nodeKey vo.NodeKey) map[string]*fcInfo {
 }
 
 func (f *fcInfo) inputString() string {
+	if f.input == nil {
+		return ""
+	}
+
 	m, err := sonic.MarshalString(f.input)
+
 	if err != nil {
 		panic(err)
 	}
@@ -899,12 +905,5 @@ func (f *fcInfo) outputString() string {
 		return ""
 	}
 
-	m := map[string]any{
-		"data": f.output.Response, // TODO: traceID, code, message?
-	}
-	b, err := sonic.MarshalString(m)
-	if err != nil {
-		panic(err)
-	}
-	return b
+	return f.output.Response
 }

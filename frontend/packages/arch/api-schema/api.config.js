@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 coze-plus Authors
+ * Copyright 2025 coze-dev Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,7 @@ const config = [
     idlRoot: path.resolve(__dirname, '../../../../'), // IDL root directory
     entries: {
       passport: './idl/passport/passport.thrift', // Entry service name and path
-      explore:
-        './idl/flow/marketplace/flow_marketplace_product/public_api.thrift',
+      explore: './idl/marketplace/public_api.thrift',
       // 企业组织管理模块
       corporation: './idl/corporation/corporation_service.thrift',
       department: './idl/corporation/department_service.thrift',

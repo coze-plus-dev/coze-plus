@@ -17,7 +17,7 @@
 package entity
 
 import (
-	"github.com/coze-dev/coze-studio/backend/api/model/ocean/cloud/workflow"
+	"github.com/coze-dev/coze-studio/backend/api/model/workflow"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/entity/vo"
 )
 
@@ -69,17 +69,16 @@ type IDVersionPair struct {
 	Version string
 }
 
-type Stage uint8
-
-const (
-	StageDraft     Stage = 1
-	StagePublished Stage = 2
-)
-
 type WorkflowBasic struct {
 	ID       int64
 	Version  string
 	SpaceID  int64
 	AppID    *int64
 	CommitID string
+}
+
+type CopyWorkflowFromAppToLibraryResult struct {
+	WorkflowIDVersionMap map[int64]IDVersionPair
+	ValidateIssues       []*vo.ValidateIssue
+	CopiedWorkflows      []*Workflow
 }

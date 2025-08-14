@@ -32,7 +32,6 @@ import (
 	"github.com/cloudwego/eino/schema"
 	"github.com/milvus-io/milvus/client/v2/milvusclient"
 	"github.com/volcengine/volc-sdk-golang/service/vikingdb"
-	"github.com/volcengine/volc-sdk-golang/service/visual"
 	"gorm.io/gorm"
 
 	"github.com/coze-dev/coze-studio/backend/application/internal"
@@ -41,6 +40,7 @@ import (
 	"github.com/coze-dev/coze-studio/backend/infra/contract/cache"
 	"github.com/coze-dev/coze-studio/backend/infra/contract/document/nl2sql"
 	"github.com/coze-dev/coze-studio/backend/infra/contract/document/ocr"
+	"github.com/coze-dev/coze-studio/backend/infra/contract/document/parser"
 	"github.com/coze-dev/coze-studio/backend/infra/contract/document/searchstore"
 	"github.com/coze-dev/coze-studio/backend/infra/contract/embedding"
 	"github.com/coze-dev/coze-studio/backend/infra/contract/es"
@@ -51,8 +51,6 @@ import (
 	"github.com/coze-dev/coze-studio/backend/infra/contract/storage"
 	chatmodelImpl "github.com/coze-dev/coze-studio/backend/infra/impl/chatmodel"
 	builtinNL2SQL "github.com/coze-dev/coze-studio/backend/infra/impl/document/nl2sql/builtin"
-	"github.com/coze-dev/coze-studio/backend/infra/impl/document/ocr/veocr"
-	builtinParser "github.com/coze-dev/coze-studio/backend/infra/impl/document/parser/builtin"
 	"github.com/coze-dev/coze-studio/backend/infra/impl/document/rerank/rrf"
 	sses "github.com/coze-dev/coze-studio/backend/infra/impl/document/searchstore/elasticsearch"
 	ssmilvus "github.com/coze-dev/coze-studio/backend/infra/impl/document/searchstore/milvus"
@@ -69,14 +67,16 @@ import (
 )
 
 type ServiceComponents struct {
-	DB       *gorm.DB
-	IDGenSVC idgen.IDGenerator
-	Storage  storage.Storage
-	RDB      rdb.RDB
-	ImageX   imagex.ImageX
-	ES       es.Client
-	EventBus search.ResourceEventBus
-	CacheCli cache.Cmdable
+	DB            *gorm.DB
+	IDGenSVC      idgen.IDGenerator
+	Storage       storage.Storage
+	RDB           rdb.RDB
+	ImageX        imagex.ImageX
+	ES            es.Client
+	EventBus      search.ResourceEventBus
+	CacheCli      cache.Cmdable
+	OCR           ocr.OCR
+	ParserManager parser.Manager
 }
 
 func InitService(c *ServiceComponents) (*KnowledgeApplicationService, error) {
@@ -100,22 +100,6 @@ func InitService(c *ServiceComponents) (*KnowledgeApplicationService, error) {
 		return nil, fmt.Errorf("init vector store failed, err=%w", err)
 	}
 	sManagers = append(sManagers, mgr)
-
-	var ocrImpl ocr.OCR
-	switch os.Getenv("OCR_TYPE") {
-	case "ve":
-		ocrAK := os.Getenv("VE_OCR_AK")
-		ocrSK := os.Getenv("VE_OCR_SK")
-		if ocrAK == "" || ocrSK == "" {
-			logs.Warnf("[ve_ocr] ak / sk not configured, ocr might not work well")
-		}
-		inst := visual.NewInstance()
-		inst.Client.SetAccessKey(ocrAK)
-		inst.Client.SetSecretKey(ocrSK)
-		ocrImpl = veocr.NewOCR(&veocr.Config{Client: inst})
-	default:
-		// accept ocr not configured
-	}
 
 	root, err := os.Getwd()
 	if err != nil {
@@ -153,29 +137,23 @@ func InitService(c *ServiceComponents) (*KnowledgeApplicationService, error) {
 		}
 	}
 
-	imageAnnoChatModel, configured, err := internal.GetBuiltinChatModel(ctx, "IA_")
-	if err != nil {
-		return nil, err
-	}
-
 	knowledgeDomainSVC, knowledgeEventHandler := knowledgeImpl.NewKnowledgeSVC(&knowledgeImpl.KnowledgeSVCConfig{
-		DB:                        c.DB,
-		IDGen:                     c.IDGenSVC,
-		RDB:                       c.RDB,
-		Producer:                  knowledgeProducer,
-		SearchStoreManagers:       sManagers,
-		ParseManager:              builtinParser.NewManager(c.Storage, ocrImpl, imageAnnoChatModel), // default builtin
-		Storage:                   c.Storage,
-		Rewriter:                  rewriter,
-		Reranker:                  rrf.NewRRFReranker(0), // default rrf
-		NL2Sql:                    n2s,
-		OCR:                       ocrImpl,
-		CacheCli:                  c.CacheCli,
-		IsAutoAnnotationSupported: configured,
-		ModelFactory:              chatmodelImpl.NewDefaultFactory(),
+		DB:                  c.DB,
+		IDGen:               c.IDGenSVC,
+		RDB:                 c.RDB,
+		Producer:            knowledgeProducer,
+		SearchStoreManagers: sManagers,
+		ParseManager:        c.ParserManager,
+		Storage:             c.Storage,
+		Rewriter:            rewriter,
+		Reranker:            rrf.NewRRFReranker(0), // default rrf
+		NL2Sql:              n2s,
+		OCR:                 c.OCR,
+		CacheCli:            c.CacheCli,
+		ModelFactory:        chatmodelImpl.NewDefaultFactory(),
 	})
 
-	if err = eventbus.RegisterConsumer(nameServer, consts.RMQTopicKnowledge, consts.RMQConsumeGroupKnowledge, knowledgeEventHandler); err != nil {
+	if err = eventbus.DefaultSVC().RegisterConsumer(nameServer, consts.RMQTopicKnowledge, consts.RMQConsumeGroupKnowledge, knowledgeEventHandler); err != nil {
 		return nil, fmt.Errorf("register knowledge consumer failed, err=%w", err)
 	}
 
@@ -194,7 +172,13 @@ func getVectorStore(ctx context.Context) (searchstore.Manager, error) {
 		defer cancel()
 
 		milvusAddr := os.Getenv("MILVUS_ADDR")
-		mc, err := milvusclient.New(cctx, &milvusclient.ClientConfig{Address: milvusAddr})
+		user := os.Getenv("MILVUS_USER")
+		password := os.Getenv("MILVUS_PASSWORD")
+		mc, err := milvusclient.New(cctx, &milvusclient.ClientConfig{
+			Address:  milvusAddr,
+			Username: user,
+			Password: password,
+		})
 		if err != nil {
 			return nil, fmt.Errorf("init milvus client failed, err=%w", err)
 		}
@@ -338,13 +322,23 @@ func getEmbedding(ctx context.Context) (embedding.Embedder, error) {
 			arkEmbeddingApiKey  = os.Getenv("ARK_EMBEDDING_API_KEY")
 			// deprecated: use ARK_EMBEDDING_API_KEY instead
 			// ARK_EMBEDDING_AK will be removed in the future
-			arkEmbeddingAK   = os.Getenv("ARK_EMBEDDING_AK")
-			arkEmbeddingDims = os.Getenv("ARK_EMBEDDING_DIMS")
+			arkEmbeddingAK      = os.Getenv("ARK_EMBEDDING_AK")
+			arkEmbeddingDims    = os.Getenv("ARK_EMBEDDING_DIMS")
+			arkEmbeddingAPIType = os.Getenv("ARK_EMBEDDING_API_TYPE")
 		)
 
 		dims, err := strconv.ParseInt(arkEmbeddingDims, 10, 64)
 		if err != nil {
 			return nil, fmt.Errorf("init ark embedding dims failed, err=%w", err)
+		}
+
+		apiType := ark.APITypeText
+		if arkEmbeddingAPIType != "" {
+			if t := ark.APIType(arkEmbeddingAPIType); t != ark.APITypeText && t != ark.APITypeMultiModal {
+				return nil, fmt.Errorf("init ark embedding api_type failed, invalid api_type=%s", t)
+			} else {
+				apiType = t
+			}
 		}
 
 		emb, err = arkemb.NewArkEmbedder(ctx, &ark.EmbeddingConfig{
@@ -356,6 +350,7 @@ func getEmbedding(ctx context.Context) (embedding.Embedder, error) {
 			}(),
 			Model:   arkEmbeddingModel,
 			BaseURL: arkEmbeddingBaseURL,
+			APIType: &apiType,
 		}, dims, batchSize)
 		if err != nil {
 			return nil, fmt.Errorf("init ark embedding client failed, err=%w", err)

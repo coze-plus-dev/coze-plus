@@ -225,8 +225,8 @@ services:
       - ETCD_QUOTA_BACKEND_BYTES=4294967296
       - ALLOW_NONE_AUTHENTICATION=yes
     ports:
-      - 2379:2379
-      - 2380:2380
+      - '2379'
+      - '2380'
     volumes:
       - ./data/bitnami/etcd:/bitnami/etcd:rw,Z
       - ./volumes/etcd/etcd.conf.yml:/opt/bitnami/etcd/conf/etcd.conf.yml:ro,Z
@@ -345,17 +345,17 @@ services:
     # build:
     #   context: ../
     #   dockerfile: backend/Dockerfile
-    image: opencoze/opencoze:latest
+    image: cozedev/coze-studio-server:latest
     restart: always
     container_name: coze-server
     env_file: *env_file
-    environment:
-      LISTEN_ADDR: 0.0.0.0:8888
+    # environment:
+    #   LISTEN_ADDR: 0.0.0.0:8888
     networks:
       - coze-network
     ports:
-      - '8888:8888'
-      - '8889:8889'
+      - '8888'
+      - '8889'
     volumes:
       - .env:/app/.env
       - ../backend/conf:/app/resources/conf
@@ -371,6 +371,26 @@ services:
         condition: service_healthy
       milvus:
         condition: service_healthy
+    command: ['/app/opencoze']
+
+  coze-web:
+    # build:
+    #   context: ..
+    #   dockerfile: frontend/Dockerfile
+    image: cozedev/coze-studio-web:latest
+    container_name: coze-web
+    restart: always
+    ports:
+      - "${WEB_LISTEN_ADDR:-8888}:80"
+      # - "443:443"  # SSL port (uncomment if using SSL)
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro  # Main nginx config
+      - ./nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf:ro  # Proxy config
+      # - ./nginx/ssl:/etc/nginx/ssl:ro  # SSL certificates (uncomment if using SSL)
+    depends_on:
+      - coze-server
+    networks:
+      - coze-network
 
 networks:
   coze-network:
