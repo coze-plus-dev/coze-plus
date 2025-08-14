@@ -31,7 +31,7 @@ import (
 
 	"github.com/coze-dev/coze-studio/backend/api/model/crossdomain/plugin"
 	"github.com/coze-dev/coze-studio/backend/api/model/crossdomain/singleagent"
-	"github.com/coze-dev/coze-studio/backend/crossdomain/contract/crossworkflow"
+	crossworkflow "github.com/coze-dev/coze-studio/backend/crossdomain/contract/workflow"
 	"github.com/coze-dev/coze-studio/backend/domain/agent/singleagent/entity"
 	"github.com/coze-dev/coze-studio/backend/pkg/lang/conv"
 	"github.com/coze-dev/coze-studio/backend/pkg/logs"
@@ -267,7 +267,6 @@ func convInterruptEventType(interruptEvent any) singleagent.InterruptEventType {
 }
 
 func (r *replyChunkCallback) concatToolsNodeOutput(ctx context.Context, output *schema.StreamReader[callbacks.CallbackOutput]) ([]*schema.Message, error) {
-	defer output.Close()
 	var toolsMsgChunks [][]*schema.Message
 	var sr *schema.StreamReader[*schema.Message]
 	var sw *schema.StreamWriter[*schema.Message]
@@ -280,7 +279,6 @@ func (r *replyChunkCallback) concatToolsNodeOutput(ctx context.Context, output *
 	returnDirectToolsMap := make(map[int]bool)
 	isReturnDirectToolsFirstCheck := true
 	isToolsMsgChunksInit := false
-
 	for {
 		cbOut, err := output.Recv()
 		if errors.Is(err, io.EOF) {
@@ -318,8 +316,8 @@ func (r *replyChunkCallback) concatToolsNodeOutput(ctx context.Context, output *
 					if !streamInitialized {
 						sr, sw = schema.Pipe[*schema.Message](5)
 						r.sw.Send(&entity.AgentEvent{
-							EventType:       singleagent.EventTypeOfToolsAsChatModelStream,
-							ChatModelAnswer: sr,
+							EventType:             singleagent.EventTypeOfToolsAsChatModelStream,
+							ToolAsChatModelAnswer: sr,
 						}, nil)
 						streamInitialized = true
 					}

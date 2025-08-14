@@ -17,8 +17,8 @@
 package vo
 
 import (
-	"github.com/coze-dev/coze-studio/backend/api/model/ocean/cloud/workflow"
-	"github.com/coze-dev/coze-studio/backend/domain/workflow/crossdomain/model"
+	model "github.com/coze-dev/coze-studio/backend/api/model/crossdomain/modelmgr"
+	"github.com/coze-dev/coze-studio/backend/api/model/workflow"
 	"github.com/coze-dev/coze-studio/backend/pkg/i18n"
 	"github.com/coze-dev/coze-studio/backend/pkg/lang/ternary"
 )
@@ -253,7 +253,7 @@ type FCParam struct {
 				RequestParameters  []*workflow.APIParameter `json:"request_params"`
 				ResponseParameters []*workflow.APIParameter `json:"response_params"`
 			} `json:"fc_setting,omitempty"`
-		}
+		} `json:"pluginList,omitempty"`
 	} `json:"pluginFCParam,omitempty"`
 
 	KnowledgeFCParam *struct {

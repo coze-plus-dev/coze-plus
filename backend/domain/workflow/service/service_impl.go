@@ -21,7 +21,6 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"time"
 
 	einoCompose "github.com/cloudwego/eino/compose"
 
@@ -30,10 +29,11 @@ import (
 	"golang.org/x/sync/errgroup"
 	"gorm.io/gorm"
 
-	cloudworkflow "github.com/coze-dev/coze-studio/backend/api/model/ocean/cloud/workflow"
+	"github.com/coze-dev/coze-studio/backend/api/model/crossdomain/plugin"
+	workflowModel "github.com/coze-dev/coze-studio/backend/api/model/crossdomain/workflow"
+	cloudworkflow "github.com/coze-dev/coze-studio/backend/api/model/workflow"
 	"github.com/coze-dev/coze-studio/backend/application/base/ctxutil"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow"
-	"github.com/coze-dev/coze-studio/backend/domain/workflow/crossdomain/search"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/entity/vo"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/internal/canvas/adaptor"
@@ -123,21 +123,6 @@ func (i *impl) Create(ctx context.Context, meta *vo.MetaCreate) (int64, error) {
 		return 0, err
 	}
 
-	err = search.GetNotifier().PublishWorkflowResource(ctx, search.Created, &search.Resource{
-		WorkflowID:    id,
-		URI:           &meta.IconURI,
-		Name:          &meta.Name,
-		Desc:          &meta.Desc,
-		APPID:         meta.AppID,
-		SpaceID:       &meta.SpaceID,
-		OwnerID:       &meta.CreatorID,
-		Mode:          ptr.Of(int32(meta.Mode)),
-		PublishStatus: ptr.Of(search.UnPublished),
-		CreatedAt:     ptr.Of(time.Now().UnixMilli()),
-	})
-	if err != nil {
-		return 0, vo.WrapError(errno.ErrNotifyWorkflowResourceChangeErr, err)
-	}
 	return id, nil
 }
 
@@ -233,7 +218,7 @@ func extractInputsAndOutputsNamedInfoList(c *vo.Canvas) (inputs []*vo.NamedTypeI
 	return inputs, outputs
 }
 
-func (i *impl) Delete(ctx context.Context, policy *vo.DeletePolicy) (err error) {
+func (i *impl) Delete(ctx context.Context, policy *vo.DeletePolicy) (ids []int64, err error) {
 	if policy.ID != nil || len(policy.IDs) == 1 {
 		var id int64
 		if policy.ID != nil {
@@ -243,48 +228,28 @@ func (i *impl) Delete(ctx context.Context, policy *vo.DeletePolicy) (err error) 
 		}
 
 		if err = i.repo.Delete(ctx, id); err != nil {
-			return err
+			return nil, err
 		}
 
-		if err = search.GetNotifier().PublishWorkflowResource(ctx, search.Deleted, &search.Resource{
-			WorkflowID: id,
-		}); err != nil {
-			return vo.WrapError(errno.ErrNotifyWorkflowResourceChangeErr, err)
-		}
-
-		return nil
+		return []int64{id}, nil
 	}
 
-	ids := policy.IDs
+	ids = policy.IDs
 	if policy.AppID != nil {
 		metas, _, err := i.repo.MGetMetas(ctx, &vo.MetaQuery{
 			AppID: policy.AppID,
 		})
 		if err != nil {
-			return err
+			return nil, err
 		}
 		ids = maps.Keys(metas)
 	}
 
 	if err = i.repo.MDelete(ctx, ids); err != nil {
-		return err
+		return nil, err
 	}
 
-	g := errgroup.Group{}
-	for i := range ids {
-		wid := ids[i]
-		g.Go(func() error {
-			return search.GetNotifier().PublishWorkflowResource(ctx, search.Deleted, &search.Resource{
-				WorkflowID: wid,
-			})
-		})
-	}
-
-	if err = g.Wait(); err != nil {
-		return vo.WrapError(errno.ErrNotifyWorkflowResourceChangeErr, err)
-	}
-
-	return nil
+	return ids, nil
 }
 
 func (i *impl) Get(ctx context.Context, policy *vo.GetPolicy) (*entity.Workflow, error) {
@@ -386,7 +351,7 @@ func (i *impl) ValidateTree(ctx context.Context, id int64, validateConfig vo.Val
 			MetaQuery: vo.MetaQuery{
 				IDs: ids,
 			},
-			QType: vo.FromDraft,
+			QType: workflowModel.FromDraft,
 		})
 		if err != nil {
 			return nil, err
@@ -686,32 +651,11 @@ func (i *impl) Publish(ctx context.Context, policy *vo.PublishPolicy) (err error
 		return err
 	}
 
-	now := time.Now().UnixMilli()
-	if err = search.GetNotifier().PublishWorkflowResource(ctx, search.Updated, &search.Resource{
-		WorkflowID:    policy.ID,
-		PublishStatus: ptr.Of(search.Published),
-		UpdatedAt:     ptr.Of(now),
-		PublishedAt:   ptr.Of(now),
-	}); err != nil {
-		return vo.WrapError(errno.ErrNotifyWorkflowResourceChangeErr, err)
-	}
-
 	return nil
 }
 
 func (i *impl) UpdateMeta(ctx context.Context, id int64, metaUpdate *vo.MetaUpdate) (err error) {
 	err = i.repo.UpdateMeta(ctx, id, metaUpdate)
-	if err != nil {
-		return err
-	}
-
-	err = search.GetNotifier().PublishWorkflowResource(ctx, search.Updated, &search.Resource{
-		WorkflowID: id,
-		URI:        metaUpdate.IconURI,
-		Name:       metaUpdate.Name,
-		Desc:       metaUpdate.Desc,
-		UpdatedAt:  ptr.Of(time.Now().UnixMilli()),
-	})
 	if err != nil {
 		return err
 	}
@@ -725,22 +669,6 @@ func (i *impl) CopyWorkflow(ctx context.Context, workflowID int64, policy vo.Cop
 		return nil, err
 	}
 
-	// TODO(zhuangjie): publish workflow resource logic should move to application
-	err = search.GetNotifier().PublishWorkflowResource(ctx, search.Created, &search.Resource{
-		WorkflowID:    wf.ID,
-		URI:           &wf.IconURI,
-		Name:          &wf.Name,
-		Desc:          &wf.Desc,
-		APPID:         wf.AppID,
-		SpaceID:       &wf.SpaceID,
-		OwnerID:       &wf.CreatorID,
-		PublishStatus: ptr.Of(search.UnPublished),
-		CreatedAt:     ptr.Of(time.Now().UnixMilli()),
-	})
-
-	if err != nil {
-		return nil, err
-	}
 	return wf, nil
 
 }
@@ -754,13 +682,13 @@ func (i *impl) ReleaseApplicationWorkflows(ctx context.Context, appID int64, con
 		MetaQuery: vo.MetaQuery{
 			AppID: &appID,
 		},
-		QType: vo.FromDraft,
+		QType: workflowModel.FromDraft,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	relatedPlugins := make(map[int64]*vo.PluginEntity, len(config.PluginIDs))
+	relatedPlugins := make(map[int64]*plugin.PluginEntity, len(config.PluginIDs))
 	relatedWorkflow := make(map[int64]entity.IDVersionPair, len(wfs))
 
 	for _, wf := range wfs {
@@ -770,7 +698,7 @@ func (i *impl) ReleaseApplicationWorkflows(ctx context.Context, appID int64, con
 		}
 	}
 	for _, id := range config.PluginIDs {
-		relatedPlugins[id] = &vo.PluginEntity{
+		relatedPlugins[id] = &plugin.PluginEntity{
 			PluginID:      id,
 			PluginVersion: &config.Version,
 		}
@@ -870,8 +798,7 @@ func (i *impl) ReleaseApplicationWorkflows(ctx context.Context, appID int64, con
 	return nil, nil
 }
 
-func (i *impl) CopyWorkflowFromAppToLibrary(ctx context.Context, workflowID int64, appID int64, related vo.ExternalResourceRelated) (map[int64]entity.IDVersionPair, []*vo.ValidateIssue, error) {
-
+func (i *impl) CopyWorkflowFromAppToLibrary(ctx context.Context, workflowID int64, appID int64, related vo.ExternalResourceRelated) (*entity.CopyWorkflowFromAppToLibraryResult, error) {
 	type copiedWorkflow struct {
 		id        int64
 		draftInfo *vo.DraftInfo
@@ -886,7 +813,7 @@ func (i *impl) CopyWorkflowFromAppToLibrary(ctx context.Context, workflowID int6
 
 	draftVersion, err = i.repo.DraftV2(ctx, workflowID, "")
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	issues, err := validateWorkflowTree(ctx, vo.ValidateTreeConfig{
@@ -894,12 +821,12 @@ func (i *impl) CopyWorkflowFromAppToLibrary(ctx context.Context, workflowID int6
 		AppID:        ptr.Of(appID),
 	})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	draftWorkflows, wid2Named, err := i.repo.GetDraftWorkflowsByAppID(ctx, appID)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	if len(issues) > 0 {
@@ -1038,22 +965,24 @@ func (i *impl) CopyWorkflowFromAppToLibrary(ctx context.Context, workflowID int6
 	draftCanvas := &vo.Canvas{}
 	err = sonic.UnmarshalString(draftVersion.Canvas, &draftCanvas)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	err = validateAndBuildWorkflowReference(draftCanvas.Nodes, copiedWf)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	if len(vIssues) > 0 {
-		return nil, vIssues, nil
+		return &entity.CopyWorkflowFromAppToLibraryResult{
+			ValidateIssues: vIssues,
+		}, nil
 	}
 
 	var copyAndPublishWorkflowProcess func(wf *copiedWorkflow) error
 
 	hasPublishedWorkflows := make(map[int64]entity.IDVersionPair)
-
+	copiedWorkflowArray := make([]*entity.Workflow, 0)
 	copyAndPublishWorkflowProcess = func(wf *copiedWorkflow) error {
 		for _, refWorkflow := range wf.refWfs {
 			err := copyAndPublishWorkflowProcess(refWorkflow)
@@ -1113,19 +1042,7 @@ func (i *impl) CopyWorkflowFromAppToLibrary(ctx context.Context, workflowID int6
 				return err
 			}
 
-			err = search.GetNotifier().PublishWorkflowResource(ctx, search.Created, &search.Resource{
-				WorkflowID:    cwf.ID,
-				URI:           &cwf.IconURI,
-				Name:          &cwf.Name,
-				Desc:          &cwf.Desc,
-				SpaceID:       &cwf.SpaceID,
-				OwnerID:       &cwf.CreatorID,
-				PublishStatus: ptr.Of(search.Published),
-				CreatedAt:     ptr.Of(time.Now().UnixMilli()),
-			})
-			if err != nil {
-				return err
-			}
+			copiedWorkflowArray = append(copiedWorkflowArray, cwf)
 
 			hasPublishedWorkflows[wf.id] = entity.IDVersionPair{
 				ID:      cwf.ID,
@@ -1137,14 +1054,17 @@ func (i *impl) CopyWorkflowFromAppToLibrary(ctx context.Context, workflowID int6
 
 	err = copyAndPublishWorkflowProcess(copiedWf)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return hasPublishedWorkflows, nil, nil
+	return &entity.CopyWorkflowFromAppToLibraryResult{
+		WorkflowIDVersionMap: hasPublishedWorkflows,
+		CopiedWorkflows:      copiedWorkflowArray,
+	}, nil
 
 }
 
-func (i *impl) DuplicateWorkflowsByAppID(ctx context.Context, sourceAppID, targetAppID int64, related vo.ExternalResourceRelated) error {
+func (i *impl) DuplicateWorkflowsByAppID(ctx context.Context, sourceAppID, targetAppID int64, related vo.ExternalResourceRelated) ([]*entity.Workflow, error) {
 
 	type copiedWorkflow struct {
 		id           int64
@@ -1156,7 +1076,7 @@ func (i *impl) DuplicateWorkflowsByAppID(ctx context.Context, sourceAppID, targe
 
 	draftWorkflows, _, err := i.repo.GetDraftWorkflowsByAppID(ctx, sourceAppID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var duplicateWorkflowProcess func(workflowID int64, info *vo.DraftInfo) error
@@ -1251,6 +1171,8 @@ func (i *impl) DuplicateWorkflowsByAppID(ctx context.Context, sourceAppID, targe
 		}
 		return nil
 	}
+
+	copiedWorkflowArray := make([]*entity.Workflow, 0)
 	var duplicateWorkflow func(wf *copiedWorkflow) error
 	duplicateWorkflow = func(wf *copiedWorkflow) error {
 		for _, refWorkflow := range wf.refWfs {
@@ -1284,9 +1206,7 @@ func (i *impl) DuplicateWorkflowsByAppID(ctx context.Context, sourceAppID, targe
 				return err
 			}
 
-			if err != nil {
-				return err
-			}
+			copiedWorkflowArray = append(copiedWorkflowArray, cwf)
 
 			hasCopiedWorkflows[wf.id] = entity.IDVersionPair{
 				ID: cwf.ID,
@@ -1323,11 +1243,11 @@ func (i *impl) DuplicateWorkflowsByAppID(ctx context.Context, sourceAppID, targe
 		}
 		err = duplicateWorkflowProcess(workflowID, draftVersion)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	return copiedWorkflowArray, nil
 
 }
 
@@ -1383,7 +1303,7 @@ func (i *impl) SyncRelatedWorkflowResources(ctx context.Context, appID int64, re
 func (i *impl) GetWorkflowDependenceResource(ctx context.Context, workflowID int64) (*vo.DependenceResource, error) {
 	wf, err := i.Get(ctx, &vo.GetPolicy{
 		ID:    workflowID,
-		QType: vo.FromDraft,
+		QType: workflowModel.FromDraft,
 	})
 	if err != nil {
 		return nil, err
@@ -1451,14 +1371,14 @@ func (i *impl) GetWorkflowDependenceResource(ctx context.Context, workflowID int
 			case entity.NodeTypeLLM:
 				if node.Data.Inputs.FCParam != nil && node.Data.Inputs.FCParam.PluginFCParam != nil {
 					for idx := range node.Data.Inputs.FCParam.PluginFCParam.PluginList {
-						pl := node.Data.Inputs.FCParam.PluginFCParam.PluginList[idx]
-						pluginID, err := strconv.ParseInt(pl.PluginID, 10, 64)
-						if err != nil {
-							return err
-						}
-
-						if pl.PluginVersion == "0" {
+						if node.Data.Inputs.FCParam.PluginFCParam.PluginList[idx].IsDraft {
+							pl := node.Data.Inputs.FCParam.PluginFCParam.PluginList[idx]
+							pluginID, err := strconv.ParseInt(pl.PluginID, 10, 64)
+							if err != nil {
+								return err
+							}
 							ds.PluginIDs = append(ds.PluginIDs, pluginID)
+
 						}
 
 					}
@@ -1475,29 +1395,63 @@ func (i *impl) GetWorkflowDependenceResource(ctx context.Context, workflowID int
 					}
 				}
 
+				if node.Data.Inputs.FCParam != nil && node.Data.Inputs.FCParam.WorkflowFCParam != nil {
+					for idx := range node.Data.Inputs.FCParam.WorkflowFCParam.WorkflowList {
+						if node.Data.Inputs.FCParam.WorkflowFCParam.WorkflowList[idx].IsDraft {
+							wID, err := strconv.ParseInt(node.Data.Inputs.FCParam.WorkflowFCParam.WorkflowList[idx].WorkflowID, 10, 64)
+							if err != nil {
+								return err
+							}
+
+							wfe, err := i.repo.GetEntity(ctx, &vo.GetPolicy{
+								ID:    wID,
+								QType: workflowModel.FromDraft,
+							})
+							if err != nil {
+								return err
+							}
+
+							workflowToolCanvas := &vo.Canvas{}
+							err = sonic.UnmarshalString(wfe.Canvas, workflowToolCanvas)
+							if err != nil {
+								return err
+							}
+
+							err = collectDependence(workflowToolCanvas.Nodes)
+							if err != nil {
+								return err
+							}
+						}
+
+					}
+
+				}
+
 			case entity.NodeTypeSubWorkflow:
-				wfID, err := strconv.ParseInt(node.Data.Inputs.WorkflowID, 10, 64)
-				if err != nil {
-					return err
-				}
+				if node.Data.Inputs.WorkflowVersion == "" {
+					wfID, err := strconv.ParseInt(node.Data.Inputs.WorkflowID, 10, 64)
+					if err != nil {
+						return err
+					}
 
-				subWorkflow, err := i.repo.GetEntity(ctx, &vo.GetPolicy{
-					ID:    wfID,
-					QType: vo.FromDraft,
-				})
-				if err != nil {
-					return err
-				}
+					subWorkflow, err := i.repo.GetEntity(ctx, &vo.GetPolicy{
+						ID:    wfID,
+						QType: workflowModel.FromDraft,
+					})
+					if err != nil {
+						return err
+					}
 
-				subCanvas := &vo.Canvas{}
-				err = sonic.UnmarshalString(subWorkflow.Canvas, subCanvas)
-				if err != nil {
-					return err
-				}
+					subCanvas := &vo.Canvas{}
+					err = sonic.UnmarshalString(subWorkflow.Canvas, subCanvas)
+					if err != nil {
+						return err
+					}
 
-				err = collectDependence(subCanvas.Nodes)
-				if err != nil {
-					return err
+					err = collectDependence(subCanvas.Nodes)
+					if err != nil {
+						return err
+					}
 				}
 
 			}
@@ -1558,9 +1512,9 @@ func (i *impl) MGet(ctx context.Context, policy *vo.MGetPolicy) ([]*entity.Workf
 	}
 
 	switch policy.QType {
-	case vo.FromDraft:
+	case workflowModel.FromDraft:
 		return i.repo.MGetDrafts(ctx, policy)
-	case vo.FromSpecificVersion:
+	case workflowModel.FromSpecificVersion:
 		if len(policy.IDs) == 0 || len(policy.Versions) != len(policy.IDs) {
 			return nil, 0, fmt.Errorf("ids and versions are required when MGet from specific versions")
 		}
@@ -1602,7 +1556,7 @@ func (i *impl) MGet(ctx context.Context, policy *vo.MGetPolicy) ([]*entity.Workf
 		}
 
 		return result, total, nil
-	case vo.FromLatestVersion:
+	case workflowModel.FromLatestVersion:
 		return i.repo.MGetLatestVersion(ctx, policy)
 	default:
 		panic("not implemented")
@@ -1648,7 +1602,7 @@ func replaceRelatedWorkflowOrExternalResourceInWorkflowNodes(nodes []*vo.Node, r
 	for _, node := range nodes {
 		switch entity.IDStrToNodeType(node.Type) {
 		case entity.NodeTypeSubWorkflow:
-			if !hasWorkflowRelated {
+			if !hasWorkflowRelated || node.Data.Inputs.SubWorkflow == nil {
 				continue
 			}
 			workflowID, err := strconv.ParseInt(node.Data.Inputs.WorkflowID, 10, 64)
@@ -1660,7 +1614,7 @@ func replaceRelatedWorkflowOrExternalResourceInWorkflowNodes(nodes []*vo.Node, r
 				node.Data.Inputs.WorkflowVersion = wf.Version
 			}
 		case entity.NodeTypePlugin:
-			if !hasPluginRelated {
+			if !hasPluginRelated || node.Data.Inputs.PluginAPIParam == nil {
 				continue
 			}
 			apiParams := slices.ToMap(node.Data.Inputs.APIParams, func(e *vo.Param) (string, *vo.Param) {
@@ -1703,6 +1657,9 @@ func replaceRelatedWorkflowOrExternalResourceInWorkflowNodes(nodes []*vo.Node, r
 			}
 
 		case entity.NodeTypeLLM:
+			if node.Data.Inputs.LLM == nil {
+				continue
+			}
 			if hasWorkflowRelated && node.Data.Inputs.FCParam != nil && node.Data.Inputs.FCParam.WorkflowFCParam != nil {
 				for idx := range node.Data.Inputs.FCParam.WorkflowFCParam.WorkflowList {
 					wf := node.Data.Inputs.FCParam.WorkflowFCParam.WorkflowList[idx]
@@ -1714,6 +1671,7 @@ func replaceRelatedWorkflowOrExternalResourceInWorkflowNodes(nodes []*vo.Node, r
 						wf.WorkflowID = strconv.FormatInt(refWf.ID, 10)
 						wf.WorkflowVersion = refWf.Version
 					}
+					node.Data.Inputs.FCParam.WorkflowFCParam.WorkflowList[idx] = wf
 				}
 
 			}
@@ -1724,13 +1682,26 @@ func replaceRelatedWorkflowOrExternalResourceInWorkflowNodes(nodes []*vo.Node, r
 					if err != nil {
 						return err
 					}
+
+					toolID, err := strconv.ParseInt(pl.ApiId, 10, 64)
+					if err != nil {
+						return err
+					}
+
 					if refPlugin, ok := related.PluginMap[pluginID]; ok {
+						tID, ok := related.PluginToolMap[toolID]
+						if ok {
+							pl.ApiId = strconv.FormatInt(tID, 10)
+						}
 						pl.PluginID = strconv.FormatInt(refPlugin.PluginID, 10)
 						if refPlugin.PluginVersion != nil {
 							pl.PluginVersion = *refPlugin.PluginVersion
+
+							pl.IsDraft = false
 						}
 
 					}
+					node.Data.Inputs.FCParam.PluginFCParam.PluginList[idx] = pl
 
 				}
 			}
@@ -1749,7 +1720,7 @@ func replaceRelatedWorkflowOrExternalResourceInWorkflowNodes(nodes []*vo.Node, r
 			}
 
 		case entity.NodeTypeKnowledgeIndexer, entity.NodeTypeKnowledgeRetriever:
-			if !hasKnowledgeRelated {
+			if !hasKnowledgeRelated || node.Data.Inputs.Knowledge == nil {
 				continue
 			}
 			datasetListInfoParam := node.Data.Inputs.DatasetParam[0]
@@ -1765,7 +1736,7 @@ func replaceRelatedWorkflowOrExternalResourceInWorkflowNodes(nodes []*vo.Node, r
 			}
 
 		case entity.NodeTypeDatabaseCustomSQL, entity.NodeTypeDatabaseQuery, entity.NodeTypeDatabaseInsert, entity.NodeTypeDatabaseDelete, entity.NodeTypeDatabaseUpdate:
-			if !hasDatabaseRelated {
+			if !hasDatabaseRelated || node.Data.Inputs.DatabaseNode == nil {
 				continue
 			}
 			dsList := node.Data.Inputs.DatabaseInfoList

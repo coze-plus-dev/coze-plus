@@ -34,11 +34,15 @@ import (
 	callbacks2 "github.com/cloudwego/eino/utils/callbacks"
 	"golang.org/x/exp/maps"
 
-	workflow3 "github.com/coze-dev/coze-studio/backend/api/model/ocean/cloud/workflow"
+	"github.com/coze-dev/coze-studio/backend/api/model/crossdomain/knowledge"
+	crossmodel "github.com/coze-dev/coze-studio/backend/api/model/crossdomain/modelmgr"
+	"github.com/coze-dev/coze-studio/backend/api/model/crossdomain/plugin"
+	workflowModel "github.com/coze-dev/coze-studio/backend/api/model/crossdomain/workflow"
+	workflow3 "github.com/coze-dev/coze-studio/backend/api/model/workflow"
+	crossknowledge "github.com/coze-dev/coze-studio/backend/crossdomain/contract/knowledge"
+	crossmodelmgr "github.com/coze-dev/coze-studio/backend/crossdomain/contract/modelmgr"
+	crossplugin "github.com/coze-dev/coze-studio/backend/crossdomain/contract/plugin"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow"
-	"github.com/coze-dev/coze-studio/backend/domain/workflow/crossdomain/knowledge"
-	crossmodel "github.com/coze-dev/coze-studio/backend/domain/workflow/crossdomain/model"
-	"github.com/coze-dev/coze-studio/backend/domain/workflow/crossdomain/plugin"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/entity/vo"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/internal/canvas/convert"
@@ -157,7 +161,6 @@ type RetrievalStrategy struct {
 
 type KnowledgeRecallConfig struct {
 	ChatModel                model.BaseChatModel
-	Retriever                knowledge.KnowledgeOperator
 	RetrievalStrategy        *RetrievalStrategy
 	SelectedKnowledgeDetails []*knowledge.KnowledgeDetail
 }
@@ -326,7 +329,8 @@ func llmParamsToLLMParam(params vo.LLMParam) (*crossmodel.LLMParams, error) {
 			}
 			p.TopP = &floatVar
 		default:
-			return nil, fmt.Errorf("invalid LLMParam name: %s", param.Name)
+			logs.Warnf("encountered unknown param when converting LLM Params, name= %s, "+
+				"value= %v", param.Name, param.Input.Value.Content)
 		}
 	}
 
@@ -360,7 +364,7 @@ func (c *Config) Build(ctx context.Context, ns *schema2.NodeSchema, _ ...schema2
 		knowledgeRecallConfig *KnowledgeRecallConfig
 	)
 
-	chatModel, info, err = crossmodel.GetManager().GetModel(ctx, c.LLMParams)
+	chatModel, info, err = crossmodelmgr.DefaultSVC().GetModel(ctx, c.LLMParams)
 	if err != nil {
 		return nil, err
 	}
@@ -369,7 +373,7 @@ func (c *Config) Build(ctx context.Context, ns *schema2.NodeSchema, _ ...schema2
 	if exceptionConf != nil && exceptionConf.MaxRetry > 0 {
 		backupModelParams := c.BackupLLMParams
 		if backupModelParams != nil {
-			fallbackM, fallbackI, err = crossmodel.GetManager().GetModel(ctx, backupModelParams)
+			fallbackM, fallbackI, err = crossmodelmgr.DefaultSVC().GetModel(ctx, backupModelParams)
 			if err != nil {
 				return nil, err
 			}
@@ -398,9 +402,9 @@ func (c *Config) Build(ctx context.Context, ns *schema2.NodeSchema, _ ...schema2
 					workflowToolConfig.OutputParametersConfig = wf.FCSetting.ResponseParameters
 				}
 
-				locator := vo.FromDraft
+				locator := workflowModel.FromDraft
 				if wf.WorkflowVersion != "" {
-					locator = vo.FromSpecificVersion
+					locator = workflowModel.FromSpecificVersion
 				}
 
 				wfTool, err := workflow.GetRepository().WorkflowAsTool(ctx, vo.GetPolicy{
@@ -454,7 +458,7 @@ func (c *Config) Build(ctx context.Context, ns *schema2.NodeSchema, _ ...schema2
 					}
 				} else {
 					pluginToolsInfoRequest := &plugin.ToolsInvokableRequest{
-						PluginEntity: plugin.Entity{
+						PluginEntity: plugin.PluginEntity{
 							PluginID:      pid,
 							PluginVersion: ptr.Of(p.PluginVersion),
 						},
@@ -472,12 +476,12 @@ func (c *Config) Build(ctx context.Context, ns *schema2.NodeSchema, _ ...schema2
 			}
 			inInvokableTools := make([]tool.BaseTool, 0, len(fcParams.PluginFCParam.PluginList))
 			for _, req := range pluginToolsInvokableReq {
-				toolMap, err := plugin.GetPluginService().GetPluginInvokableTools(ctx, req)
+				toolMap, err := crossplugin.DefaultSVC().GetPluginInvokableTools(ctx, req)
 				if err != nil {
 					return nil, err
 				}
 				for _, t := range toolMap {
-					inInvokableTools = append(inInvokableTools, plugin.NewInvokableTool(t))
+					inInvokableTools = append(inInvokableTools, newInvokableTool(t))
 				}
 			}
 			if len(inInvokableTools) > 0 {
@@ -491,11 +495,9 @@ func (c *Config) Build(ctx context.Context, ns *schema2.NodeSchema, _ ...schema2
 				return nil, fmt.Errorf("workflow builtin chat model for knowledge recall not configured")
 			}
 
-			knowledgeOperator := knowledge.GetKnowledgeOperator()
 			setting := fcParams.KnowledgeFCParam.GlobalSetting
 			knowledgeRecallConfig = &KnowledgeRecallConfig{
 				ChatModel: kwChatModel,
-				Retriever: knowledgeOperator,
 			}
 			searchType, err := toRetrievalSearchType(setting.SearchMode)
 			if err != nil {
@@ -523,7 +525,7 @@ func (c *Config) Build(ctx context.Context, ns *schema2.NodeSchema, _ ...schema2
 				knowledgeIDs = append(knowledgeIDs, kid)
 			}
 
-			detailResp, err := knowledgeOperator.ListKnowledgeDetail(ctx,
+			detailResp, err := crossknowledge.DefaultSVC().ListKnowledgeDetail(ctx,
 				&knowledge.ListKnowledgeDetailRequest{
 					KnowledgeIDs: knowledgeIDs,
 				})
@@ -729,10 +731,7 @@ func (c *Config) Build(ctx context.Context, ns *schema2.NodeSchema, _ ...schema2
 	_ = g.AddEdge(llmNodeKey, outputConvertNodeKey)
 	_ = g.AddEdge(outputConvertNodeKey, compose.END)
 
-	requireCheckpoint := false
-	if len(tools) > 0 {
-		requireCheckpoint = true
-	}
+	requireCheckpoint := c.RequireCheckpoint()
 
 	var compileOpts []compose.GraphCompileOption
 	if requireCheckpoint {
@@ -757,8 +756,16 @@ func (c *Config) Build(ctx context.Context, ns *schema2.NodeSchema, _ ...schema2
 
 func (c *Config) RequireCheckpoint() bool {
 	if c.FCParam != nil {
-		if c.FCParam.WorkflowFCParam != nil || c.FCParam.PluginFCParam != nil {
-			return true
+		if c.FCParam.WorkflowFCParam != nil {
+			if len(c.FCParam.WorkflowFCParam.WorkflowList) > 0 {
+				return true
+			}
+		}
+
+		if c.FCParam.PluginFCParam != nil {
+			if len(c.FCParam.PluginFCParam.PluginList) > 0 {
+				return true
+			}
 		}
 	}
 
@@ -811,7 +818,7 @@ func toRetrievalSearchType(s int64) (knowledge.SearchType, error) {
 	case 20:
 		return knowledge.SearchTypeFullText, nil
 	default:
-		return "", fmt.Errorf("invalid retrieval search type %v", s)
+		return 0, fmt.Errorf("invalid retrieval search type %v", s)
 	}
 }
 
@@ -1156,28 +1163,28 @@ func injectKnowledgeTool(_ context.Context, g *compose.Graph[map[string]any, map
 			return make(map[string]any), nil
 		}
 
-		docs, err := cfg.Retriever.Retrieve(ctx, &knowledge.RetrieveRequest{
-			Query:             userPrompt,
-			KnowledgeIDs:      recallKnowledgeIDs,
-			RetrievalStrategy: cfg.RetrievalStrategy.RetrievalStrategy,
+		docs, err := crossknowledge.DefaultSVC().Retrieve(ctx, &knowledge.RetrieveRequest{
+			Query:        userPrompt,
+			KnowledgeIDs: recallKnowledgeIDs,
+			Strategy:     cfg.RetrievalStrategy.RetrievalStrategy,
 		})
 		if err != nil {
 			return nil, err
 		}
 
-		if len(docs.Slices) == 0 && cfg.RetrievalStrategy.NoReCallReplyMode == NoReCallReplyModeOfDefault {
+		if len(docs.RetrieveSlices) == 0 && cfg.RetrievalStrategy.NoReCallReplyMode == NoReCallReplyModeOfDefault {
 			return make(map[string]any), nil
 		}
 
 		sb := strings.Builder{}
-		if len(docs.Slices) == 0 && cfg.RetrievalStrategy.NoReCallReplyMode == NoReCallReplyModeOfCustomize {
+		if len(docs.RetrieveSlices) == 0 && cfg.RetrievalStrategy.NoReCallReplyMode == NoReCallReplyModeOfCustomize {
 			sb.WriteString("recall slice 1: \n")
 			sb.WriteString(cfg.RetrievalStrategy.NoReCallReplyCustomizePrompt + "\n")
 		}
 
-		for idx, msg := range docs.Slices {
+		for idx, msg := range docs.RetrieveSlices {
 			sb.WriteString(fmt.Sprintf("recall slice %d:\n", idx+1))
-			sb.WriteString(fmt.Sprintf("%s\n", msg.Output))
+			sb.WriteString(fmt.Sprintf("%s\n", msg.Slice.GetSliceContent()))
 		}
 
 		output = map[string]any{

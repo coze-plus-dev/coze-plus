@@ -33,10 +33,10 @@ import (
 
 	"github.com/coze-dev/coze-studio/backend/infra/contract/cache"
 
+	"github.com/coze-dev/coze-studio/backend/api/model/app/bot_common"
 	"github.com/coze-dev/coze-studio/backend/api/model/crossdomain/database"
-	"github.com/coze-dev/coze-studio/backend/api/model/ocean/cloud/bot_common"
-	"github.com/coze-dev/coze-studio/backend/api/model/table"
-	"github.com/coze-dev/coze-studio/backend/crossdomain/contract/crossvariables"
+	"github.com/coze-dev/coze-studio/backend/api/model/data/database/table"
+	crossvariables "github.com/coze-dev/coze-studio/backend/crossdomain/contract/variables"
 	entity2 "github.com/coze-dev/coze-studio/backend/domain/memory/database/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/memory/database/internal/convertor"
 	"github.com/coze-dev/coze-studio/backend/domain/memory/database/internal/dal/query"

@@ -19,39 +19,25 @@ package workflow
 import (
 	"context"
 
+	"github.com/cloudwego/eino/callbacks"
 	"github.com/cloudwego/eino/compose"
 	"gorm.io/gorm"
 
-	"github.com/cloudwego/eino/callbacks"
-
 	"github.com/coze-dev/coze-studio/backend/application/internal"
-
-	wfdatabase "github.com/coze-dev/coze-studio/backend/crossdomain/workflow/database"
-	wfknowledge "github.com/coze-dev/coze-studio/backend/crossdomain/workflow/knowledge"
-	wfmodel "github.com/coze-dev/coze-studio/backend/crossdomain/workflow/model"
-	wfplugin "github.com/coze-dev/coze-studio/backend/crossdomain/workflow/plugin"
-	wfsearch "github.com/coze-dev/coze-studio/backend/crossdomain/workflow/search"
-	"github.com/coze-dev/coze-studio/backend/crossdomain/workflow/variable"
+	"github.com/coze-dev/coze-studio/backend/crossdomain/impl/code"
 	knowledge "github.com/coze-dev/coze-studio/backend/domain/knowledge/service"
 	dbservice "github.com/coze-dev/coze-studio/backend/domain/memory/database/service"
 	variables "github.com/coze-dev/coze-studio/backend/domain/memory/variables/service"
 	plugin "github.com/coze-dev/coze-studio/backend/domain/plugin/service"
 	search "github.com/coze-dev/coze-studio/backend/domain/search/service"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow"
-	crosscode "github.com/coze-dev/coze-studio/backend/domain/workflow/crossdomain/code"
-	crossdatabase "github.com/coze-dev/coze-studio/backend/domain/workflow/crossdomain/database"
-	crossknowledge "github.com/coze-dev/coze-studio/backend/domain/workflow/crossdomain/knowledge"
-	crossmodel "github.com/coze-dev/coze-studio/backend/domain/workflow/crossdomain/model"
-	crossplugin "github.com/coze-dev/coze-studio/backend/domain/workflow/crossdomain/plugin"
-	crosssearch "github.com/coze-dev/coze-studio/backend/domain/workflow/crossdomain/search"
-	crossvariable "github.com/coze-dev/coze-studio/backend/domain/workflow/crossdomain/variable"
+
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/service"
 	workflowservice "github.com/coze-dev/coze-studio/backend/domain/workflow/service"
 	"github.com/coze-dev/coze-studio/backend/infra/contract/cache"
 	"github.com/coze-dev/coze-studio/backend/infra/contract/coderunner"
 	"github.com/coze-dev/coze-studio/backend/infra/contract/idgen"
 	"github.com/coze-dev/coze-studio/backend/infra/contract/imagex"
-	"github.com/coze-dev/coze-studio/backend/infra/contract/modelmgr"
 	"github.com/coze-dev/coze-studio/backend/infra/contract/storage"
 	"github.com/coze-dev/coze-studio/backend/pkg/logs"
 )
@@ -64,7 +50,6 @@ type ServiceComponents struct {
 	VariablesDomainSVC variables.Variables
 	PluginDomainSVC    plugin.PluginService
 	KnowledgeDomainSVC knowledge.Knowledge
-	ModelManager       modelmgr.Manager
 	DomainNotifier     search.ResourceEventBus
 	Tos                storage.Storage
 	ImageX             imagex.ImageX
@@ -88,15 +73,10 @@ func InitService(ctx context.Context, components *ServiceComponents) (*Applicati
 	workflow.SetRepository(workflowRepo)
 
 	workflowDomainSVC := service.NewWorkflowService(workflowRepo)
-	crossdatabase.SetDatabaseOperator(wfdatabase.NewDatabaseRepository(components.DatabaseDomainSVC))
-	crossvariable.SetVariableHandler(variable.NewVariableHandler(components.VariablesDomainSVC))
-	crossvariable.SetVariablesMetaGetter(variable.NewVariablesMetaGetter(components.VariablesDomainSVC))
-	crossplugin.SetPluginService(wfplugin.NewPluginService(components.PluginDomainSVC, components.Tos))
-	crossknowledge.SetKnowledgeOperator(wfknowledge.NewKnowledgeRepository(components.KnowledgeDomainSVC, components.IDGen))
-	crossmodel.SetManager(wfmodel.NewModelManager(components.ModelManager, nil))
-	crosscode.SetCodeRunner(components.CodeRunner)
-	crosssearch.SetNotifier(wfsearch.NewNotify(components.DomainNotifier))
+
+	code.SetCodeRunner(components.CodeRunner)
 	callbacks.AppendGlobalHandlers(workflowservice.GetTokenCallbackHandler())
+	setEventBus(components.DomainNotifier)
 
 	SVC.DomainSVC = workflowDomainSVC
 	SVC.ImageX = components.ImageX
