@@ -1,0 +1,231 @@
+.orgTreeContainer {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--semi-color-bg-1);
+  
+  .header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--semi-color-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    
+    .title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--semi-color-text-0);
+    }
+    
+    .collapseButton {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 4px;
+      color: var(--semi-color-text-2);
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        background-color: var(--semi-color-fill-0);
+        color: var(--semi-color-text-0);
+      }
+      
+      &:active {
+        background-color: var(--semi-color-fill-1);
+      }
+    }
+  }
+  
+  .treeWrapper {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 16px;
+    
+    :global {
+      .semi-tree-option-label {
+        font-size: 14px;
+      }
+
+      .semi-tree-option-selected {
+        background-color: var(--semi-color-primary-light-default);
+        border-radius: 6px;
+      }
+      
+      // 企业节点样式（顶级组织）
+      .semi-tree-option-level-0 {
+        .semi-tree-option-label {
+          font-weight: 600;
+          font-size: 15px;
+          color: var(--semi-color-text-0);
+          padding: 10px 12px;
+          border-radius: 6px;
+          background: var(--semi-color-bg-0);
+          border: 1px solid var(--semi-color-border);
+          margin-bottom: 6px;
+        }
+      }
+      
+      // 子组织和部门样式（简化统一）
+      .semi-tree-option-level-1,
+      .semi-tree-option-level-2,
+      .semi-tree-option-level-3 {
+        .semi-tree-option-label {
+          font-weight: 400;
+          font-size: 14px;
+          color: var(--semi-color-text-1);
+          padding: 6px 12px;
+          border-radius: 4px;
+          margin: 1px 0;
+          
+          &:hover {
+            background-color: var(--semi-color-fill-0);
+            color: var(--semi-color-text-0);
+          }
+        }
+      }
+      
+      // 选中状态简化
+      .semi-tree-option-selected .semi-tree-option-label {
+        background-color: var(--semi-color-primary-light-default) !important;
+        color: var(--semi-color-primary) !important;
+        font-weight: 500;
+      }
+      
+      // 树节点简化间距
+      .semi-tree-option {
+        margin-bottom: 2px;
+        
+        &.semi-tree-option-level-0 {
+          margin-bottom: 8px;
+          margin-top: 4px;
+        }
+      }
+    }
+  }
+  
+  // 自定义Tree组件样式，控制缩进
+  .customTree {
+    :global {
+      // 针对不同层级的强制样式
+      .semi-tree [aria-level="1"],
+      .semi-tree-option-level-1 {
+        padding-left: 0px !important;
+      }
+      
+      .semi-tree [aria-level="2"],
+      .semi-tree-option-level-2 {
+        padding-left: 3px !important;
+      }
+      
+      .semi-tree [aria-level="3"],
+      .semi-tree-option-level-3 {
+        padding-left: 6px !important;
+      }
+      
+      .semi-tree [aria-level="4"],
+      .semi-tree-option-level-4 {
+        padding-left: 9px !important;
+      }
+    }
+  }
+  
+  .emptyWrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+  
+  .loadingWrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+  
+  .treeNode {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    position: relative;
+    
+    // 顶级企业节点样式（简化图标）
+    &.topCorpNode {
+      .nodeIcon {
+        font-size: 18px;
+        color: var(--semi-color-primary);
+        margin-right: 8px;
+      }
+      
+      .nodeTitle {
+        font-weight: 600;
+        font-size: 15px;
+        color: var(--semi-color-text-0);
+      }
+    }
+    
+    // 子企业节点样式（无图标）
+    &.subCorpNode {
+      .nodeTitle {
+        font-weight: 500;
+        font-size: 14px;
+        color: var(--semi-color-text-0);
+      }
+    }
+    
+    // 部门节点样式（简化图标）
+    &.deptNode {
+      .nodeIcon {
+        font-size: 16px;
+        color: var(--semi-color-text-2);
+        margin-right: 8px;
+      }
+      
+      .nodeTitle {
+        font-weight: 400;
+        font-size: 14px;
+        color: var(--semi-color-text-1);
+      }
+    }
+    
+    .nodeIcon {
+      transition: all 0.2s ease;
+    }
+    
+    .nodeTitle {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      transition: color 0.2s ease;
+    }
+    
+    .moreIcon {
+      font-size: 14px;
+      color: var(--semi-color-text-2);
+      cursor: pointer;
+      padding: 2px;
+      border-radius: 2px;
+      opacity: 0;
+      transition: opacity 0.2s;
+      
+      &:hover {
+        background-color: var(--semi-color-fill-0);
+        color: var(--semi-color-text-0);
+      }
+    }
+    
+    &:hover .moreIcon {
+      opacity: 1;
+    }
+  }
+}

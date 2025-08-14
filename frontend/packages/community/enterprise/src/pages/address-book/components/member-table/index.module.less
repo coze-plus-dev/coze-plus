@@ -1,0 +1,171 @@
+.tableContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  margin: 0 24px; // 添加左右margin
+  
+  .tableHeader {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--semi-color-border);
+    margin-bottom: 16px;
+    
+    .nodeInfo {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      
+      .nodeName {
+        font-size: 16px;
+        font-weight: 500;
+        color: var(--semi-color-text-0);
+      }
+      
+      .memberCount {
+        font-size: 14px;
+        color: var(--semi-color-text-1);
+        background: var(--semi-color-fill-0);
+        padding: 4px 8px;
+        border-radius: 4px;
+      }
+    }
+  }
+  
+  .emptyWrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+  }
+  
+  .nameCell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: var(--semi-color-primary-light-default);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--semi-color-primary);
+      
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+    }
+  }
+
+  .departmentContainer {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+
+    > span {
+      max-width: 120px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  .actionColumn {
+    display: flex;
+    align-items: center;
+    justify-content: center; // 确保操作列内容居中
+    gap: 8px;
+    
+    .actionLink {
+      color: var(--semi-color-primary);
+      cursor: pointer;
+      
+      &:hover {
+        color: var(--semi-color-primary-hover);
+      }
+    }
+    
+    .moreButton {
+      padding: 4px;
+      min-width: 28px;
+      height: 28px;
+      border-radius: 4px;
+      background: transparent !important; // 强制去掉背景色
+      border: none !important; // 去掉边框
+      color: var(--semi-color-text-2); // 设置更浅的颜色
+      
+      &:hover {
+        background-color: var(--semi-color-fill-0) !important;
+        color: var(--semi-color-text-0); // hover时颜色稍深
+      }
+      
+      &:active, &:focus {
+        background: transparent !important; // 点击和焦点状态也去掉背景
+      }
+    }
+  }
+
+  :global {
+    .semi-table {
+      background: var(--semi-color-bg-0);
+    }
+
+    .semi-table-thead th {
+      background: var(--semi-color-bg-1);
+      font-weight: 500;
+      text-align: center; // 表格标题居中
+      
+      .semi-table-column-title {
+        justify-content: center; // flex布局居中
+      }
+    }
+
+    .semi-table-row:hover {
+      background: var(--semi-color-fill-0);
+    }
+    
+    // moreButton相关的全局样式
+    .moreButton {
+      background: transparent !important;
+      border: none !important;
+      
+      .semi-button-content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent !important;
+      }
+      
+      &.semi-button-borderless {
+        background: transparent !important;
+        border: none !important;
+      }
+      
+      &:hover {
+        background-color: var(--semi-color-fill-0) !important;
+      }
+      
+      &:active, &:focus {
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+    }
+    
+    .moreButton .semi-icon {
+      color: var(--semi-color-text-2) !important;
+    }
+    
+    .moreButton:hover .semi-icon {
+      color: var(--semi-color-text-0) !important;
+    }
+  }
+}

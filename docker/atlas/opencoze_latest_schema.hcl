@@ -1068,6 +1068,473 @@ table "conversation" {
     columns = [column.connector_id, column.agent_id, column.creator_id]
   }
 }
+table "corporation" {
+  schema  = schema.opencoze
+  comment = "Corporation Info Table"
+  column "id" {
+    null           = false
+    type           = bigint
+    unsigned       = true
+    comment        = "Corporation ID"
+    auto_increment = true
+  }
+  column "parent_id" {
+    null     = true
+    type     = bigint
+    unsigned = true
+    comment  = "Parent Corporation ID (NULL for root corporation)"
+  }
+  column "name" {
+    null    = false
+    type    = varchar(150)
+    comment = "Corporation Name"
+  }
+  column "corp_type" {
+    null    = false
+    type    = varchar(50)
+    default = "company"
+    comment = "Corporation Type: group,company,branch"
+  }
+  column "sort" {
+    null    = false
+    type    = int
+    default = 0
+    comment = "Sort Order"
+  }
+  column "out_corp_id" {
+    null    = true
+    type    = varchar(100)
+    comment = "External Corporation ID"
+  }
+  column "corp_source" {
+    null     = true
+    type     = tinyint
+    unsigned = true
+    comment  = "Data Source: 1-Enterprise WeChat,2-DingTalk,3-Feishu,4-Manual"
+  }
+  column "creator_id" {
+    null     = false
+    type     = bigint
+    unsigned = true
+    comment  = "Creator ID"
+  }
+  column "created_at" {
+    null     = false
+    type     = bigint
+    default  = 0
+    unsigned = true
+    comment  = "Create Time in Milliseconds"
+  }
+  column "updated_at" {
+    null     = false
+    type     = bigint
+    default  = 0
+    unsigned = true
+    comment  = "Update Time in Milliseconds"
+  }
+  column "deleted_at" {
+    null     = true
+    type     = bigint
+    unsigned = true
+    comment  = "Delete Time in Milliseconds"
+  }
+  primary_key {
+    columns = [column.id]
+  }
+  index "idx_corp_source" {
+    columns = [column.corp_source]
+  }
+  index "idx_corp_type" {
+    columns = [column.corp_type]
+  }
+  index "idx_creator_id" {
+    columns = [column.creator_id]
+  }
+  index "idx_deleted_at" {
+    columns = [column.deleted_at]
+  }
+  index "idx_parent_id" {
+    columns = [column.parent_id]
+  }
+  index "idx_sort" {
+    columns = [column.sort]
+  }
+  index "uk_out_corp_source" {
+    unique  = true
+    columns = [column.out_corp_id, column.corp_source]
+  }
+  index "uk_parent_name" {
+    unique  = true
+    columns = [column.parent_id, column.name]
+  }
+}
+table "corporation_department" {
+  schema  = schema.opencoze
+  comment = "Department Info Table"
+  column "id" {
+    null           = false
+    type           = bigint
+    unsigned       = true
+    comment        = "Department ID"
+    auto_increment = true
+  }
+  column "corp_id" {
+    null     = false
+    type     = bigint
+    unsigned = true
+    comment  = "Corporation ID"
+  }
+  column "parent_id" {
+    null     = true
+    type     = bigint
+    unsigned = true
+    comment  = "Parent Department ID (NULL for root department)"
+  }
+  column "name" {
+    null    = false
+    type    = varchar(150)
+    comment = "Department Name"
+  }
+  column "code" {
+    null    = true
+    type    = varchar(32)
+    comment = "Department Code"
+  }
+  column "level" {
+    null    = false
+    type    = int
+    default = 1
+    comment = "Department Level"
+  }
+  column "full_path" {
+    null    = true
+    type    = varchar(500)
+    comment = "Department Full Path"
+  }
+  column "leader_id" {
+    null     = true
+    type     = bigint
+    unsigned = true
+    comment  = "Department Leader ID"
+  }
+  column "sort" {
+    null    = false
+    type    = int
+    default = 0
+    comment = "Sort Order"
+  }
+  column "status" {
+    null    = false
+    type    = tinyint
+    default = 1
+    comment = "Status: 1-Active, 2-Inactive"
+  }
+  column "out_department_id" {
+    null    = true
+    type    = varchar(100)
+    comment = "External Department ID"
+  }
+  column "department_source" {
+    null     = true
+    type     = tinyint
+    unsigned = true
+    comment  = "Data Source: 1-Enterprise WeChat,2-DingTalk,3-Feishu,4-Manual"
+  }
+  column "creator_id" {
+    null     = false
+    type     = bigint
+    unsigned = true
+    comment  = "Creator ID"
+  }
+  column "created_at" {
+    null     = false
+    type     = bigint
+    default  = 0
+    unsigned = true
+    comment  = "Create Time in Milliseconds"
+  }
+  column "updated_at" {
+    null     = false
+    type     = bigint
+    default  = 0
+    unsigned = true
+    comment  = "Update Time in Milliseconds"
+  }
+  column "deleted_at" {
+    null     = true
+    type     = bigint
+    unsigned = true
+    comment  = "Delete Time in Milliseconds"
+  }
+  primary_key {
+    columns = [column.id]
+  }
+  index "idx_corp_id" {
+    columns = [column.corp_id]
+  }
+  index "idx_corp_parent_level" {
+    columns = [column.corp_id, column.parent_id, column.level]
+  }
+  index "idx_corp_status" {
+    columns = [column.corp_id, column.status]
+  }
+  index "idx_deleted_at" {
+    columns = [column.deleted_at]
+  }
+  index "idx_department_source" {
+    columns = [column.department_source]
+  }
+  index "idx_leader_id" {
+    columns = [column.leader_id]
+  }
+  index "idx_level" {
+    columns = [column.level]
+  }
+  index "idx_parent_id" {
+    columns = [column.parent_id]
+  }
+  index "idx_status" {
+    columns = [column.status]
+  }
+  index "uk_corp_code" {
+    unique  = true
+    columns = [column.corp_id, column.code]
+  }
+  index "uk_corp_parent_dept_name" {
+    unique  = true
+    columns = [column.corp_id, column.parent_id, column.name]
+  }
+  index "uk_out_dept_source" {
+    unique  = true
+    columns = [column.out_department_id, column.department_source, column.corp_id]
+  }
+}
+table "corporation_employee" {
+  schema  = schema.opencoze
+  comment = "Employee Info Table"
+  column "id" {
+    null           = false
+    type           = bigint
+    unsigned       = true
+    comment        = "Employee ID"
+    auto_increment = true
+  }
+  column "employee_no" {
+    null    = true
+    type    = varchar(32)
+    comment = "Employee Number (globally unique)"
+  }
+  column "name" {
+    null    = false
+    type    = varchar(50)
+    comment = "Employee Name"
+  }
+  column "en_name" {
+    null    = true
+    type    = varchar(50)
+    comment = "English Name"
+  }
+  column "nickname" {
+    null    = true
+    type    = varchar(50)
+    comment = "Nickname"
+  }
+  column "avatar" {
+    null    = true
+    type    = varchar(255)
+    comment = "Avatar URL"
+  }
+  column "email" {
+    null    = true
+    type    = varchar(100)
+    comment = "Email Address"
+  }
+  column "mobile" {
+    null    = false
+    type    = varchar(20)
+    comment = "Mobile Phone"
+  }
+  column "status" {
+    null    = false
+    type    = tinyint
+    default = 1
+    comment = "Employee Status: 1-Active, 2-Resigned"
+  }
+  column "out_employee_id" {
+    null    = true
+    type    = varchar(100)
+    comment = "External Employee ID"
+  }
+  column "employee_source" {
+    null     = true
+    type     = tinyint
+    unsigned = true
+    comment  = "Data Source: 1-Enterprise WeChat,2-DingTalk,3-Feishu,4-Manual"
+  }
+  column "creator_id" {
+    null     = false
+    type     = bigint
+    unsigned = true
+    comment  = "Creator ID"
+  }
+  column "created_at" {
+    null     = false
+    type     = bigint
+    default  = 0
+    unsigned = true
+    comment  = "Create Time in Milliseconds"
+  }
+  column "updated_at" {
+    null     = false
+    type     = bigint
+    default  = 0
+    unsigned = true
+    comment  = "Update Time in Milliseconds"
+  }
+  column "deleted_at" {
+    null     = true
+    type     = bigint
+    unsigned = true
+    comment  = "Delete Time in Milliseconds"
+  }
+  primary_key {
+    columns = [column.id]
+  }
+  index "idx_creator_id" {
+    columns = [column.creator_id]
+  }
+  index "idx_deleted_at" {
+    columns = [column.deleted_at]
+  }
+  index "idx_employee_source" {
+    columns = [column.employee_source]
+  }
+  index "idx_status" {
+    columns = [column.status]
+  }
+  index "uk_email" {
+    unique  = true
+    columns = [column.email]
+  }
+  index "uk_employee_no" {
+    unique  = true
+    columns = [column.employee_no]
+  }
+  index "uk_mobile" {
+    unique  = true
+    columns = [column.mobile]
+  }
+  index "uk_out_emp_source" {
+    unique  = true
+    columns = [column.out_employee_id, column.employee_source]
+  }
+}
+table "corporation_employee_department" {
+  schema  = schema.opencoze
+  comment = "Employee Department Relationship Table"
+  column "id" {
+    null           = false
+    type           = bigint
+    unsigned       = true
+    comment        = "Relationship ID"
+    auto_increment = true
+  }
+  column "employee_id" {
+    null     = false
+    type     = bigint
+    unsigned = true
+    comment  = "Employee ID"
+  }
+  column "department_id" {
+    null     = false
+    type     = bigint
+    unsigned = true
+    comment  = "Department ID"
+  }
+  column "corp_id" {
+    null     = false
+    type     = bigint
+    unsigned = true
+    comment  = "Corporation ID (department's corporation)"
+  }
+  column "job_title" {
+    null    = true
+    type    = varchar(100)
+    comment = "Job Title"
+  }
+  column "is_primary" {
+    null    = false
+    type    = tinyint
+    default = 0
+    comment = "Is Primary Department: 0-No, 1-Yes"
+  }
+  column "status" {
+    null    = false
+    type    = tinyint
+    default = 1
+    comment = "Status: 1-Active, 2-Transferred"
+  }
+  column "creator_id" {
+    null     = false
+    type     = bigint
+    unsigned = true
+    comment  = "Creator ID"
+  }
+  column "created_at" {
+    null     = false
+    type     = bigint
+    default  = 0
+    unsigned = true
+    comment  = "Create Time in Milliseconds"
+  }
+  column "updated_at" {
+    null     = false
+    type     = bigint
+    default  = 0
+    unsigned = true
+    comment  = "Update Time in Milliseconds"
+  }
+  column "deleted_at" {
+    null     = true
+    type     = bigint
+    unsigned = true
+    comment  = "Delete Time in Milliseconds"
+  }
+  primary_key {
+    columns = [column.id]
+  }
+  index "idx_corp_id" {
+    columns = [column.corp_id]
+  }
+  index "idx_creator_id" {
+    columns = [column.creator_id]
+  }
+  index "idx_deleted_at" {
+    columns = [column.deleted_at]
+  }
+  index "idx_department_id" {
+    columns = [column.department_id]
+  }
+  index "idx_dept_status" {
+    columns = [column.department_id, column.status]
+  }
+  index "idx_employee_corp" {
+    columns = [column.employee_id, column.corp_id]
+  }
+  index "idx_employee_id" {
+    columns = [column.employee_id]
+  }
+  index "idx_is_primary" {
+    columns = [column.is_primary]
+  }
+  index "idx_status" {
+    columns = [column.status]
+  }
+  index "uk_employee_department" {
+    unique  = true
+    columns = [column.employee_id, column.department_id]
+  }
+}
 table "data_copy_task" {
   schema  = schema.opencoze
   comment = "data copy task record"

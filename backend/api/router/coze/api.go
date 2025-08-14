@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 coze-dev Authors
+ * Copyright 2025 coze-plus Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -359,6 +359,43 @@ func Register(r *server.Hertz) {
 			_user.POST("/update_profile_check", append(_updateuserprofilecheckMw(), coze.UpdateUserProfileCheck)...)
 		}
 		{
+			_v1 := _api.Group("/v1", _v1Mw()...)
+			{
+				_corporation := _v1.Group("/corporation", _corporationMw()...)
+				_corporation.POST("/create", append(_createcorporationMw(), coze.CreateCorporation)...)
+				_corporation.DELETE("/:id", append(_deletecorporationMw(), coze.DeleteCorporation)...)
+				_corporation.GET("/:id", append(_getcorporationMw(), coze.GetCorporation)...)
+				_corporation.PUT("/:id", append(_updatecorporationMw(), coze.UpdateCorporation)...)
+				_corporation.POST("/list", append(_listcorporationsMw(), coze.ListCorporations)...)
+				{
+					_department := _corporation.Group("/department", _departmentMw()...)
+					_department.POST("/create", append(_createdepartmentMw(), coze.CreateDepartment)...)
+					_department.DELETE("/:id", append(_deletedepartmentMw(), coze.DeleteDepartment)...)
+					_department.GET("/:id", append(_getdepartmentMw(), coze.GetDepartment)...)
+					_department.PUT("/:id", append(_updatedepartmentMw(), coze.UpdateDepartment)...)
+					_department.POST("/list", append(_listdepartmentsMw(), coze.ListDepartments)...)
+					_department.POST("/sort", append(_sortdepartmentsMw(), coze.SortDepartments)...)
+					_department.POST("/tree", append(_getdepartmenttreeMw(), coze.GetDepartmentTree)...)
+				}
+				{
+					_employee := _corporation.Group("/employee", _employeeMw()...)
+					_employee.POST("/create", append(_createemployeeMw(), coze.CreateEmployee)...)
+					_employee.DELETE("/:id", append(_deleteemployeeMw(), coze.DeleteEmployee)...)
+					_id := _employee.Group("/:id", _idMw()...)
+					_id.PUT("/department", append(_changeemployeedepartmentMw(), coze.ChangeEmployeeDepartment)...)
+					_id.PUT("/resign", append(_resignemployeeMw(), coze.ResignEmployee)...)
+					_id.PUT("/restore", append(_restoreemployeeMw(), coze.RestoreEmployee)...)
+					_employee.GET("/:id", append(_getemployeeMw(), coze.GetEmployee)...)
+					_employee.PUT("/:id", append(_updateemployeeMw(), coze.UpdateEmployee)...)
+					_employee.POST("/list", append(_listemployeesMw(), coze.ListEmployees)...)
+				}
+			}
+			{
+				_organization := _v1.Group("/organization", _organizationMw()...)
+				_organization.POST("/tree", append(_getorganizationtreeMw(), coze.GetOrganizationTree)...)
+			}
+		}
+		{
 			_web0 := _api.Group("/web", _web0Mw()...)
 			{
 				_user0 := _web0.Group("/user", _user0Mw()...)
@@ -436,8 +473,10 @@ func Register(r *server.Hertz) {
 			_apps := _v1.Group("/apps", _appsMw()...)
 			_apps.GET("/:app_id", append(_getonlineappdataMw(), coze.GetOnlineAppData)...)
 		}
+		_v10 := root.Group("/v1", _v10Mw()...)
+		_v10.GET("/conversations", append(_listconversationsapiMw(), coze.ListConversationsApi)...)
 		{
-			_bot0 := _v1.Group("/bot", _bot0Mw()...)
+			_bot0 := _v10.Group("/bot", _bot0Mw()...)
 			_bot0.GET("/get_online_info", append(_getbotonlineinfoMw(), coze.GetBotOnlineInfo)...)
 		}
 		{
@@ -446,6 +485,7 @@ func Register(r *server.Hertz) {
 		}
 		{
 			_conversation0 := _v1.Group("/conversation", _conversation0Mw()...)
+			_conversation0 := _v10.Group("/conversation", _conversation0Mw()...)
 			_conversation0.POST("/create", append(_createconversationMw(), coze.CreateConversation)...)
 			{
 				_message := _conversation0.Group("/message", _messageMw()...)
@@ -457,48 +497,18 @@ func Register(r *server.Hertz) {
 			{
 				_conversation_id := _conversations0.Group("/:conversation_id", _conversation_idMw()...)
 			_conversations := _v1.Group("/conversations", _conversationsMw()...)
+			_conversations := _v10.Group("/conversations", _conversationsMw()...)
 			{
 				_conversation_id := _conversations.Group("/:conversation_id", _conversation_idMw()...)
 				_conversation_id.POST("/clear", append(_clearconversationapiMw(), coze.ClearConversationApi)...)
 			}
 		}
 		{
-			_corporation := _v1.Group("/corporation", _corporationMw()...)
-			_corporation.POST("/create", append(_createcorporationMw(), coze.CreateCorporation)...)
-			_corporation.DELETE("/:id", append(_deletecorporationMw(), coze.DeleteCorporation)...)
-			_corporation.GET("/:id", append(_getcorporationMw(), coze.GetCorporation)...)
-			_corporation.PUT("/:id", append(_updatecorporationMw(), coze.UpdateCorporation)...)
-			_corporation.POST("/list", append(_listcorporationsMw(), coze.ListCorporations)...)
-			{
-				_department := _corporation.Group("/department", _departmentMw()...)
-				_department.POST("/create", append(_createdepartmentMw(), coze.CreateDepartment)...)
-				_department.DELETE("/:id", append(_deletedepartmentMw(), coze.DeleteDepartment)...)
-				_department.GET("/:id", append(_getdepartmentMw(), coze.GetDepartment)...)
-				_department.PUT("/:id", append(_updatedepartmentMw(), coze.UpdateDepartment)...)
-				_department.POST("/list", append(_listdepartmentsMw(), coze.ListDepartments)...)
-				_department.POST("/sort", append(_sortdepartmentsMw(), coze.SortDepartments)...)
-			}
-			{
-				_employee := _corporation.Group("/employee", _employeeMw()...)
-				_employee.POST("/assign-department", append(_assignemployeetodepartmentMw(), coze.AssignEmployeeToDepartment)...)
-				_employee.POST("/create", append(_createemployeeMw(), coze.CreateEmployee)...)
-				_employee.DELETE("/:id", append(_deleteemployeeMw(), coze.DeleteEmployee)...)
-				_employee.GET("/:id", append(_getemployeeMw(), coze.GetEmployee)...)
-				_employee.PUT("/:id", append(_updateemployeeMw(), coze.UpdateEmployee)...)
-				_employee.POST("/list", append(_listemployeesMw(), coze.ListEmployees)...)
-				{
-					_department0 := _employee.Group("/department", _department0Mw()...)
-					_department0.DELETE("/:id", append(_removeemployeefromdepartmentMw(), coze.RemoveEmployeeFromDepartment)...)
-					_department0.PUT("/:id", append(_updateemployeedepartmentMw(), coze.UpdateEmployeeDepartment)...)
-				}
-			}
-		}
-		{
-			_files := _v1.Group("/files", _filesMw()...)
+			_files := _v10.Group("/files", _filesMw()...)
 			_files.POST("/upload", append(_uploadfileopenMw(), coze.UploadFileOpen)...)
 		}
 		{
-			_workflow := _v1.Group("/workflow", _workflowMw()...)
+			_workflow := _v10.Group("/workflow", _workflowMw()...)
 			_workflow.GET("/get_run_history", append(_openapigetworkflowrunhistoryMw(), coze.OpenAPIGetWorkflowRunHistory)...)
 			_workflow.POST("/run", append(_openapirunflowMw(), coze.OpenAPIRunFlow)...)
 			_workflow.POST("/stream_resume", append(_openapistreamresumeflowMw(), coze.OpenAPIStreamResumeFlow)...)
@@ -509,7 +519,7 @@ func Register(r *server.Hertz) {
 			}
 		}
 		{
-			_workflows := _v1.Group("/workflows", _workflowsMw()...)
+			_workflows := _v10.Group("/workflows", _workflowsMw()...)
 			_workflows.POST("/chat", append(_openapichatflowrunMw(), coze.OpenAPIChatFlowRun)...)
 			_workflows.GET("/:workflow_id", append(_openapigetworkflowinfoMw(), coze.OpenAPIGetWorkflowInfo)...)
 		}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 coze-dev Authors
+ * Copyright 2025 coze-plus Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,8 @@ type CorporationService interface {
 	DeleteCorporation(ctx context.Context, request *DeleteCorpRequest) (r *DeleteCorpResponse, err error)
 
 	ListCorporations(ctx context.Context, request *ListCorpsRequest) (r *ListCorpsResponse, err error)
+
+	GetOrganizationTree(ctx context.Context, request *GetOrganizationTreeRequest) (r *GetOrganizationTreeResponse, err error)
 }
 
 type CorporationServiceClient struct {
@@ -107,6 +109,15 @@ func (p *CorporationServiceClient) ListCorporations(ctx context.Context, request
 	}
 	return _result.GetSuccess(), nil
 }
+func (p *CorporationServiceClient) GetOrganizationTree(ctx context.Context, request *GetOrganizationTreeRequest) (r *GetOrganizationTreeResponse, err error) {
+	var _args CorporationServiceGetOrganizationTreeArgs
+	_args.Request = request
+	var _result CorporationServiceGetOrganizationTreeResult
+	if err = p.Client_().Call(ctx, "GetOrganizationTree", &_args, &_result); err != nil {
+		return
+	}
+	return _result.GetSuccess(), nil
+}
 
 type CorporationServiceProcessor struct {
 	processorMap map[string]thrift.TProcessorFunction
@@ -133,6 +144,7 @@ func NewCorporationServiceProcessor(handler CorporationService) *CorporationServ
 	self.AddToProcessorMap("UpdateCorporation", &corporationServiceProcessorUpdateCorporation{handler: handler})
 	self.AddToProcessorMap("DeleteCorporation", &corporationServiceProcessorDeleteCorporation{handler: handler})
 	self.AddToProcessorMap("ListCorporations", &corporationServiceProcessorListCorporations{handler: handler})
+	self.AddToProcessorMap("GetOrganizationTree", &corporationServiceProcessorGetOrganizationTree{handler: handler})
 	return self
 }
 func (p *CorporationServiceProcessor) Process(ctx context.Context, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
@@ -376,6 +388,54 @@ func (p *corporationServiceProcessorListCorporations) Process(ctx context.Contex
 		result.Success = retval
 	}
 	if err2 = oprot.WriteMessageBegin("ListCorporations", thrift.REPLY, seqId); err2 != nil {
+		err = err2
+	}
+	if err2 = result.Write(oprot); err == nil && err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.Flush(ctx); err == nil && err2 != nil {
+		err = err2
+	}
+	if err != nil {
+		return
+	}
+	return true, err
+}
+
+type corporationServiceProcessorGetOrganizationTree struct {
+	handler CorporationService
+}
+
+func (p *corporationServiceProcessorGetOrganizationTree) Process(ctx context.Context, seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+	args := CorporationServiceGetOrganizationTreeArgs{}
+	if err = args.Read(iprot); err != nil {
+		iprot.ReadMessageEnd()
+		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
+		oprot.WriteMessageBegin("GetOrganizationTree", thrift.EXCEPTION, seqId)
+		x.Write(oprot)
+		oprot.WriteMessageEnd()
+		oprot.Flush(ctx)
+		return false, err
+	}
+
+	iprot.ReadMessageEnd()
+	var err2 error
+	result := CorporationServiceGetOrganizationTreeResult{}
+	var retval *GetOrganizationTreeResponse
+	if retval, err2 = p.handler.GetOrganizationTree(ctx, args.Request); err2 != nil {
+		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing GetOrganizationTree: "+err2.Error())
+		oprot.WriteMessageBegin("GetOrganizationTree", thrift.EXCEPTION, seqId)
+		x.Write(oprot)
+		oprot.WriteMessageEnd()
+		oprot.Flush(ctx)
+		return true, err2
+	} else {
+		result.Success = retval
+	}
+	if err2 = oprot.WriteMessageBegin("GetOrganizationTree", thrift.REPLY, seqId); err2 != nil {
 		err = err2
 	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
@@ -1850,5 +1910,297 @@ func (p *CorporationServiceListCorporationsResult) String() string {
 		return "<nil>"
 	}
 	return fmt.Sprintf("CorporationServiceListCorporationsResult(%+v)", *p)
+
+}
+
+type CorporationServiceGetOrganizationTreeArgs struct {
+	Request *GetOrganizationTreeRequest `thrift:"request,1"`
+}
+
+func NewCorporationServiceGetOrganizationTreeArgs() *CorporationServiceGetOrganizationTreeArgs {
+	return &CorporationServiceGetOrganizationTreeArgs{}
+}
+
+func (p *CorporationServiceGetOrganizationTreeArgs) InitDefault() {
+}
+
+var CorporationServiceGetOrganizationTreeArgs_Request_DEFAULT *GetOrganizationTreeRequest
+
+func (p *CorporationServiceGetOrganizationTreeArgs) GetRequest() (v *GetOrganizationTreeRequest) {
+	if !p.IsSetRequest() {
+		return CorporationServiceGetOrganizationTreeArgs_Request_DEFAULT
+	}
+	return p.Request
+}
+
+var fieldIDToName_CorporationServiceGetOrganizationTreeArgs = map[int16]string{
+	1: "request",
+}
+
+func (p *CorporationServiceGetOrganizationTreeArgs) IsSetRequest() bool {
+	return p.Request != nil
+}
+
+func (p *CorporationServiceGetOrganizationTreeArgs) Read(iprot thrift.TProtocol) (err error) {
+	var fieldTypeId thrift.TType
+	var fieldId int16
+
+	if _, err = iprot.ReadStructBegin(); err != nil {
+		goto ReadStructBeginError
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err = iprot.ReadFieldBegin()
+		if err != nil {
+			goto ReadFieldBeginError
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+
+		switch fieldId {
+		case 1:
+			if fieldTypeId == thrift.STRUCT {
+				if err = p.ReadField1(iprot); err != nil {
+					goto ReadFieldError
+				}
+			} else if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		default:
+			if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		}
+		if err = iprot.ReadFieldEnd(); err != nil {
+			goto ReadFieldEndError
+		}
+	}
+	if err = iprot.ReadStructEnd(); err != nil {
+		goto ReadStructEndError
+	}
+
+	return nil
+ReadStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct begin error: ", p), err)
+ReadFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
+ReadFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_CorporationServiceGetOrganizationTreeArgs[fieldId]), err)
+SkipFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
+
+ReadFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read field end error", p), err)
+ReadStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+}
+
+func (p *CorporationServiceGetOrganizationTreeArgs) ReadField1(iprot thrift.TProtocol) error {
+	_field := NewGetOrganizationTreeRequest()
+	if err := _field.Read(iprot); err != nil {
+		return err
+	}
+	p.Request = _field
+	return nil
+}
+
+func (p *CorporationServiceGetOrganizationTreeArgs) Write(oprot thrift.TProtocol) (err error) {
+	var fieldId int16
+	if err = oprot.WriteStructBegin("GetOrganizationTree_args"); err != nil {
+		goto WriteStructBeginError
+	}
+	if p != nil {
+		if err = p.writeField1(oprot); err != nil {
+			fieldId = 1
+			goto WriteFieldError
+		}
+	}
+	if err = oprot.WriteFieldStop(); err != nil {
+		goto WriteFieldStopError
+	}
+	if err = oprot.WriteStructEnd(); err != nil {
+		goto WriteStructEndError
+	}
+	return nil
+WriteStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+WriteFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T write field %d error: ", p, fieldId), err)
+WriteFieldStopError:
+	return thrift.PrependError(fmt.Sprintf("%T write field stop error: ", p), err)
+WriteStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
+}
+
+func (p *CorporationServiceGetOrganizationTreeArgs) writeField1(oprot thrift.TProtocol) (err error) {
+	if err = oprot.WriteFieldBegin("request", thrift.STRUCT, 1); err != nil {
+		goto WriteFieldBeginError
+	}
+	if err := p.Request.Write(oprot); err != nil {
+		return err
+	}
+	if err = oprot.WriteFieldEnd(); err != nil {
+		goto WriteFieldEndError
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 1 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 1 end error: ", p), err)
+}
+
+func (p *CorporationServiceGetOrganizationTreeArgs) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("CorporationServiceGetOrganizationTreeArgs(%+v)", *p)
+
+}
+
+type CorporationServiceGetOrganizationTreeResult struct {
+	Success *GetOrganizationTreeResponse `thrift:"success,0,optional"`
+}
+
+func NewCorporationServiceGetOrganizationTreeResult() *CorporationServiceGetOrganizationTreeResult {
+	return &CorporationServiceGetOrganizationTreeResult{}
+}
+
+func (p *CorporationServiceGetOrganizationTreeResult) InitDefault() {
+}
+
+var CorporationServiceGetOrganizationTreeResult_Success_DEFAULT *GetOrganizationTreeResponse
+
+func (p *CorporationServiceGetOrganizationTreeResult) GetSuccess() (v *GetOrganizationTreeResponse) {
+	if !p.IsSetSuccess() {
+		return CorporationServiceGetOrganizationTreeResult_Success_DEFAULT
+	}
+	return p.Success
+}
+
+var fieldIDToName_CorporationServiceGetOrganizationTreeResult = map[int16]string{
+	0: "success",
+}
+
+func (p *CorporationServiceGetOrganizationTreeResult) IsSetSuccess() bool {
+	return p.Success != nil
+}
+
+func (p *CorporationServiceGetOrganizationTreeResult) Read(iprot thrift.TProtocol) (err error) {
+	var fieldTypeId thrift.TType
+	var fieldId int16
+
+	if _, err = iprot.ReadStructBegin(); err != nil {
+		goto ReadStructBeginError
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err = iprot.ReadFieldBegin()
+		if err != nil {
+			goto ReadFieldBeginError
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+
+		switch fieldId {
+		case 0:
+			if fieldTypeId == thrift.STRUCT {
+				if err = p.ReadField0(iprot); err != nil {
+					goto ReadFieldError
+				}
+			} else if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		default:
+			if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		}
+		if err = iprot.ReadFieldEnd(); err != nil {
+			goto ReadFieldEndError
+		}
+	}
+	if err = iprot.ReadStructEnd(); err != nil {
+		goto ReadStructEndError
+	}
+
+	return nil
+ReadStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct begin error: ", p), err)
+ReadFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
+ReadFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_CorporationServiceGetOrganizationTreeResult[fieldId]), err)
+SkipFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
+
+ReadFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read field end error", p), err)
+ReadStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+}
+
+func (p *CorporationServiceGetOrganizationTreeResult) ReadField0(iprot thrift.TProtocol) error {
+	_field := NewGetOrganizationTreeResponse()
+	if err := _field.Read(iprot); err != nil {
+		return err
+	}
+	p.Success = _field
+	return nil
+}
+
+func (p *CorporationServiceGetOrganizationTreeResult) Write(oprot thrift.TProtocol) (err error) {
+	var fieldId int16
+	if err = oprot.WriteStructBegin("GetOrganizationTree_result"); err != nil {
+		goto WriteStructBeginError
+	}
+	if p != nil {
+		if err = p.writeField0(oprot); err != nil {
+			fieldId = 0
+			goto WriteFieldError
+		}
+	}
+	if err = oprot.WriteFieldStop(); err != nil {
+		goto WriteFieldStopError
+	}
+	if err = oprot.WriteStructEnd(); err != nil {
+		goto WriteStructEndError
+	}
+	return nil
+WriteStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+WriteFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T write field %d error: ", p, fieldId), err)
+WriteFieldStopError:
+	return thrift.PrependError(fmt.Sprintf("%T write field stop error: ", p), err)
+WriteStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
+}
+
+func (p *CorporationServiceGetOrganizationTreeResult) writeField0(oprot thrift.TProtocol) (err error) {
+	if p.IsSetSuccess() {
+		if err = oprot.WriteFieldBegin("success", thrift.STRUCT, 0); err != nil {
+			goto WriteFieldBeginError
+		}
+		if err := p.Success.Write(oprot); err != nil {
+			return err
+		}
+		if err = oprot.WriteFieldEnd(); err != nil {
+			goto WriteFieldEndError
+		}
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 0 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 0 end error: ", p), err)
+}
+
+func (p *CorporationServiceGetOrganizationTreeResult) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("CorporationServiceGetOrganizationTreeResult(%+v)", *p)
 
 }

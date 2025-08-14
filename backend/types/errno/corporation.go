@@ -1,4 +1,20 @@
 /*
+ * Copyright 2025 coze-plus Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * Copyright 2025 coze-dev Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,17 +49,19 @@ const (
 	ErrCorporationCircularRef    = 120100004
 
 	// Department specific errors
-	ErrDepartmentNotFound      = 120200001
-	ErrDepartmentNameEmpty     = 120200002
+	ErrDepartmentNotFound       = 120200001
+	ErrDepartmentNameEmpty      = 120200002
 	ErrDepartmentParentNotFound = 120200003
 	ErrDepartmentCannotDelete   = 120200004
 	ErrDepartmentCircularRef    = 120200005
 
 	// Employee specific errors
-	ErrEmployeeNotFound        = 120300001
-	ErrEmployeeNameEmpty       = 120300002
-	ErrEmployeeEmailExists     = 120300003
-	ErrEmployeeIDExists        = 120300004
+	ErrEmployeeNotFound                   = 120300001
+	ErrEmployeeNameEmpty                  = 120300002
+	ErrEmployeeEmailExists                = 120300003
+	ErrEmployeeIDExists                   = 120300004
+	ErrEmployeePhoneExists                = 120300005
+	ErrEmployeeDepartmentRelationNotFound = 120300006
 )
 
 func init() {
@@ -87,7 +105,7 @@ func init() {
 
 	code.Register(
 		ErrCorporationCannotDelete,
-		"cannot delete corporation with child corporations",
+		"cannot delete corporation with child corporations or departments",
 		code.WithAffectStability(false),
 	)
 
@@ -118,7 +136,7 @@ func init() {
 
 	code.Register(
 		ErrDepartmentCannotDelete,
-		"cannot delete department with child departments",
+		"cannot delete department with child departments or employees",
 		code.WithAffectStability(false),
 	)
 
@@ -150,6 +168,18 @@ func init() {
 	code.Register(
 		ErrEmployeeIDExists,
 		"employee ID already exists",
+		code.WithAffectStability(false),
+	)
+
+	code.Register(
+		ErrEmployeePhoneExists,
+		"phone number already exists",
+		code.WithAffectStability(false),
+	)
+
+	code.Register(
+		ErrEmployeeDepartmentRelationNotFound,
+		"employee department relationship not found",
 		code.WithAffectStability(false),
 	)
 }

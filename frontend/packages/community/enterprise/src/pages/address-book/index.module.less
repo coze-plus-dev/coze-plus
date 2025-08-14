@@ -1,0 +1,31 @@
+.addressBookLayout {
+  height: 100%;
+  background: var(--semi-color-bg-0);
+  display: flex;
+  flex-direction: row;
+
+  .sider {
+    width: 280px;
+    background: var(--semi-color-bg-1);
+    border-right: 1px solid var(--semi-color-border);
+    overflow-y: auto;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+  }
+
+  .content {
+    flex: 1;
+    padding: 0;
+    background: var(--semi-color-bg-0);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    transition: all 0.3s ease;
+    
+    &.contentExpanded {
+      width: 100%;
+    }
+  }
+  
+}

@@ -1,4 +1,20 @@
 /*
+ * Copyright 2025 coze-plus Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * Copyright 2025 coze-dev Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -88,6 +104,8 @@ func (dao *DepartmentDAO) Update(ctx context.Context, dept *entity.Department) e
 		updateData[table.ParentID.ColumnName().String()] = *dept.ParentDeptID
 	}
 	updateData[table.Sort.ColumnName().String()] = dept.Sort
+	updateData[table.Level.ColumnName().String()] = dept.Level
+	updateData[table.FullPath.ColumnName().String()] = dept.FullPath
 	if dept.OutDeptID != nil {
 		updateData[table.OutDepartmentID.ColumnName().String()] = *dept.OutDeptID
 	}
@@ -247,21 +265,34 @@ func (dao *DepartmentDAO) departmentDO2PO(ctx context.Context, dept *entity.Depa
 		ID:         dept.ID,
 		CorpID:     dept.CorpID,
 		Name:       dept.Name,
+		Level:      dept.Level,
 		Sort:       dept.Sort,
-		DepartmentSource: int32(dept.DeptSource),
 		CreatorID:  dept.CreatorID,
 		CreatedAt:  time.Now().UnixMilli(),
 		UpdatedAt:  time.Now().UnixMilli(),
 	}
 	
+	// Set FullPath
+	if dept.FullPath != "" {
+		po.FullPath = &dept.FullPath
+	}
+	
 	if dept.ParentDeptID != nil {
-		po.ParentID = *dept.ParentDeptID
+		po.ParentID = dept.ParentDeptID
 	}
 	if dept.OutDeptID != nil {
-		po.OutDepartmentID = *dept.OutDeptID
+		po.OutDepartmentID = dept.OutDeptID
+	}
+	if dept.DeptSource != 0 {
+		deptSource := int32(dept.DeptSource)
+		po.DepartmentSource = &deptSource
 	}
 	if dept.DeletedAt != nil {
-		po.DeletedAt = *dept.DeletedAt
+		deletedAt := gorm.DeletedAt{
+			Time:  time.UnixMilli(*dept.DeletedAt),
+			Valid: true,
+		}
+		po.DeletedAt = deletedAt
 	}
 	
 	return po
@@ -269,24 +300,34 @@ func (dao *DepartmentDAO) departmentDO2PO(ctx context.Context, dept *entity.Depa
 
 func (dao *DepartmentDAO) departmentPO2DO(ctx context.Context, po *model.CorporationDepartment) *entity.Department {
 	dept := &entity.Department{
-		ID:         po.ID,
-		CorpID:     po.CorpID,
-		Name:       po.Name,
-		Sort:       po.Sort,
-		DeptSource: entity.DepartmentSource(po.DepartmentSource),
-		CreatorID:  po.CreatorID,
-		CreatedAt:  po.CreatedAt,
-		UpdatedAt:  po.UpdatedAt,
+		ID:        po.ID,
+		CorpID:    po.CorpID,
+		Name:      po.Name,
+		Level:     po.Level,
+		Sort:      po.Sort,
+		CreatorID: po.CreatorID,
+		CreatedAt: po.CreatedAt,
+		UpdatedAt: po.UpdatedAt,
 	}
 	
-	if po.ParentID != 0 {
-		dept.ParentDeptID = &po.ParentID
+	// Set FullPath
+	if po.FullPath != nil {
+		dept.FullPath = *po.FullPath
 	}
-	if po.OutDepartmentID != "" {
-		dept.OutDeptID = &po.OutDepartmentID
+	
+	if po.ParentID != nil {
+		dept.ParentDeptID = po.ParentID
 	}
-	if po.DeletedAt != 0 {
-		dept.DeletedAt = &po.DeletedAt
+	if po.OutDepartmentID != nil {
+		dept.OutDeptID = po.OutDepartmentID
+	}
+	if po.DepartmentSource != nil {
+		deptSource := entity.DepartmentSource(*po.DepartmentSource)
+		dept.DeptSource = deptSource
+	}
+	if po.DeletedAt.Valid {
+		deletedAt := po.DeletedAt.Time.UnixMilli()
+		dept.DeletedAt = &deletedAt
 	}
 	
 	return dept

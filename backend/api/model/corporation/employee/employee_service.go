@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 coze-dev Authors
+ * Copyright 2025 coze-plus Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,11 +35,11 @@ type EmployeeService interface {
 
 	ListEmployees(ctx context.Context, request *ListEmployeeRequest) (r *ListEmployeeResponse, err error)
 
-	AssignEmployeeToDepartment(ctx context.Context, request *AssignEmployeeToDepartmentRequest) (r *AssignEmployeeToDepartmentResponse, err error)
+	ChangeEmployeeDepartment(ctx context.Context, request *ChangeEmployeeDepartmentRequest) (r *ChangeEmployeeDepartmentResponse, err error)
 
-	UpdateEmployeeDepartment(ctx context.Context, request *UpdateEmployeeDepartmentRequest) (r *UpdateEmployeeDepartmentResponse, err error)
+	ResignEmployee(ctx context.Context, request *ResignEmployeeRequest) (r *ResignEmployeeResponse, err error)
 
-	RemoveEmployeeFromDepartment(ctx context.Context, request *RemoveEmployeeFromDepartmentRequest) (r *RemoveEmployeeFromDepartmentResponse, err error)
+	RestoreEmployee(ctx context.Context, request *RestoreEmployeeRequest) (r *RestoreEmployeeResponse, err error)
 }
 
 type EmployeeServiceClient struct {
@@ -113,29 +113,29 @@ func (p *EmployeeServiceClient) ListEmployees(ctx context.Context, request *List
 	}
 	return _result.GetSuccess(), nil
 }
-func (p *EmployeeServiceClient) AssignEmployeeToDepartment(ctx context.Context, request *AssignEmployeeToDepartmentRequest) (r *AssignEmployeeToDepartmentResponse, err error) {
-	var _args EmployeeServiceAssignEmployeeToDepartmentArgs
+func (p *EmployeeServiceClient) ChangeEmployeeDepartment(ctx context.Context, request *ChangeEmployeeDepartmentRequest) (r *ChangeEmployeeDepartmentResponse, err error) {
+	var _args EmployeeServiceChangeEmployeeDepartmentArgs
 	_args.Request = request
-	var _result EmployeeServiceAssignEmployeeToDepartmentResult
-	if err = p.Client_().Call(ctx, "AssignEmployeeToDepartment", &_args, &_result); err != nil {
+	var _result EmployeeServiceChangeEmployeeDepartmentResult
+	if err = p.Client_().Call(ctx, "ChangeEmployeeDepartment", &_args, &_result); err != nil {
 		return
 	}
 	return _result.GetSuccess(), nil
 }
-func (p *EmployeeServiceClient) UpdateEmployeeDepartment(ctx context.Context, request *UpdateEmployeeDepartmentRequest) (r *UpdateEmployeeDepartmentResponse, err error) {
-	var _args EmployeeServiceUpdateEmployeeDepartmentArgs
+func (p *EmployeeServiceClient) ResignEmployee(ctx context.Context, request *ResignEmployeeRequest) (r *ResignEmployeeResponse, err error) {
+	var _args EmployeeServiceResignEmployeeArgs
 	_args.Request = request
-	var _result EmployeeServiceUpdateEmployeeDepartmentResult
-	if err = p.Client_().Call(ctx, "UpdateEmployeeDepartment", &_args, &_result); err != nil {
+	var _result EmployeeServiceResignEmployeeResult
+	if err = p.Client_().Call(ctx, "ResignEmployee", &_args, &_result); err != nil {
 		return
 	}
 	return _result.GetSuccess(), nil
 }
-func (p *EmployeeServiceClient) RemoveEmployeeFromDepartment(ctx context.Context, request *RemoveEmployeeFromDepartmentRequest) (r *RemoveEmployeeFromDepartmentResponse, err error) {
-	var _args EmployeeServiceRemoveEmployeeFromDepartmentArgs
+func (p *EmployeeServiceClient) RestoreEmployee(ctx context.Context, request *RestoreEmployeeRequest) (r *RestoreEmployeeResponse, err error) {
+	var _args EmployeeServiceRestoreEmployeeArgs
 	_args.Request = request
-	var _result EmployeeServiceRemoveEmployeeFromDepartmentResult
-	if err = p.Client_().Call(ctx, "RemoveEmployeeFromDepartment", &_args, &_result); err != nil {
+	var _result EmployeeServiceRestoreEmployeeResult
+	if err = p.Client_().Call(ctx, "RestoreEmployee", &_args, &_result); err != nil {
 		return
 	}
 	return _result.GetSuccess(), nil
@@ -166,9 +166,9 @@ func NewEmployeeServiceProcessor(handler EmployeeService) *EmployeeServiceProces
 	self.AddToProcessorMap("UpdateEmployee", &employeeServiceProcessorUpdateEmployee{handler: handler})
 	self.AddToProcessorMap("DeleteEmployee", &employeeServiceProcessorDeleteEmployee{handler: handler})
 	self.AddToProcessorMap("ListEmployees", &employeeServiceProcessorListEmployees{handler: handler})
-	self.AddToProcessorMap("AssignEmployeeToDepartment", &employeeServiceProcessorAssignEmployeeToDepartment{handler: handler})
-	self.AddToProcessorMap("UpdateEmployeeDepartment", &employeeServiceProcessorUpdateEmployeeDepartment{handler: handler})
-	self.AddToProcessorMap("RemoveEmployeeFromDepartment", &employeeServiceProcessorRemoveEmployeeFromDepartment{handler: handler})
+	self.AddToProcessorMap("ChangeEmployeeDepartment", &employeeServiceProcessorChangeEmployeeDepartment{handler: handler})
+	self.AddToProcessorMap("ResignEmployee", &employeeServiceProcessorResignEmployee{handler: handler})
+	self.AddToProcessorMap("RestoreEmployee", &employeeServiceProcessorRestoreEmployee{handler: handler})
 	return self
 }
 func (p *EmployeeServiceProcessor) Process(ctx context.Context, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
@@ -429,16 +429,16 @@ func (p *employeeServiceProcessorListEmployees) Process(ctx context.Context, seq
 	return true, err
 }
 
-type employeeServiceProcessorAssignEmployeeToDepartment struct {
+type employeeServiceProcessorChangeEmployeeDepartment struct {
 	handler EmployeeService
 }
 
-func (p *employeeServiceProcessorAssignEmployeeToDepartment) Process(ctx context.Context, seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
-	args := EmployeeServiceAssignEmployeeToDepartmentArgs{}
+func (p *employeeServiceProcessorChangeEmployeeDepartment) Process(ctx context.Context, seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+	args := EmployeeServiceChangeEmployeeDepartmentArgs{}
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
 		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
-		oprot.WriteMessageBegin("AssignEmployeeToDepartment", thrift.EXCEPTION, seqId)
+		oprot.WriteMessageBegin("ChangeEmployeeDepartment", thrift.EXCEPTION, seqId)
 		x.Write(oprot)
 		oprot.WriteMessageEnd()
 		oprot.Flush(ctx)
@@ -447,11 +447,11 @@ func (p *employeeServiceProcessorAssignEmployeeToDepartment) Process(ctx context
 
 	iprot.ReadMessageEnd()
 	var err2 error
-	result := EmployeeServiceAssignEmployeeToDepartmentResult{}
-	var retval *AssignEmployeeToDepartmentResponse
-	if retval, err2 = p.handler.AssignEmployeeToDepartment(ctx, args.Request); err2 != nil {
-		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing AssignEmployeeToDepartment: "+err2.Error())
-		oprot.WriteMessageBegin("AssignEmployeeToDepartment", thrift.EXCEPTION, seqId)
+	result := EmployeeServiceChangeEmployeeDepartmentResult{}
+	var retval *ChangeEmployeeDepartmentResponse
+	if retval, err2 = p.handler.ChangeEmployeeDepartment(ctx, args.Request); err2 != nil {
+		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing ChangeEmployeeDepartment: "+err2.Error())
+		oprot.WriteMessageBegin("ChangeEmployeeDepartment", thrift.EXCEPTION, seqId)
 		x.Write(oprot)
 		oprot.WriteMessageEnd()
 		oprot.Flush(ctx)
@@ -459,7 +459,7 @@ func (p *employeeServiceProcessorAssignEmployeeToDepartment) Process(ctx context
 	} else {
 		result.Success = retval
 	}
-	if err2 = oprot.WriteMessageBegin("AssignEmployeeToDepartment", thrift.REPLY, seqId); err2 != nil {
+	if err2 = oprot.WriteMessageBegin("ChangeEmployeeDepartment", thrift.REPLY, seqId); err2 != nil {
 		err = err2
 	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
@@ -477,16 +477,16 @@ func (p *employeeServiceProcessorAssignEmployeeToDepartment) Process(ctx context
 	return true, err
 }
 
-type employeeServiceProcessorUpdateEmployeeDepartment struct {
+type employeeServiceProcessorResignEmployee struct {
 	handler EmployeeService
 }
 
-func (p *employeeServiceProcessorUpdateEmployeeDepartment) Process(ctx context.Context, seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
-	args := EmployeeServiceUpdateEmployeeDepartmentArgs{}
+func (p *employeeServiceProcessorResignEmployee) Process(ctx context.Context, seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+	args := EmployeeServiceResignEmployeeArgs{}
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
 		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
-		oprot.WriteMessageBegin("UpdateEmployeeDepartment", thrift.EXCEPTION, seqId)
+		oprot.WriteMessageBegin("ResignEmployee", thrift.EXCEPTION, seqId)
 		x.Write(oprot)
 		oprot.WriteMessageEnd()
 		oprot.Flush(ctx)
@@ -495,11 +495,11 @@ func (p *employeeServiceProcessorUpdateEmployeeDepartment) Process(ctx context.C
 
 	iprot.ReadMessageEnd()
 	var err2 error
-	result := EmployeeServiceUpdateEmployeeDepartmentResult{}
-	var retval *UpdateEmployeeDepartmentResponse
-	if retval, err2 = p.handler.UpdateEmployeeDepartment(ctx, args.Request); err2 != nil {
-		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing UpdateEmployeeDepartment: "+err2.Error())
-		oprot.WriteMessageBegin("UpdateEmployeeDepartment", thrift.EXCEPTION, seqId)
+	result := EmployeeServiceResignEmployeeResult{}
+	var retval *ResignEmployeeResponse
+	if retval, err2 = p.handler.ResignEmployee(ctx, args.Request); err2 != nil {
+		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing ResignEmployee: "+err2.Error())
+		oprot.WriteMessageBegin("ResignEmployee", thrift.EXCEPTION, seqId)
 		x.Write(oprot)
 		oprot.WriteMessageEnd()
 		oprot.Flush(ctx)
@@ -507,7 +507,7 @@ func (p *employeeServiceProcessorUpdateEmployeeDepartment) Process(ctx context.C
 	} else {
 		result.Success = retval
 	}
-	if err2 = oprot.WriteMessageBegin("UpdateEmployeeDepartment", thrift.REPLY, seqId); err2 != nil {
+	if err2 = oprot.WriteMessageBegin("ResignEmployee", thrift.REPLY, seqId); err2 != nil {
 		err = err2
 	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
@@ -525,16 +525,16 @@ func (p *employeeServiceProcessorUpdateEmployeeDepartment) Process(ctx context.C
 	return true, err
 }
 
-type employeeServiceProcessorRemoveEmployeeFromDepartment struct {
+type employeeServiceProcessorRestoreEmployee struct {
 	handler EmployeeService
 }
 
-func (p *employeeServiceProcessorRemoveEmployeeFromDepartment) Process(ctx context.Context, seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
-	args := EmployeeServiceRemoveEmployeeFromDepartmentArgs{}
+func (p *employeeServiceProcessorRestoreEmployee) Process(ctx context.Context, seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+	args := EmployeeServiceRestoreEmployeeArgs{}
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
 		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
-		oprot.WriteMessageBegin("RemoveEmployeeFromDepartment", thrift.EXCEPTION, seqId)
+		oprot.WriteMessageBegin("RestoreEmployee", thrift.EXCEPTION, seqId)
 		x.Write(oprot)
 		oprot.WriteMessageEnd()
 		oprot.Flush(ctx)
@@ -543,11 +543,11 @@ func (p *employeeServiceProcessorRemoveEmployeeFromDepartment) Process(ctx conte
 
 	iprot.ReadMessageEnd()
 	var err2 error
-	result := EmployeeServiceRemoveEmployeeFromDepartmentResult{}
-	var retval *RemoveEmployeeFromDepartmentResponse
-	if retval, err2 = p.handler.RemoveEmployeeFromDepartment(ctx, args.Request); err2 != nil {
-		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing RemoveEmployeeFromDepartment: "+err2.Error())
-		oprot.WriteMessageBegin("RemoveEmployeeFromDepartment", thrift.EXCEPTION, seqId)
+	result := EmployeeServiceRestoreEmployeeResult{}
+	var retval *RestoreEmployeeResponse
+	if retval, err2 = p.handler.RestoreEmployee(ctx, args.Request); err2 != nil {
+		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing RestoreEmployee: "+err2.Error())
+		oprot.WriteMessageBegin("RestoreEmployee", thrift.EXCEPTION, seqId)
 		x.Write(oprot)
 		oprot.WriteMessageEnd()
 		oprot.Flush(ctx)
@@ -555,7 +555,7 @@ func (p *employeeServiceProcessorRemoveEmployeeFromDepartment) Process(ctx conte
 	} else {
 		result.Success = retval
 	}
-	if err2 = oprot.WriteMessageBegin("RemoveEmployeeFromDepartment", thrift.REPLY, seqId); err2 != nil {
+	if err2 = oprot.WriteMessageBegin("RestoreEmployee", thrift.REPLY, seqId); err2 != nil {
 		err = err2
 	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
@@ -2033,35 +2033,35 @@ func (p *EmployeeServiceListEmployeesResult) String() string {
 
 }
 
-type EmployeeServiceAssignEmployeeToDepartmentArgs struct {
-	Request *AssignEmployeeToDepartmentRequest `thrift:"request,1"`
+type EmployeeServiceChangeEmployeeDepartmentArgs struct {
+	Request *ChangeEmployeeDepartmentRequest `thrift:"request,1"`
 }
 
-func NewEmployeeServiceAssignEmployeeToDepartmentArgs() *EmployeeServiceAssignEmployeeToDepartmentArgs {
-	return &EmployeeServiceAssignEmployeeToDepartmentArgs{}
+func NewEmployeeServiceChangeEmployeeDepartmentArgs() *EmployeeServiceChangeEmployeeDepartmentArgs {
+	return &EmployeeServiceChangeEmployeeDepartmentArgs{}
 }
 
-func (p *EmployeeServiceAssignEmployeeToDepartmentArgs) InitDefault() {
+func (p *EmployeeServiceChangeEmployeeDepartmentArgs) InitDefault() {
 }
 
-var EmployeeServiceAssignEmployeeToDepartmentArgs_Request_DEFAULT *AssignEmployeeToDepartmentRequest
+var EmployeeServiceChangeEmployeeDepartmentArgs_Request_DEFAULT *ChangeEmployeeDepartmentRequest
 
-func (p *EmployeeServiceAssignEmployeeToDepartmentArgs) GetRequest() (v *AssignEmployeeToDepartmentRequest) {
+func (p *EmployeeServiceChangeEmployeeDepartmentArgs) GetRequest() (v *ChangeEmployeeDepartmentRequest) {
 	if !p.IsSetRequest() {
-		return EmployeeServiceAssignEmployeeToDepartmentArgs_Request_DEFAULT
+		return EmployeeServiceChangeEmployeeDepartmentArgs_Request_DEFAULT
 	}
 	return p.Request
 }
 
-var fieldIDToName_EmployeeServiceAssignEmployeeToDepartmentArgs = map[int16]string{
+var fieldIDToName_EmployeeServiceChangeEmployeeDepartmentArgs = map[int16]string{
 	1: "request",
 }
 
-func (p *EmployeeServiceAssignEmployeeToDepartmentArgs) IsSetRequest() bool {
+func (p *EmployeeServiceChangeEmployeeDepartmentArgs) IsSetRequest() bool {
 	return p.Request != nil
 }
 
-func (p *EmployeeServiceAssignEmployeeToDepartmentArgs) Read(iprot thrift.TProtocol) (err error) {
+func (p *EmployeeServiceChangeEmployeeDepartmentArgs) Read(iprot thrift.TProtocol) (err error) {
 	var fieldTypeId thrift.TType
 	var fieldId int16
 
@@ -2106,7 +2106,7 @@ ReadStructBeginError:
 ReadFieldBeginError:
 	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
 ReadFieldError:
-	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_EmployeeServiceAssignEmployeeToDepartmentArgs[fieldId]), err)
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_EmployeeServiceChangeEmployeeDepartmentArgs[fieldId]), err)
 SkipFieldError:
 	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
 
@@ -2116,8 +2116,8 @@ ReadStructEndError:
 	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
 }
 
-func (p *EmployeeServiceAssignEmployeeToDepartmentArgs) ReadField1(iprot thrift.TProtocol) error {
-	_field := NewAssignEmployeeToDepartmentRequest()
+func (p *EmployeeServiceChangeEmployeeDepartmentArgs) ReadField1(iprot thrift.TProtocol) error {
+	_field := NewChangeEmployeeDepartmentRequest()
 	if err := _field.Read(iprot); err != nil {
 		return err
 	}
@@ -2125,9 +2125,9 @@ func (p *EmployeeServiceAssignEmployeeToDepartmentArgs) ReadField1(iprot thrift.
 	return nil
 }
 
-func (p *EmployeeServiceAssignEmployeeToDepartmentArgs) Write(oprot thrift.TProtocol) (err error) {
+func (p *EmployeeServiceChangeEmployeeDepartmentArgs) Write(oprot thrift.TProtocol) (err error) {
 	var fieldId int16
-	if err = oprot.WriteStructBegin("AssignEmployeeToDepartment_args"); err != nil {
+	if err = oprot.WriteStructBegin("ChangeEmployeeDepartment_args"); err != nil {
 		goto WriteStructBeginError
 	}
 	if p != nil {
@@ -2153,7 +2153,7 @@ WriteStructEndError:
 	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
 }
 
-func (p *EmployeeServiceAssignEmployeeToDepartmentArgs) writeField1(oprot thrift.TProtocol) (err error) {
+func (p *EmployeeServiceChangeEmployeeDepartmentArgs) writeField1(oprot thrift.TProtocol) (err error) {
 	if err = oprot.WriteFieldBegin("request", thrift.STRUCT, 1); err != nil {
 		goto WriteFieldBeginError
 	}
@@ -2170,43 +2170,43 @@ WriteFieldEndError:
 	return thrift.PrependError(fmt.Sprintf("%T write field 1 end error: ", p), err)
 }
 
-func (p *EmployeeServiceAssignEmployeeToDepartmentArgs) String() string {
+func (p *EmployeeServiceChangeEmployeeDepartmentArgs) String() string {
 	if p == nil {
 		return "<nil>"
 	}
-	return fmt.Sprintf("EmployeeServiceAssignEmployeeToDepartmentArgs(%+v)", *p)
+	return fmt.Sprintf("EmployeeServiceChangeEmployeeDepartmentArgs(%+v)", *p)
 
 }
 
-type EmployeeServiceAssignEmployeeToDepartmentResult struct {
-	Success *AssignEmployeeToDepartmentResponse `thrift:"success,0,optional"`
+type EmployeeServiceChangeEmployeeDepartmentResult struct {
+	Success *ChangeEmployeeDepartmentResponse `thrift:"success,0,optional"`
 }
 
-func NewEmployeeServiceAssignEmployeeToDepartmentResult() *EmployeeServiceAssignEmployeeToDepartmentResult {
-	return &EmployeeServiceAssignEmployeeToDepartmentResult{}
+func NewEmployeeServiceChangeEmployeeDepartmentResult() *EmployeeServiceChangeEmployeeDepartmentResult {
+	return &EmployeeServiceChangeEmployeeDepartmentResult{}
 }
 
-func (p *EmployeeServiceAssignEmployeeToDepartmentResult) InitDefault() {
+func (p *EmployeeServiceChangeEmployeeDepartmentResult) InitDefault() {
 }
 
-var EmployeeServiceAssignEmployeeToDepartmentResult_Success_DEFAULT *AssignEmployeeToDepartmentResponse
+var EmployeeServiceChangeEmployeeDepartmentResult_Success_DEFAULT *ChangeEmployeeDepartmentResponse
 
-func (p *EmployeeServiceAssignEmployeeToDepartmentResult) GetSuccess() (v *AssignEmployeeToDepartmentResponse) {
+func (p *EmployeeServiceChangeEmployeeDepartmentResult) GetSuccess() (v *ChangeEmployeeDepartmentResponse) {
 	if !p.IsSetSuccess() {
-		return EmployeeServiceAssignEmployeeToDepartmentResult_Success_DEFAULT
+		return EmployeeServiceChangeEmployeeDepartmentResult_Success_DEFAULT
 	}
 	return p.Success
 }
 
-var fieldIDToName_EmployeeServiceAssignEmployeeToDepartmentResult = map[int16]string{
+var fieldIDToName_EmployeeServiceChangeEmployeeDepartmentResult = map[int16]string{
 	0: "success",
 }
 
-func (p *EmployeeServiceAssignEmployeeToDepartmentResult) IsSetSuccess() bool {
+func (p *EmployeeServiceChangeEmployeeDepartmentResult) IsSetSuccess() bool {
 	return p.Success != nil
 }
 
-func (p *EmployeeServiceAssignEmployeeToDepartmentResult) Read(iprot thrift.TProtocol) (err error) {
+func (p *EmployeeServiceChangeEmployeeDepartmentResult) Read(iprot thrift.TProtocol) (err error) {
 	var fieldTypeId thrift.TType
 	var fieldId int16
 
@@ -2251,7 +2251,7 @@ ReadStructBeginError:
 ReadFieldBeginError:
 	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
 ReadFieldError:
-	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_EmployeeServiceAssignEmployeeToDepartmentResult[fieldId]), err)
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_EmployeeServiceChangeEmployeeDepartmentResult[fieldId]), err)
 SkipFieldError:
 	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
 
@@ -2261,8 +2261,8 @@ ReadStructEndError:
 	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
 }
 
-func (p *EmployeeServiceAssignEmployeeToDepartmentResult) ReadField0(iprot thrift.TProtocol) error {
-	_field := NewAssignEmployeeToDepartmentResponse()
+func (p *EmployeeServiceChangeEmployeeDepartmentResult) ReadField0(iprot thrift.TProtocol) error {
+	_field := NewChangeEmployeeDepartmentResponse()
 	if err := _field.Read(iprot); err != nil {
 		return err
 	}
@@ -2270,9 +2270,9 @@ func (p *EmployeeServiceAssignEmployeeToDepartmentResult) ReadField0(iprot thrif
 	return nil
 }
 
-func (p *EmployeeServiceAssignEmployeeToDepartmentResult) Write(oprot thrift.TProtocol) (err error) {
+func (p *EmployeeServiceChangeEmployeeDepartmentResult) Write(oprot thrift.TProtocol) (err error) {
 	var fieldId int16
-	if err = oprot.WriteStructBegin("AssignEmployeeToDepartment_result"); err != nil {
+	if err = oprot.WriteStructBegin("ChangeEmployeeDepartment_result"); err != nil {
 		goto WriteStructBeginError
 	}
 	if p != nil {
@@ -2298,7 +2298,7 @@ WriteStructEndError:
 	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
 }
 
-func (p *EmployeeServiceAssignEmployeeToDepartmentResult) writeField0(oprot thrift.TProtocol) (err error) {
+func (p *EmployeeServiceChangeEmployeeDepartmentResult) writeField0(oprot thrift.TProtocol) (err error) {
 	if p.IsSetSuccess() {
 		if err = oprot.WriteFieldBegin("success", thrift.STRUCT, 0); err != nil {
 			goto WriteFieldBeginError
@@ -2317,43 +2317,43 @@ WriteFieldEndError:
 	return thrift.PrependError(fmt.Sprintf("%T write field 0 end error: ", p), err)
 }
 
-func (p *EmployeeServiceAssignEmployeeToDepartmentResult) String() string {
+func (p *EmployeeServiceChangeEmployeeDepartmentResult) String() string {
 	if p == nil {
 		return "<nil>"
 	}
-	return fmt.Sprintf("EmployeeServiceAssignEmployeeToDepartmentResult(%+v)", *p)
+	return fmt.Sprintf("EmployeeServiceChangeEmployeeDepartmentResult(%+v)", *p)
 
 }
 
-type EmployeeServiceUpdateEmployeeDepartmentArgs struct {
-	Request *UpdateEmployeeDepartmentRequest `thrift:"request,1"`
+type EmployeeServiceResignEmployeeArgs struct {
+	Request *ResignEmployeeRequest `thrift:"request,1"`
 }
 
-func NewEmployeeServiceUpdateEmployeeDepartmentArgs() *EmployeeServiceUpdateEmployeeDepartmentArgs {
-	return &EmployeeServiceUpdateEmployeeDepartmentArgs{}
+func NewEmployeeServiceResignEmployeeArgs() *EmployeeServiceResignEmployeeArgs {
+	return &EmployeeServiceResignEmployeeArgs{}
 }
 
-func (p *EmployeeServiceUpdateEmployeeDepartmentArgs) InitDefault() {
+func (p *EmployeeServiceResignEmployeeArgs) InitDefault() {
 }
 
-var EmployeeServiceUpdateEmployeeDepartmentArgs_Request_DEFAULT *UpdateEmployeeDepartmentRequest
+var EmployeeServiceResignEmployeeArgs_Request_DEFAULT *ResignEmployeeRequest
 
-func (p *EmployeeServiceUpdateEmployeeDepartmentArgs) GetRequest() (v *UpdateEmployeeDepartmentRequest) {
+func (p *EmployeeServiceResignEmployeeArgs) GetRequest() (v *ResignEmployeeRequest) {
 	if !p.IsSetRequest() {
-		return EmployeeServiceUpdateEmployeeDepartmentArgs_Request_DEFAULT
+		return EmployeeServiceResignEmployeeArgs_Request_DEFAULT
 	}
 	return p.Request
 }
 
-var fieldIDToName_EmployeeServiceUpdateEmployeeDepartmentArgs = map[int16]string{
+var fieldIDToName_EmployeeServiceResignEmployeeArgs = map[int16]string{
 	1: "request",
 }
 
-func (p *EmployeeServiceUpdateEmployeeDepartmentArgs) IsSetRequest() bool {
+func (p *EmployeeServiceResignEmployeeArgs) IsSetRequest() bool {
 	return p.Request != nil
 }
 
-func (p *EmployeeServiceUpdateEmployeeDepartmentArgs) Read(iprot thrift.TProtocol) (err error) {
+func (p *EmployeeServiceResignEmployeeArgs) Read(iprot thrift.TProtocol) (err error) {
 	var fieldTypeId thrift.TType
 	var fieldId int16
 
@@ -2398,7 +2398,7 @@ ReadStructBeginError:
 ReadFieldBeginError:
 	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
 ReadFieldError:
-	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_EmployeeServiceUpdateEmployeeDepartmentArgs[fieldId]), err)
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_EmployeeServiceResignEmployeeArgs[fieldId]), err)
 SkipFieldError:
 	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
 
@@ -2408,8 +2408,8 @@ ReadStructEndError:
 	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
 }
 
-func (p *EmployeeServiceUpdateEmployeeDepartmentArgs) ReadField1(iprot thrift.TProtocol) error {
-	_field := NewUpdateEmployeeDepartmentRequest()
+func (p *EmployeeServiceResignEmployeeArgs) ReadField1(iprot thrift.TProtocol) error {
+	_field := NewResignEmployeeRequest()
 	if err := _field.Read(iprot); err != nil {
 		return err
 	}
@@ -2417,9 +2417,9 @@ func (p *EmployeeServiceUpdateEmployeeDepartmentArgs) ReadField1(iprot thrift.TP
 	return nil
 }
 
-func (p *EmployeeServiceUpdateEmployeeDepartmentArgs) Write(oprot thrift.TProtocol) (err error) {
+func (p *EmployeeServiceResignEmployeeArgs) Write(oprot thrift.TProtocol) (err error) {
 	var fieldId int16
-	if err = oprot.WriteStructBegin("UpdateEmployeeDepartment_args"); err != nil {
+	if err = oprot.WriteStructBegin("ResignEmployee_args"); err != nil {
 		goto WriteStructBeginError
 	}
 	if p != nil {
@@ -2445,7 +2445,7 @@ WriteStructEndError:
 	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
 }
 
-func (p *EmployeeServiceUpdateEmployeeDepartmentArgs) writeField1(oprot thrift.TProtocol) (err error) {
+func (p *EmployeeServiceResignEmployeeArgs) writeField1(oprot thrift.TProtocol) (err error) {
 	if err = oprot.WriteFieldBegin("request", thrift.STRUCT, 1); err != nil {
 		goto WriteFieldBeginError
 	}
@@ -2462,43 +2462,43 @@ WriteFieldEndError:
 	return thrift.PrependError(fmt.Sprintf("%T write field 1 end error: ", p), err)
 }
 
-func (p *EmployeeServiceUpdateEmployeeDepartmentArgs) String() string {
+func (p *EmployeeServiceResignEmployeeArgs) String() string {
 	if p == nil {
 		return "<nil>"
 	}
-	return fmt.Sprintf("EmployeeServiceUpdateEmployeeDepartmentArgs(%+v)", *p)
+	return fmt.Sprintf("EmployeeServiceResignEmployeeArgs(%+v)", *p)
 
 }
 
-type EmployeeServiceUpdateEmployeeDepartmentResult struct {
-	Success *UpdateEmployeeDepartmentResponse `thrift:"success,0,optional"`
+type EmployeeServiceResignEmployeeResult struct {
+	Success *ResignEmployeeResponse `thrift:"success,0,optional"`
 }
 
-func NewEmployeeServiceUpdateEmployeeDepartmentResult() *EmployeeServiceUpdateEmployeeDepartmentResult {
-	return &EmployeeServiceUpdateEmployeeDepartmentResult{}
+func NewEmployeeServiceResignEmployeeResult() *EmployeeServiceResignEmployeeResult {
+	return &EmployeeServiceResignEmployeeResult{}
 }
 
-func (p *EmployeeServiceUpdateEmployeeDepartmentResult) InitDefault() {
+func (p *EmployeeServiceResignEmployeeResult) InitDefault() {
 }
 
-var EmployeeServiceUpdateEmployeeDepartmentResult_Success_DEFAULT *UpdateEmployeeDepartmentResponse
+var EmployeeServiceResignEmployeeResult_Success_DEFAULT *ResignEmployeeResponse
 
-func (p *EmployeeServiceUpdateEmployeeDepartmentResult) GetSuccess() (v *UpdateEmployeeDepartmentResponse) {
+func (p *EmployeeServiceResignEmployeeResult) GetSuccess() (v *ResignEmployeeResponse) {
 	if !p.IsSetSuccess() {
-		return EmployeeServiceUpdateEmployeeDepartmentResult_Success_DEFAULT
+		return EmployeeServiceResignEmployeeResult_Success_DEFAULT
 	}
 	return p.Success
 }
 
-var fieldIDToName_EmployeeServiceUpdateEmployeeDepartmentResult = map[int16]string{
+var fieldIDToName_EmployeeServiceResignEmployeeResult = map[int16]string{
 	0: "success",
 }
 
-func (p *EmployeeServiceUpdateEmployeeDepartmentResult) IsSetSuccess() bool {
+func (p *EmployeeServiceResignEmployeeResult) IsSetSuccess() bool {
 	return p.Success != nil
 }
 
-func (p *EmployeeServiceUpdateEmployeeDepartmentResult) Read(iprot thrift.TProtocol) (err error) {
+func (p *EmployeeServiceResignEmployeeResult) Read(iprot thrift.TProtocol) (err error) {
 	var fieldTypeId thrift.TType
 	var fieldId int16
 
@@ -2543,7 +2543,7 @@ ReadStructBeginError:
 ReadFieldBeginError:
 	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
 ReadFieldError:
-	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_EmployeeServiceUpdateEmployeeDepartmentResult[fieldId]), err)
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_EmployeeServiceResignEmployeeResult[fieldId]), err)
 SkipFieldError:
 	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
 
@@ -2553,8 +2553,8 @@ ReadStructEndError:
 	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
 }
 
-func (p *EmployeeServiceUpdateEmployeeDepartmentResult) ReadField0(iprot thrift.TProtocol) error {
-	_field := NewUpdateEmployeeDepartmentResponse()
+func (p *EmployeeServiceResignEmployeeResult) ReadField0(iprot thrift.TProtocol) error {
+	_field := NewResignEmployeeResponse()
 	if err := _field.Read(iprot); err != nil {
 		return err
 	}
@@ -2562,9 +2562,9 @@ func (p *EmployeeServiceUpdateEmployeeDepartmentResult) ReadField0(iprot thrift.
 	return nil
 }
 
-func (p *EmployeeServiceUpdateEmployeeDepartmentResult) Write(oprot thrift.TProtocol) (err error) {
+func (p *EmployeeServiceResignEmployeeResult) Write(oprot thrift.TProtocol) (err error) {
 	var fieldId int16
-	if err = oprot.WriteStructBegin("UpdateEmployeeDepartment_result"); err != nil {
+	if err = oprot.WriteStructBegin("ResignEmployee_result"); err != nil {
 		goto WriteStructBeginError
 	}
 	if p != nil {
@@ -2590,7 +2590,7 @@ WriteStructEndError:
 	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
 }
 
-func (p *EmployeeServiceUpdateEmployeeDepartmentResult) writeField0(oprot thrift.TProtocol) (err error) {
+func (p *EmployeeServiceResignEmployeeResult) writeField0(oprot thrift.TProtocol) (err error) {
 	if p.IsSetSuccess() {
 		if err = oprot.WriteFieldBegin("success", thrift.STRUCT, 0); err != nil {
 			goto WriteFieldBeginError
@@ -2609,43 +2609,43 @@ WriteFieldEndError:
 	return thrift.PrependError(fmt.Sprintf("%T write field 0 end error: ", p), err)
 }
 
-func (p *EmployeeServiceUpdateEmployeeDepartmentResult) String() string {
+func (p *EmployeeServiceResignEmployeeResult) String() string {
 	if p == nil {
 		return "<nil>"
 	}
-	return fmt.Sprintf("EmployeeServiceUpdateEmployeeDepartmentResult(%+v)", *p)
+	return fmt.Sprintf("EmployeeServiceResignEmployeeResult(%+v)", *p)
 
 }
 
-type EmployeeServiceRemoveEmployeeFromDepartmentArgs struct {
-	Request *RemoveEmployeeFromDepartmentRequest `thrift:"request,1"`
+type EmployeeServiceRestoreEmployeeArgs struct {
+	Request *RestoreEmployeeRequest `thrift:"request,1"`
 }
 
-func NewEmployeeServiceRemoveEmployeeFromDepartmentArgs() *EmployeeServiceRemoveEmployeeFromDepartmentArgs {
-	return &EmployeeServiceRemoveEmployeeFromDepartmentArgs{}
+func NewEmployeeServiceRestoreEmployeeArgs() *EmployeeServiceRestoreEmployeeArgs {
+	return &EmployeeServiceRestoreEmployeeArgs{}
 }
 
-func (p *EmployeeServiceRemoveEmployeeFromDepartmentArgs) InitDefault() {
+func (p *EmployeeServiceRestoreEmployeeArgs) InitDefault() {
 }
 
-var EmployeeServiceRemoveEmployeeFromDepartmentArgs_Request_DEFAULT *RemoveEmployeeFromDepartmentRequest
+var EmployeeServiceRestoreEmployeeArgs_Request_DEFAULT *RestoreEmployeeRequest
 
-func (p *EmployeeServiceRemoveEmployeeFromDepartmentArgs) GetRequest() (v *RemoveEmployeeFromDepartmentRequest) {
+func (p *EmployeeServiceRestoreEmployeeArgs) GetRequest() (v *RestoreEmployeeRequest) {
 	if !p.IsSetRequest() {
-		return EmployeeServiceRemoveEmployeeFromDepartmentArgs_Request_DEFAULT
+		return EmployeeServiceRestoreEmployeeArgs_Request_DEFAULT
 	}
 	return p.Request
 }
 
-var fieldIDToName_EmployeeServiceRemoveEmployeeFromDepartmentArgs = map[int16]string{
+var fieldIDToName_EmployeeServiceRestoreEmployeeArgs = map[int16]string{
 	1: "request",
 }
 
-func (p *EmployeeServiceRemoveEmployeeFromDepartmentArgs) IsSetRequest() bool {
+func (p *EmployeeServiceRestoreEmployeeArgs) IsSetRequest() bool {
 	return p.Request != nil
 }
 
-func (p *EmployeeServiceRemoveEmployeeFromDepartmentArgs) Read(iprot thrift.TProtocol) (err error) {
+func (p *EmployeeServiceRestoreEmployeeArgs) Read(iprot thrift.TProtocol) (err error) {
 	var fieldTypeId thrift.TType
 	var fieldId int16
 
@@ -2690,7 +2690,7 @@ ReadStructBeginError:
 ReadFieldBeginError:
 	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
 ReadFieldError:
-	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_EmployeeServiceRemoveEmployeeFromDepartmentArgs[fieldId]), err)
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_EmployeeServiceRestoreEmployeeArgs[fieldId]), err)
 SkipFieldError:
 	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
 
@@ -2700,8 +2700,8 @@ ReadStructEndError:
 	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
 }
 
-func (p *EmployeeServiceRemoveEmployeeFromDepartmentArgs) ReadField1(iprot thrift.TProtocol) error {
-	_field := NewRemoveEmployeeFromDepartmentRequest()
+func (p *EmployeeServiceRestoreEmployeeArgs) ReadField1(iprot thrift.TProtocol) error {
+	_field := NewRestoreEmployeeRequest()
 	if err := _field.Read(iprot); err != nil {
 		return err
 	}
@@ -2709,9 +2709,9 @@ func (p *EmployeeServiceRemoveEmployeeFromDepartmentArgs) ReadField1(iprot thrif
 	return nil
 }
 
-func (p *EmployeeServiceRemoveEmployeeFromDepartmentArgs) Write(oprot thrift.TProtocol) (err error) {
+func (p *EmployeeServiceRestoreEmployeeArgs) Write(oprot thrift.TProtocol) (err error) {
 	var fieldId int16
-	if err = oprot.WriteStructBegin("RemoveEmployeeFromDepartment_args"); err != nil {
+	if err = oprot.WriteStructBegin("RestoreEmployee_args"); err != nil {
 		goto WriteStructBeginError
 	}
 	if p != nil {
@@ -2737,7 +2737,7 @@ WriteStructEndError:
 	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
 }
 
-func (p *EmployeeServiceRemoveEmployeeFromDepartmentArgs) writeField1(oprot thrift.TProtocol) (err error) {
+func (p *EmployeeServiceRestoreEmployeeArgs) writeField1(oprot thrift.TProtocol) (err error) {
 	if err = oprot.WriteFieldBegin("request", thrift.STRUCT, 1); err != nil {
 		goto WriteFieldBeginError
 	}
@@ -2754,43 +2754,43 @@ WriteFieldEndError:
 	return thrift.PrependError(fmt.Sprintf("%T write field 1 end error: ", p), err)
 }
 
-func (p *EmployeeServiceRemoveEmployeeFromDepartmentArgs) String() string {
+func (p *EmployeeServiceRestoreEmployeeArgs) String() string {
 	if p == nil {
 		return "<nil>"
 	}
-	return fmt.Sprintf("EmployeeServiceRemoveEmployeeFromDepartmentArgs(%+v)", *p)
+	return fmt.Sprintf("EmployeeServiceRestoreEmployeeArgs(%+v)", *p)
 
 }
 
-type EmployeeServiceRemoveEmployeeFromDepartmentResult struct {
-	Success *RemoveEmployeeFromDepartmentResponse `thrift:"success,0,optional"`
+type EmployeeServiceRestoreEmployeeResult struct {
+	Success *RestoreEmployeeResponse `thrift:"success,0,optional"`
 }
 
-func NewEmployeeServiceRemoveEmployeeFromDepartmentResult() *EmployeeServiceRemoveEmployeeFromDepartmentResult {
-	return &EmployeeServiceRemoveEmployeeFromDepartmentResult{}
+func NewEmployeeServiceRestoreEmployeeResult() *EmployeeServiceRestoreEmployeeResult {
+	return &EmployeeServiceRestoreEmployeeResult{}
 }
 
-func (p *EmployeeServiceRemoveEmployeeFromDepartmentResult) InitDefault() {
+func (p *EmployeeServiceRestoreEmployeeResult) InitDefault() {
 }
 
-var EmployeeServiceRemoveEmployeeFromDepartmentResult_Success_DEFAULT *RemoveEmployeeFromDepartmentResponse
+var EmployeeServiceRestoreEmployeeResult_Success_DEFAULT *RestoreEmployeeResponse
 
-func (p *EmployeeServiceRemoveEmployeeFromDepartmentResult) GetSuccess() (v *RemoveEmployeeFromDepartmentResponse) {
+func (p *EmployeeServiceRestoreEmployeeResult) GetSuccess() (v *RestoreEmployeeResponse) {
 	if !p.IsSetSuccess() {
-		return EmployeeServiceRemoveEmployeeFromDepartmentResult_Success_DEFAULT
+		return EmployeeServiceRestoreEmployeeResult_Success_DEFAULT
 	}
 	return p.Success
 }
 
-var fieldIDToName_EmployeeServiceRemoveEmployeeFromDepartmentResult = map[int16]string{
+var fieldIDToName_EmployeeServiceRestoreEmployeeResult = map[int16]string{
 	0: "success",
 }
 
-func (p *EmployeeServiceRemoveEmployeeFromDepartmentResult) IsSetSuccess() bool {
+func (p *EmployeeServiceRestoreEmployeeResult) IsSetSuccess() bool {
 	return p.Success != nil
 }
 
-func (p *EmployeeServiceRemoveEmployeeFromDepartmentResult) Read(iprot thrift.TProtocol) (err error) {
+func (p *EmployeeServiceRestoreEmployeeResult) Read(iprot thrift.TProtocol) (err error) {
 	var fieldTypeId thrift.TType
 	var fieldId int16
 
@@ -2835,7 +2835,7 @@ ReadStructBeginError:
 ReadFieldBeginError:
 	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
 ReadFieldError:
-	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_EmployeeServiceRemoveEmployeeFromDepartmentResult[fieldId]), err)
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_EmployeeServiceRestoreEmployeeResult[fieldId]), err)
 SkipFieldError:
 	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
 
@@ -2845,8 +2845,8 @@ ReadStructEndError:
 	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
 }
 
-func (p *EmployeeServiceRemoveEmployeeFromDepartmentResult) ReadField0(iprot thrift.TProtocol) error {
-	_field := NewRemoveEmployeeFromDepartmentResponse()
+func (p *EmployeeServiceRestoreEmployeeResult) ReadField0(iprot thrift.TProtocol) error {
+	_field := NewRestoreEmployeeResponse()
 	if err := _field.Read(iprot); err != nil {
 		return err
 	}
@@ -2854,9 +2854,9 @@ func (p *EmployeeServiceRemoveEmployeeFromDepartmentResult) ReadField0(iprot thr
 	return nil
 }
 
-func (p *EmployeeServiceRemoveEmployeeFromDepartmentResult) Write(oprot thrift.TProtocol) (err error) {
+func (p *EmployeeServiceRestoreEmployeeResult) Write(oprot thrift.TProtocol) (err error) {
 	var fieldId int16
-	if err = oprot.WriteStructBegin("RemoveEmployeeFromDepartment_result"); err != nil {
+	if err = oprot.WriteStructBegin("RestoreEmployee_result"); err != nil {
 		goto WriteStructBeginError
 	}
 	if p != nil {
@@ -2882,7 +2882,7 @@ WriteStructEndError:
 	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
 }
 
-func (p *EmployeeServiceRemoveEmployeeFromDepartmentResult) writeField0(oprot thrift.TProtocol) (err error) {
+func (p *EmployeeServiceRestoreEmployeeResult) writeField0(oprot thrift.TProtocol) (err error) {
 	if p.IsSetSuccess() {
 		if err = oprot.WriteFieldBegin("success", thrift.STRUCT, 0); err != nil {
 			goto WriteFieldBeginError
@@ -2901,10 +2901,10 @@ WriteFieldEndError:
 	return thrift.PrependError(fmt.Sprintf("%T write field 0 end error: ", p), err)
 }
 
-func (p *EmployeeServiceRemoveEmployeeFromDepartmentResult) String() string {
+func (p *EmployeeServiceRestoreEmployeeResult) String() string {
 	if p == nil {
 		return "<nil>"
 	}
-	return fmt.Sprintf("EmployeeServiceRemoveEmployeeFromDepartmentResult(%+v)", *p)
+	return fmt.Sprintf("EmployeeServiceRestoreEmployeeResult(%+v)", *p)
 
 }

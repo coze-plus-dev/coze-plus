@@ -1,4 +1,20 @@
 /*
+ * Copyright 2025 coze-plus Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * Copyright 2025 coze-dev Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -65,6 +81,8 @@ type Employee interface {
 	// Business operations
 	AssignEmployeeToDepartment(ctx context.Context, request *AssignEmployeeToDepartmentRequest) error
 	RemoveEmployeeFromDepartment(ctx context.Context, request *RemoveEmployeeFromDepartmentRequest) error
+	ForceDeleteEmployeeDepartment(ctx context.Context, relationID int64) error
+	UpdateEmployeeDepartment(ctx context.Context, request *UpdateEmployeeDepartmentRequest) error
 	UpdateEmployeeStatus(ctx context.Context, request *UpdateEmployeeStatusRequest) error
 	GetEmployeesByDepartment(ctx context.Context, request *GetEmployeesByDepartmentRequest) (*GetEmployeesByDepartmentResponse, error)
 	GetDepartmentsByEmployee(ctx context.Context, request *GetDepartmentsByEmployeeRequest) (*GetDepartmentsByEmployeeResponse, error)
@@ -242,7 +260,6 @@ type SortDepartmentsRequest struct {
 // Request/Response structures for Employee service
 
 type CreateEmployeeRequest struct {
-	CorpID     int64                       `json:"corp_id"`
 	Name       string                      `json:"name"`
 	Email      *string                     `json:"email,omitempty"`
 	Phone      *string                     `json:"phone,omitempty"`
@@ -290,7 +307,7 @@ type ListEmployeesRequest struct {
 	Status     *entity.EmployeeStatus    `json:"status,omitempty"`
 	EmpSource  *entity.EmployeeSource    `json:"emp_source,omitempty"`
 	CreatorID  *int64                    `json:"creator_id,omitempty"`
-	Keyword    *string                   `json:"keyword,omitempty"`
+	Keyword    *string                   `json:"keyword,omitempty"` // 支持姓名和手机号模糊查询
 	Limit      int                       `json:"limit"`
 	Page       int                       `json:"page"`
 }
@@ -302,14 +319,22 @@ type ListEmployeesResponse struct {
 }
 
 type AssignEmployeeToDepartmentRequest struct {
-	EmpID    int64 `json:"emp_id"`
-	DeptID   int64 `json:"dept_id"`
-	IsLeader bool  `json:"is_leader"`
+	EmpID     int64 `json:"emp_id"`
+	DeptID    int64 `json:"dept_id"`
+	IsLeader  bool  `json:"is_leader"`
+	IsPrimary bool  `json:"is_primary"`
 }
 
 type RemoveEmployeeFromDepartmentRequest struct {
 	EmpID  int64 `json:"emp_id"`
 	DeptID int64 `json:"dept_id"`
+}
+
+type UpdateEmployeeDepartmentRequest struct {
+	ID        int64                            `json:"id"`
+	JobTitle  *string                          `json:"job_title"`
+	Status    *entity.EmployeeDepartmentStatus `json:"status"`
+	IsPrimary *bool                            `json:"is_primary"`
 }
 
 type UpdateEmployeeStatusRequest struct {

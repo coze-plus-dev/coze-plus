@@ -1,4 +1,20 @@
 /*
+ * Copyright 2025 coze-plus Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * Copyright 2025 coze-dev Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1573,6 +1589,7 @@ export interface I18nOptionsMap {
   };
   Data_request_download_data_records: { date: ReactNode /* string */ };
   datasets_botRefer_list_description_after: { num: ReactNode /* number */ };
+  common_total_count: { count: ReactNode /* number */ };
 }
 // #endregion
 
@@ -10908,6 +10925,10 @@ export type I18nKeysNoOptionsType =
   | 'navigation_store'
   | 'navigation_template'
   | 'navigation_template_2'
+  | 'navigation_organization_account_management'
+  | 'navigation_organization_address_book'
+  | 'navigation_organization_management'
+  | 'navigation_organization_role_management'
   | 'navigation_workspace'
   | 'navigation_workspace_develop'
   | 'navigation_workspace_fav_load'
@@ -16224,7 +16245,35 @@ export type I18nKeysNoOptionsType =
   | 'data_request_request_failed'
   | 'data_request_requesting'
   | 'other_knowledge'
-  | 'recall_knowledge_empty';
+  | 'recall_knowledge_empty'
+  | 'common_name'
+  | 'common_mobile'
+  | 'common_department'
+  | 'common_role'
+  | 'common_status'
+  | 'common_operation'
+  | 'common_edit'
+  | 'common_create'
+  | 'common_joined'
+  | 'common_not_joined'
+  | 'enterprise_organization'
+  | 'enterprise_department'
+  | 'enterprise_member'
+  | 'enterprise_no_employee_data'
+  | 'enterprise_please_add_employee'
+  | 'enterprise_no_department_data'
+  | 'enterprise_please_create_department'
+  | 'create_organization'
+  | 'organization_name'
+  | 'please_input_organization_name'
+  | 'organization_name_too_long'
+  | 'organization_type'
+  | 'please_select_organization_type'
+  | 'corp_type_group'
+  | 'corp_type_company'
+  | 'corp_type_branch'
+  | 'create_success'
+  | 'create_failed';
 // #endregion
 
 // #region LocaleData

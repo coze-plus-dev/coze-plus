@@ -2,7 +2,7 @@
 
 # License header content
 APACHE_LICENSE_HEADER="/*
- * Copyright 2025 coze-dev Authors
+ * Copyright 2025 coze-plus Authors
  *
  * Licensed under the Apache License, Version 2.0 (the \"License\");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ APACHE_LICENSE_HEADER="/*
  */"
 
 SHELL_LICENSE_HEADER="#
-# Copyright 2025 coze-dev Authors
+# Copyright 2025 coze-plus Authors  
 #
 # Licensed under the Apache License, Version 2.0 (the \"License\");
 # you may not use this file except in compliance with the License.
@@ -44,11 +44,11 @@ has_license_header() {
     case "$ext" in
         "go"|"ts"|"tsx"|"js"|"jsx")
             # Check for /* Copyright pattern within first 5 lines
-            head -n 5 "$file" | grep -q "Copyright.*coze-dev Authors"
+            head -n 5 "$file" | grep -q "Copyright.*coze-plus Authors"
             ;;
         "sh")
             # Check for # Copyright pattern within first 10 lines (accounting for shebang)
-            head -n 10 "$file" | grep -q "Copyright.*coze-dev Authors"
+            head -n 10 "$file" | grep -q "Copyright.*coze-plus Authors"
             ;;
         *)
             return 1

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 coze-dev Authors
+ * Copyright 2025 coze-plus Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,3 +16,6 @@
 
 export * as passport from './idl/passport/passport';
 export * as explore from './idl/marketplace/public_api';
+export * as corporation from './idl/corporation/corporation_service';
+export * as department from './idl/corporation/department_service';
+export * as employee from './idl/corporation/employee_service';

@@ -1,4 +1,20 @@
 /*
+ * Copyright 2025 coze-plus Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * Copyright 2025 coze-dev Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,13 +50,13 @@ func CreateDepartment(ctx context.Context, c *app.RequestContext) {
 	var req department1.CreateDepartmentRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
-		c.String(consts.StatusBadRequest, err.Error())
+		invalidParamRequestResponse(c, err.Error())
 		return
 	}
 
 	resp, err := corporation.CorporationSVC.CreateDepartment(ctx, &req)
 	if err != nil {
-		c.String(consts.StatusInternalServerError, err.Error())
+		internalServerErrorResponse(ctx, c, err)
 		return
 	}
 
@@ -54,13 +70,13 @@ func GetDepartment(ctx context.Context, c *app.RequestContext) {
 	var req department1.GetDepartmentRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
-		c.String(consts.StatusBadRequest, err.Error())
+		invalidParamRequestResponse(c, err.Error())
 		return
 	}
 
 	resp, err := corporation.CorporationSVC.GetDepartmentByID(ctx, &req)
 	if err != nil {
-		c.String(consts.StatusInternalServerError, err.Error())
+		internalServerErrorResponse(ctx, c, err)
 		return
 	}
 
@@ -74,13 +90,13 @@ func UpdateDepartment(ctx context.Context, c *app.RequestContext) {
 	var req department1.UpdateDepartmentRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
-		c.String(consts.StatusBadRequest, err.Error())
+		invalidParamRequestResponse(c, err.Error())
 		return
 	}
 
 	resp, err := corporation.CorporationSVC.UpdateDepartment(ctx, &req)
 	if err != nil {
-		c.String(consts.StatusInternalServerError, err.Error())
+		internalServerErrorResponse(ctx, c, err)
 		return
 	}
 
@@ -94,13 +110,13 @@ func DeleteDepartment(ctx context.Context, c *app.RequestContext) {
 	var req department1.DeleteDepartmentRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
-		c.String(consts.StatusBadRequest, err.Error())
+		invalidParamRequestResponse(c, err.Error())
 		return
 	}
 
 	resp, err := corporation.CorporationSVC.DeleteDepartment(ctx, &req)
 	if err != nil {
-		c.String(consts.StatusInternalServerError, err.Error())
+		internalServerErrorResponse(ctx, c, err)
 		return
 	}
 
@@ -114,13 +130,13 @@ func ListDepartments(ctx context.Context, c *app.RequestContext) {
 	var req department1.ListDepartmentRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
-		c.String(consts.StatusBadRequest, err.Error())
+		invalidParamRequestResponse(c, err.Error())
 		return
 	}
 
 	resp, err := corporation.CorporationSVC.ListDepartments(ctx, &req)
 	if err != nil {
-		c.String(consts.StatusInternalServerError, err.Error())
+		internalServerErrorResponse(ctx, c, err)
 		return
 	}
 
@@ -134,13 +150,33 @@ func SortDepartments(ctx context.Context, c *app.RequestContext) {
 	var req department1.SortDepartmentRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
-		c.String(consts.StatusBadRequest, err.Error())
+		invalidParamRequestResponse(c, err.Error())
 		return
 	}
 
 	resp, err := corporation.CorporationSVC.SortDepartments(ctx, &req)
 	if err != nil {
-		c.String(consts.StatusInternalServerError, err.Error())
+		internalServerErrorResponse(ctx, c, err)
+		return
+	}
+
+	c.JSON(consts.StatusOK, resp)
+}
+
+// GetDepartmentTree .
+// @router /api/v1/corporation/department/tree [POST]
+func GetDepartmentTree(ctx context.Context, c *app.RequestContext) {
+	var err error
+	var req department1.GetDepartmentTreeRequest
+	err = c.BindAndValidate(&req)
+	if err != nil {
+		invalidParamRequestResponse(c, err.Error())
+		return
+	}
+
+	resp, err := corporation.CorporationSVC.GetDepartmentTree(ctx, &req)
+	if err != nil {
+		internalServerErrorResponse(ctx, c, err)
 		return
 	}
 
