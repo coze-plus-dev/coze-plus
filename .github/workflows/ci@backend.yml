@@ -31,7 +31,6 @@ jobs:
     env:
       COVERAGE_FILE: coverage.out
       BREAKDOWN_FILE: main.breakdown
-
     steps:
       - uses: actions/checkout@v4
       - name: Set up Go
@@ -52,7 +51,6 @@ jobs:
           mysql version: '8.4.5'
           mysql database: 'opencoze'
           mysql root password: 'root'
-
       - name: Verify MySQL Startup
         run: |
           echo "Waiting for MySQL to be ready..."
@@ -86,7 +84,6 @@ jobs:
           for module in $modules; do go work use $module; list=$module"/... "$list; coverpkg=$module"/...,"$coverpkg; done
           go work sync
           go test -race -v -coverprofile=${{ env.COVERAGE_FILE }} -gcflags="all=-l -N" -coverpkg=$coverpkg $list
-
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
