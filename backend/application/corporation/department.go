@@ -14,22 +14,6 @@
  * limitations under the License.
  */
 
-/*
- * Copyright 2025 coze-dev Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package corporation
 
 import (
@@ -37,8 +21,8 @@ import (
 
 	"gorm.io/gorm"
 
-	departmentAPI "github.com/coze-dev/coze-studio/backend/api/model/corporation/department"
 	"github.com/coze-dev/coze-studio/backend/api/model/corporation/common"
+	departmentAPI "github.com/coze-dev/coze-studio/backend/api/model/corporation/department"
 	"github.com/coze-dev/coze-studio/backend/application/base/ctxutil"
 	"github.com/coze-dev/coze-studio/backend/domain/corporation/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/corporation/service"
@@ -216,40 +200,40 @@ func (s *CorporationApplicationService) GetDepartmentTree(ctx context.Context, r
 	resp := departmentAPI.NewGetDepartmentTreeResponse()
 	resp.Code = 0
 	resp.Msg = ""
-	
+
 	corpID := req.GetCorpID()
-	
+
 	var parentID *int64
 	if req.IsSetParentID() {
 		id := req.GetParentID()
 		parentID = &id
 	}
-	
+
 	depth := int32(0) // 0 means all levels
 	if req.IsSetDepth() {
 		depth = req.GetDepth()
 	}
-	
+
 	includeEmployeeCount := false
 	if req.IsSetIncludeEmployeeCount() {
 		includeEmployeeCount = req.GetIncludeEmployeeCount()
 	}
-	
+
 	// Get department tree
 	deptTreeReq := &service.GetDepartmentTreeRequest{
 		CorpID:     corpID,
 		RootDeptID: parentID,
 	}
-	
+
 	deptTreeResp, err := s.DomainDepartmentSVC.GetDepartmentTree(ctx, deptTreeReq)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Build tree nodes
 	treeNodes := make([]*departmentAPI.DepartmentTreeNode, 0)
 	deptMap := make(map[int64]*departmentAPI.DepartmentTreeNode)
-	
+
 	// First pass: create all department nodes
 	for _, dept := range deptTreeResp.Departments {
 		node := &departmentAPI.DepartmentTreeNode{
@@ -270,7 +254,7 @@ func (s *CorporationApplicationService) GetDepartmentTree(ctx context.Context, r
 		}
 		deptMap[dept.ID] = node
 	}
-	
+
 	// Build department hierarchy
 	for _, dept := range deptTreeResp.Departments {
 		node := deptMap[dept.ID]
@@ -282,21 +266,21 @@ func (s *CorporationApplicationService) GetDepartmentTree(ctx context.Context, r
 			parentNode.HasChildren = true
 		}
 	}
-	
+
 	// Apply depth limit if specified
 	if depth > 0 {
 		for _, node := range treeNodes {
 			s.applyDepthLimitToDepartmentTree(node, 1, depth)
 		}
 	}
-	
+
 	// If include employee count, calculate counts
 	if includeEmployeeCount {
 		for _, node := range treeNodes {
 			s.calculateDepartmentEmployeeCount(ctx, node)
 		}
 	}
-	
+
 	resp.Data = treeNodes
 	return resp, nil
 }
@@ -388,7 +372,7 @@ func (s *CorporationApplicationService) applyDepthLimitToDepartmentTree(node *de
 		}
 		return
 	}
-	
+
 	for _, child := range node.Children {
 		s.applyDepthLimitToDepartmentTree(child, currentDepth+1, maxDepth)
 	}
@@ -401,18 +385,18 @@ func (s *CorporationApplicationService) calculateDepartmentEmployeeCount(ctx con
 		Limit:  1,
 		Page:   1,
 	}
-	
+
 	count := int32(0)
 	empResp, err := s.DomainEmployeeSVC.ListEmployees(ctx, empReq)
 	if err == nil {
 		count = int32(empResp.Total)
 	}
-	
+
 	// Add counts from children
 	for _, child := range node.Children {
 		count += s.calculateDepartmentEmployeeCount(ctx, child)
 	}
-	
+
 	node.EmployeeCount = count
 	return count
 }

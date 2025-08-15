@@ -14,22 +14,6 @@
  * limitations under the License.
  */
 
-/*
- * Copyright 2025 coze-dev Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package corporation
 
 import (
@@ -37,8 +21,8 @@ import (
 
 	"gorm.io/gorm"
 
-	employeeAPI "github.com/coze-dev/coze-studio/backend/api/model/corporation/employee"
 	"github.com/coze-dev/coze-studio/backend/api/model/corporation/common"
+	employeeAPI "github.com/coze-dev/coze-studio/backend/api/model/corporation/employee"
 	"github.com/coze-dev/coze-studio/backend/application/base/ctxutil"
 	"github.com/coze-dev/coze-studio/backend/domain/corporation/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/corporation/service"
@@ -82,7 +66,7 @@ func (s *CorporationApplicationService) CreateEmployee(ctx context.Context, req 
 		if err != nil {
 			return err
 		}
-		
+
 		// Assign employee to each department
 		for _, deptInfo := range req.GetDepartmentIds() {
 			assignReq := &service.AssignEmployeeToDepartmentRequest{
@@ -96,7 +80,7 @@ func (s *CorporationApplicationService) CreateEmployee(ctx context.Context, req 
 				return err
 			}
 		}
-		
+
 		return nil
 	})
 
@@ -243,12 +227,12 @@ func (s *CorporationApplicationService) UpdateEmployee(ctx context.Context, req 
 					updateReq := &service.UpdateEmployeeDepartmentRequest{
 						ID: existingRel.ID, // Use the relation ID
 					}
-					
+
 					if existingRel.IsPrimary != isPrimary {
 						updateReq.IsPrimary = &isPrimary
 						needUpdate = true
 					}
-					
+
 					if deptInfo.IsSetJobTitle() {
 						jobTitle := deptInfo.GetJobTitle()
 						if existingRel.JobTitle == nil || *existingRel.JobTitle != jobTitle {
@@ -256,7 +240,7 @@ func (s *CorporationApplicationService) UpdateEmployee(ctx context.Context, req 
 							needUpdate = true
 						}
 					}
-					
+
 					if needUpdate {
 						err := s.DomainEmployeeSVC.UpdateEmployeeDepartment(ctx, updateReq)
 						if err != nil {
@@ -404,12 +388,12 @@ func (s *CorporationApplicationService) ChangeEmployeeDepartment(ctx context.Con
 			updateReq := &service.UpdateEmployeeDepartmentRequest{
 				ID: existingRel.ID, // Use the relation ID
 			}
-			
+
 			if existingRel.IsPrimary != isPrimary {
 				updateReq.IsPrimary = &isPrimary
 				needUpdate = true
 			}
-			
+
 			if deptInfo.IsSetJobTitle() {
 				jobTitle := deptInfo.GetJobTitle()
 				if existingRel.JobTitle == nil || *existingRel.JobTitle != jobTitle {
@@ -417,7 +401,7 @@ func (s *CorporationApplicationService) ChangeEmployeeDepartment(ctx context.Con
 					needUpdate = true
 				}
 			}
-			
+
 			if needUpdate {
 				err := s.DomainEmployeeSVC.UpdateEmployeeDepartment(ctx, updateReq)
 				if err != nil {
@@ -476,9 +460,9 @@ func convertEntityToEmployeeData(emp *entity.Employee) *employeeAPI.EmployeeData
 	}
 
 	empData := &employeeAPI.EmployeeData{
-		ID:        emp.ID,
-		Name:      emp.Name,
-		Status:    convertEntityEmployeeStatusToCommon(emp.Status),
+		ID:     emp.ID,
+		Name:   emp.Name,
+		Status: convertEntityEmployeeStatusToCommon(emp.Status),
 	}
 
 	// Map Phone field from entity to Mobile field in API
@@ -523,7 +507,7 @@ func convertEntityToEmployeeDataWithDepartments(emp *entity.Employee) *employeeA
 				CorpID:         rel.CorpID,
 				CorpName:       "Corporation", // Default name
 			}
-			
+
 			// Use actual department name and path if available
 			if rel.Department != nil {
 				deptInfo.DepartmentName = rel.Department.Name
@@ -531,12 +515,12 @@ func convertEntityToEmployeeDataWithDepartments(emp *entity.Employee) *employeeA
 					deptInfo.DepartmentPath = &rel.Department.FullPath
 				}
 			}
-			
+
 			// Use actual corporation name if available
 			if rel.Corporation != nil {
 				deptInfo.CorpName = rel.Corporation.Name
 			}
-			
+
 			if rel.JobTitle != nil {
 				deptInfo.JobTitle = rel.JobTitle
 			}
@@ -679,7 +663,7 @@ func (s *CorporationApplicationService) RestoreEmployee(ctx context.Context, req
 				IsLeader:  false,
 				IsPrimary: deptInfo.GetIsPrimary(),
 			}
-			
+
 			err := s.DomainEmployeeSVC.AssignEmployeeToDepartment(ctx, assignReq)
 			if err != nil {
 				return err

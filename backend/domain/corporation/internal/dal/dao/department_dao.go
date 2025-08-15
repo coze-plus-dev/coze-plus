@@ -14,22 +14,6 @@
  * limitations under the License.
  */
 
-/*
- * Copyright 2025 coze-dev Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package dal
 
 import (
@@ -235,7 +219,7 @@ func (dao *DepartmentDAO) GetDepartmentTree(ctx context.Context, corpID int64, r
 // UpdateSort updates department sort order
 func (dao *DepartmentDAO) UpdateSort(ctx context.Context, id int64, sort int32) error {
 	updateData := map[string]interface{}{
-		dao.query.CorporationDepartment.Sort.ColumnName().String():     sort,
+		dao.query.CorporationDepartment.Sort.ColumnName().String():      sort,
 		dao.query.CorporationDepartment.UpdatedAt.ColumnName().String(): time.Now().UnixMilli(),
 	}
 
@@ -248,8 +232,8 @@ func (dao *DepartmentDAO) UpdateSort(ctx context.Context, id int64, sort int32) 
 // MoveDepartment moves department to new parent
 func (dao *DepartmentDAO) MoveDepartment(ctx context.Context, deptID, newParentID int64) error {
 	updateData := map[string]interface{}{
-		dao.query.CorporationDepartment.ParentID.ColumnName().String(): newParentID,
-		dao.query.CorporationDepartment.UpdatedAt.ColumnName().String():   time.Now().UnixMilli(),
+		dao.query.CorporationDepartment.ParentID.ColumnName().String():  newParentID,
+		dao.query.CorporationDepartment.UpdatedAt.ColumnName().String(): time.Now().UnixMilli(),
 	}
 
 	_, err := dao.query.CorporationDepartment.WithContext(ctx).
@@ -262,21 +246,21 @@ func (dao *DepartmentDAO) MoveDepartment(ctx context.Context, deptID, newParentI
 
 func (dao *DepartmentDAO) departmentDO2PO(ctx context.Context, dept *entity.Department) *model.CorporationDepartment {
 	po := &model.CorporationDepartment{
-		ID:         dept.ID,
-		CorpID:     dept.CorpID,
-		Name:       dept.Name,
-		Level:      dept.Level,
-		Sort:       dept.Sort,
-		CreatorID:  dept.CreatorID,
-		CreatedAt:  time.Now().UnixMilli(),
-		UpdatedAt:  time.Now().UnixMilli(),
+		ID:        dept.ID,
+		CorpID:    dept.CorpID,
+		Name:      dept.Name,
+		Level:     dept.Level,
+		Sort:      dept.Sort,
+		CreatorID: dept.CreatorID,
+		CreatedAt: time.Now().UnixMilli(),
+		UpdatedAt: time.Now().UnixMilli(),
 	}
-	
+
 	// Set FullPath
 	if dept.FullPath != "" {
 		po.FullPath = &dept.FullPath
 	}
-	
+
 	if dept.ParentDeptID != nil {
 		po.ParentID = dept.ParentDeptID
 	}
@@ -294,7 +278,7 @@ func (dao *DepartmentDAO) departmentDO2PO(ctx context.Context, dept *entity.Depa
 		}
 		po.DeletedAt = deletedAt
 	}
-	
+
 	return po
 }
 
@@ -309,12 +293,12 @@ func (dao *DepartmentDAO) departmentPO2DO(ctx context.Context, po *model.Corpora
 		CreatedAt: po.CreatedAt,
 		UpdatedAt: po.UpdatedAt,
 	}
-	
+
 	// Set FullPath
 	if po.FullPath != nil {
 		dept.FullPath = *po.FullPath
 	}
-	
+
 	if po.ParentID != nil {
 		dept.ParentDeptID = po.ParentID
 	}
@@ -329,7 +313,7 @@ func (dao *DepartmentDAO) departmentPO2DO(ctx context.Context, po *model.Corpora
 		deletedAt := po.DeletedAt.Time.UnixMilli()
 		dept.DeletedAt = &deletedAt
 	}
-	
+
 	return dept
 }
 
