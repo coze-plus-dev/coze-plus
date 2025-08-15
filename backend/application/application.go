@@ -130,6 +130,7 @@ func Init(ctx context.Context) (err error) {
 	if err != nil {
 		return fmt.Errorf("Init - initVitalServices failed, err: %v", err)
 	}
+
 	crossconnector.SetDefaultSVC(connectorImpl.InitDomainService(basicServices.connectorSVC.DomainSVC))
 	crossdatabase.SetDefaultSVC(databaseImpl.InitDomainService(primaryServices.memorySVC.DatabaseDomainSVC))
 	crossknowledge.SetDefaultSVC(knowledgeImpl.InitDomainService(primaryServices.knowledgeSVC.DomainSVC))
@@ -265,16 +266,15 @@ func (b *basicServices) toPluginServiceComponents() *plugin.ServiceComponents {
 
 func (b *basicServices) toKnowledgeServiceComponents(memoryService *memory.MemoryApplicationServices) *knowledge.ServiceComponents {
 	return &knowledge.ServiceComponents{
-		DB:            b.infra.DB,
-		IDGenSVC:      b.infra.IDGenSVC,
-		Storage:       b.infra.TOSClient,
-		RDB:           memoryService.RDBDomainSVC,
-		ImageX:        b.infra.ImageXClient,
-		ES:            b.infra.ESClient,
-		EventBus:      b.eventbus.resourceEventBus,
-		CacheCli:      b.infra.CacheCli,
-		OCR:           b.infra.OCR,
-		ParserManager: b.infra.ParserManager,
+		DB:                  b.infra.DB,
+		IDGenSVC:            b.infra.IDGenSVC,
+		Storage:             b.infra.TOSClient,
+		RDB:                 memoryService.RDBDomainSVC,
+		SearchStoreManagers: b.infra.SearchStoreManagers,
+		EventBus:            b.eventbus.resourceEventBus,
+		CacheCli:            b.infra.CacheCli,
+		OCR:                 b.infra.OCR,
+		ParserManager:       b.infra.ParserManager,
 	}
 }
 
