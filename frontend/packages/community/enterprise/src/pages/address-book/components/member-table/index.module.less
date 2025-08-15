@@ -4,6 +4,7 @@
   flex-direction: column;
   height: 100%;
   margin: 0 24px; // 添加左右margin
+  min-height: 0; // 允许容器收缩
   
   .tableHeader {
     padding: 16px 0;
@@ -37,6 +38,12 @@
     align-items: center;
     justify-content: center;
     min-height: 400px;
+  }
+
+  // 表格内容区域
+  .tableWrapper {
+    flex: 1;
+    min-height: 0;
   }
   
   .nameCell {
