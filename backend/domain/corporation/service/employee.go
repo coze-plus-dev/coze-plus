@@ -14,22 +14,6 @@
  * limitations under the License.
  */
 
-/*
- * Copyright 2025 coze-dev Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package service
 
 import (
@@ -51,9 +35,9 @@ import (
 // NewEmployeeSVC creates a new employee service
 func NewEmployeeSVC(config *EmployeeSVCConfig) Employee {
 	return &employeeSVC{
-		employeeRepo:    repository.NewEmployeeRepo(config.DB, config.IDGen),
-		departmentRepo:  repository.NewDepartmentRepo(config.DB, config.IDGen),
-		storage:         config.Storage,
+		employeeRepo:   repository.NewEmployeeRepo(config.DB, config.IDGen),
+		departmentRepo: repository.NewDepartmentRepo(config.DB, config.IDGen),
+		storage:        config.Storage,
 		idgen:          config.IDGen,
 	}
 }
@@ -66,9 +50,9 @@ type EmployeeSVCConfig struct {
 }
 
 type employeeSVC struct {
-	employeeRepo    repository.EmployeeRepo
-	departmentRepo  repository.DepartmentRepo
-	storage         storage.Storage
+	employeeRepo   repository.EmployeeRepo
+	departmentRepo repository.DepartmentRepo
+	storage        storage.Storage
 	idgen          idgen.IDGenerator
 }
 
@@ -390,13 +374,13 @@ func (s *employeeSVC) AssignEmployeeToDepartment(ctx context.Context, req *Assig
 
 	// Create employee department relation
 	relation := &entity.EmployeeDepartmentRelation{
-		CorpID:     dept.CorpID,
-		EmpID:      req.EmpID,
-		DeptID:     req.DeptID,
-		Status:     entity.EmployeeDepartmentStatusActive,
-		IsLeader:   req.IsLeader,
-		IsPrimary:  req.IsPrimary,
-		CreatorID:  emp.CreatorID, // Use employee creator ID
+		CorpID:    dept.CorpID,
+		EmpID:     req.EmpID,
+		DeptID:    req.DeptID,
+		Status:    entity.EmployeeDepartmentStatusActive,
+		IsLeader:  req.IsLeader,
+		IsPrimary: req.IsPrimary,
+		CreatorID: emp.CreatorID, // Use employee creator ID
 	}
 
 	// Assign employee to department
@@ -431,14 +415,14 @@ func (s *employeeSVC) UpdateEmployeeDepartment(ctx context.Context, req *UpdateE
 	}
 	if req.IsPrimary != nil {
 		relation.IsPrimary = *req.IsPrimary
-		
+
 		// If setting this as primary, update other departments to non-primary
 		if *req.IsPrimary {
 			allRelations, err := s.employeeRepo.GetEmployeeDepartments(ctx, relation.EmpID)
 			if err != nil {
 				return errorx.WrapByCode(err, errno.ErrCorporationInternalError)
 			}
-			
+
 			// Update other relations in the same corporation to non-primary
 			for _, otherRel := range allRelations {
 				if otherRel.ID != relation.ID && otherRel.CorpID == relation.CorpID && otherRel.IsPrimary {
@@ -459,7 +443,7 @@ func (s *employeeSVC) UpdateEmployeeDepartment(ctx context.Context, req *UpdateE
 	return nil
 }
 
-// RemoveEmployeeFromDepartment removes employee from department  
+// RemoveEmployeeFromDepartment removes employee from department
 func (s *employeeSVC) RemoveEmployeeFromDepartment(ctx context.Context, req *RemoveEmployeeFromDepartmentRequest) error {
 	if req.EmpID <= 0 || req.DeptID <= 0 {
 		return errorx.New(errno.ErrCorporationInvalidParamCode, errorx.KV("msg", "invalid employee or department ID"))
@@ -575,14 +559,14 @@ func (s *employeeSVC) populateAvatarURL(ctx context.Context, emp *entity.Employe
 	if emp == nil || emp.AvatarURI == nil || *emp.AvatarURI == "" {
 		return nil
 	}
-	
+
 	avatarURL, err := s.storage.GetObjectUrl(ctx, *emp.AvatarURI)
 	if err != nil {
 		// Log error but don't fail the request for avatar URL generation
 		// logs.CtxWarnf(ctx, "Failed to generate avatar URL for employee %d: %v", emp.ID, err)
 		return nil
 	}
-	
+
 	emp.AvatarURL = &avatarURL
 	return nil
 }
@@ -590,12 +574,12 @@ func (s *employeeSVC) populateAvatarURL(ctx context.Context, emp *entity.Employe
 // handleEmployeeCreateError handles database errors during employee creation
 func (s *employeeSVC) handleEmployeeCreateError(err error) error {
 	errStr := err.Error()
-	
+
 	// Check for MySQL/PostgreSQL unique constraint violations
-	if strings.Contains(errStr, "Duplicate entry") || 
-	   strings.Contains(errStr, "duplicate key") ||
-	   strings.Contains(errStr, "UNIQUE constraint failed") {
-		
+	if strings.Contains(errStr, "Duplicate entry") ||
+		strings.Contains(errStr, "duplicate key") ||
+		strings.Contains(errStr, "UNIQUE constraint failed") {
+
 		// Check which field caused the constraint violation
 		if strings.Contains(errStr, "email") || strings.Contains(errStr, "Email") {
 			return errorx.New(errno.ErrEmployeeEmailExists)
@@ -607,7 +591,7 @@ func (s *employeeSVC) handleEmployeeCreateError(err error) error {
 			return errorx.New(errno.ErrEmployeeIDExists)
 		}
 	}
-	
+
 	// For other database errors, return generic internal error
 	return errorx.WrapByCode(err, errno.ErrCorporationInternalError)
 }
@@ -615,12 +599,12 @@ func (s *employeeSVC) handleEmployeeCreateError(err error) error {
 // handleEmployeeUpdateError handles database errors during employee update
 func (s *employeeSVC) handleEmployeeUpdateError(err error) error {
 	errStr := err.Error()
-	
+
 	// Check for MySQL/PostgreSQL unique constraint violations
-	if strings.Contains(errStr, "Duplicate entry") || 
-	   strings.Contains(errStr, "duplicate key") ||
-	   strings.Contains(errStr, "UNIQUE constraint failed") {
-		
+	if strings.Contains(errStr, "Duplicate entry") ||
+		strings.Contains(errStr, "duplicate key") ||
+		strings.Contains(errStr, "UNIQUE constraint failed") {
+
 		// Check which field caused the constraint violation
 		if strings.Contains(errStr, "email") || strings.Contains(errStr, "Email") {
 			return errorx.New(errno.ErrEmployeeEmailExists)
@@ -632,7 +616,7 @@ func (s *employeeSVC) handleEmployeeUpdateError(err error) error {
 			return errorx.New(errno.ErrEmployeeIDExists)
 		}
 	}
-	
+
 	// For other database errors, return generic internal error
 	return errorx.WrapByCode(err, errno.ErrCorporationInternalError)
 }

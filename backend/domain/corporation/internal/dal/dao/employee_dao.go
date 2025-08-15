@@ -14,22 +14,6 @@
  * limitations under the License.
  */
 
-/*
- * Copyright 2025 coze-dev Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package dal
 
 import (
@@ -174,12 +158,12 @@ func (dao *EmployeeDAO) List(ctx context.Context, filter *entity.EmployeeListFil
 	if filter.CorpID != nil || filter.DeptID != nil {
 		// Join with employee-department relationship table
 		empDeptTable := dao.query.CorporationEmployeeDepartment
-		do = do.LeftJoin(empDeptTable, 
+		do = do.LeftJoin(empDeptTable,
 			dao.query.CorporationEmployee.ID.EqCol(empDeptTable.EmployeeID))
-		
+
 		// Apply department relationship filters
 		do = do.Where(empDeptTable.DeletedAt.IsNull())
-		
+
 		if filter.CorpID != nil {
 			do = do.Where(empDeptTable.CorpID.Eq(*filter.CorpID))
 		}
@@ -224,7 +208,7 @@ func (dao *EmployeeDAO) List(ctx context.Context, filter *entity.EmployeeListFil
 	if len(poList) == 0 {
 		return nil, hasMore, total, nil
 	}
-	
+
 	// Convert to DO and load department information
 	var employees []*entity.Employee
 	if len(poList) > filter.Limit {
@@ -233,7 +217,7 @@ func (dao *EmployeeDAO) List(ctx context.Context, filter *entity.EmployeeListFil
 	} else {
 		employees = dao.employeeBatchPO2DO(ctx, poList)
 	}
-	
+
 	// Load department information for each employee
 	for _, emp := range employees {
 		deptRelations, err := dao.GetEmployeeDepartments(ctx, emp.ID)
@@ -241,10 +225,9 @@ func (dao *EmployeeDAO) List(ctx context.Context, filter *entity.EmployeeListFil
 			emp.Departments = deptRelations
 		}
 	}
-	
+
 	return employees, hasMore, total, nil
 }
-
 
 // GetByDeptID gets employees by department ID
 func (dao *EmployeeDAO) GetByDeptID(ctx context.Context, deptID int64) ([]*entity.Employee, error) {
@@ -386,7 +369,6 @@ func (dao *EmployeeDAO) DeleteEmployeeDepartment(ctx context.Context, id int64) 
 	return err
 }
 
-
 // Data conversion methods
 
 func (dao *EmployeeDAO) employeeDO2PO(ctx context.Context, emp *entity.Employee) *model.CorporationEmployee {
@@ -398,7 +380,7 @@ func (dao *EmployeeDAO) employeeDO2PO(ctx context.Context, emp *entity.Employee)
 		CreatedAt: time.Now().UnixMilli(),
 		UpdatedAt: time.Now().UnixMilli(),
 	}
-	
+
 	if emp.Email != nil {
 		po.Email = emp.Email
 	}
@@ -426,7 +408,7 @@ func (dao *EmployeeDAO) employeeDO2PO(ctx context.Context, emp *entity.Employee)
 		}
 		po.DeletedAt = deletedAt
 	}
-	
+
 	return po
 }
 
@@ -439,7 +421,7 @@ func (dao *EmployeeDAO) employeePO2DO(ctx context.Context, po *model.Corporation
 		CreatedAt: po.CreatedAt,
 		UpdatedAt: po.UpdatedAt,
 	}
-	
+
 	if po.Email != nil {
 		emp.Email = po.Email
 	}
@@ -464,7 +446,7 @@ func (dao *EmployeeDAO) employeePO2DO(ctx context.Context, po *model.Corporation
 		deletedAt := po.DeletedAt.Time.UnixMilli()
 		emp.DeletedAt = &deletedAt
 	}
-	
+
 	return emp
 }
 
@@ -477,24 +459,24 @@ func (dao *EmployeeDAO) employeeBatchPO2DO(ctx context.Context, poList []*model.
 // AssignEmployeeToDepartment assigns employee to department
 func (dao *EmployeeDAO) AssignEmployeeToDepartment(ctx context.Context, relation *entity.EmployeeDepartmentRelation) error {
 	fmt.Printf("[AssignEmployeeToDepartment] Starting assignment for emp: %d, dept: %d\n", relation.EmpID, relation.DeptID)
-	
+
 	// Check if any relationship exists (active or soft-deleted)
 	var existingRelation struct {
 		ID        int64
 		DeletedAt *int64
 	}
-	
+
 	err := dao.db.WithContext(ctx).Table("corporation_employee_department").
 		Select("id, deleted_at").
 		Where("employee_id = ? AND department_id = ?", relation.EmpID, relation.DeptID).
 		Order("created_at DESC"). // Get the most recent one
 		Scan(&existingRelation).Error
-	
+
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		fmt.Printf("[AssignEmployeeToDepartment] Error checking existing relationship: %v\n", err)
 		return err
 	}
-	
+
 	// If relationship exists
 	if existingRelation.ID > 0 {
 		updateData := map[string]interface{}{
@@ -502,11 +484,11 @@ func (dao *EmployeeDAO) AssignEmployeeToDepartment(ctx context.Context, relation
 			"is_primary": boolToInt32(relation.IsPrimary),
 			"updated_at": time.Now().UnixMilli(),
 		}
-		
+
 		if relation.JobTitle != nil {
 			updateData["job_title"] = *relation.JobTitle
 		}
-		
+
 		// If it's soft-deleted, restore it
 		if existingRelation.DeletedAt != nil && *existingRelation.DeletedAt > 0 {
 			updateData["deleted_at"] = nil
@@ -514,17 +496,17 @@ func (dao *EmployeeDAO) AssignEmployeeToDepartment(ctx context.Context, relation
 		} else {
 			fmt.Printf("[AssignEmployeeToDepartment] Updating active relationship ID: %d\n", existingRelation.ID)
 		}
-		
+
 		err = dao.db.WithContext(ctx).Table("corporation_employee_department").
 			Where("id = ?", existingRelation.ID).
 			Updates(updateData).Error
-		
+
 		fmt.Printf("[AssignEmployeeToDepartment] Update result for relationship ID %d: %v\n", existingRelation.ID, err)
 		return err
 	}
-	
+
 	fmt.Printf("[AssignEmployeeToDepartment] No existing relationship found, creating new one\n")
-	
+
 	// If it's set as primary, update other departments to non-primary
 	if relation.IsPrimary {
 		_, err := dao.query.CorporationEmployeeDepartment.WithContext(ctx).
@@ -536,13 +518,13 @@ func (dao *EmployeeDAO) AssignEmployeeToDepartment(ctx context.Context, relation
 			return err
 		}
 	}
-	
+
 	// Create new relationship
 	id, err := dao.idgen.GenID(ctx)
 	if err != nil {
 		return err
 	}
-	
+
 	po := &model.CorporationEmployeeDepartment{
 		ID:           id,
 		EmployeeID:   relation.EmpID,
@@ -554,11 +536,11 @@ func (dao *EmployeeDAO) AssignEmployeeToDepartment(ctx context.Context, relation
 		CreatedAt:    time.Now().UnixMilli(),
 		UpdatedAt:    time.Now().UnixMilli(),
 	}
-	
+
 	if relation.JobTitle != nil {
 		po.JobTitle = relation.JobTitle
 	}
-	
+
 	return dao.query.CorporationEmployeeDepartment.WithContext(ctx).Create(po)
 }
 
@@ -570,21 +552,21 @@ func (dao *EmployeeDAO) GetEmployeeDepartments(ctx context.Context, empID int64)
 		Order(dao.query.CorporationEmployeeDepartment.IsPrimary.Desc()). // Primary departments first
 		Order(dao.query.CorporationEmployeeDepartment.CreatedAt.Desc()).
 		Find()
-	
+
 	if err != nil {
 		return nil, err
 	}
-	
+
 	result := make([]*entity.EmployeeDepartmentRelation, 0, len(poList))
 	for _, po := range poList {
 		relation := dao.employeeDepartmentPO2DO(ctx, po)
-		
+
 		// Load department information
 		dept, err := dao.query.CorporationDepartment.WithContext(ctx).
 			Where(dao.query.CorporationDepartment.ID.Eq(po.DepartmentID)).
 			Where(dao.query.CorporationDepartment.DeletedAt.IsNull()).
 			First()
-		
+
 		if err == nil && dept != nil {
 			fullPath := ""
 			if dept.FullPath != nil {
@@ -597,23 +579,23 @@ func (dao *EmployeeDAO) GetEmployeeDepartments(ctx context.Context, empID int64)
 				FullPath: fullPath,
 			}
 		}
-		
+
 		// Load corporation information for the relation
 		corp, err := dao.query.Corporation.WithContext(ctx).
 			Where(dao.query.Corporation.ID.Eq(po.CorpID)).
 			Where(dao.query.Corporation.DeletedAt.IsNull()).
 			First()
-		
+
 		if err == nil && corp != nil {
 			relation.Corporation = &entity.Corporation{
 				ID:   corp.ID,
 				Name: corp.Name,
 			}
 		}
-		
+
 		result = append(result, relation)
 	}
-	
+
 	return result, nil
 }
 
@@ -622,19 +604,19 @@ func (dao *EmployeeDAO) employeeDepartmentPO2DO(ctx context.Context, po *model.C
 	if po == nil {
 		return nil
 	}
-	
+
 	relation := &entity.EmployeeDepartmentRelation{
-		ID:         po.ID,
-		CorpID:     po.CorpID,
-		EmpID:      po.EmployeeID,
-		DeptID:     po.DepartmentID,
-		Status:     entity.EmployeeDepartmentStatus(po.Status),
-		IsPrimary:  int32ToBool(po.IsPrimary),
-		CreatorID:  po.CreatorID,
-		CreatedAt:  po.CreatedAt,
-		UpdatedAt:  po.UpdatedAt,
+		ID:        po.ID,
+		CorpID:    po.CorpID,
+		EmpID:     po.EmployeeID,
+		DeptID:    po.DepartmentID,
+		Status:    entity.EmployeeDepartmentStatus(po.Status),
+		IsPrimary: int32ToBool(po.IsPrimary),
+		CreatorID: po.CreatorID,
+		CreatedAt: po.CreatedAt,
+		UpdatedAt: po.UpdatedAt,
 	}
-	
+
 	if po.JobTitle != nil {
 		relation.JobTitle = po.JobTitle
 	}
@@ -642,7 +624,7 @@ func (dao *EmployeeDAO) employeeDepartmentPO2DO(ctx context.Context, po *model.C
 		deletedAt := po.DeletedAt.Time.UnixMilli()
 		relation.DeletedAt = &deletedAt
 	}
-	
+
 	return relation
 }
 

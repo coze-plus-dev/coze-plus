@@ -14,22 +14,6 @@
  * limitations under the License.
  */
 
-/*
- * Copyright 2025 coze-dev Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package dal
 
 import (
@@ -214,16 +198,16 @@ func (dao *CorporationDAO) GetCorporationTree(ctx context.Context, rootID int64)
 	if root == nil {
 		return nil, nil
 	}
-	
+
 	// Collect all corporations in tree
 	allCorps := []*entity.Corporation{root}
-	
+
 	// Recursively get all descendants
 	descendants, err := dao.getDescendants(ctx, rootID)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	allCorps = append(allCorps, descendants...)
 	return allCorps, nil
 }
@@ -235,10 +219,10 @@ func (dao *CorporationDAO) getDescendants(ctx context.Context, parentID int64) (
 	if err != nil {
 		return nil, err
 	}
-	
+
 	allDescendants := make([]*entity.Corporation, 0)
 	allDescendants = append(allDescendants, children...)
-	
+
 	// Recursively get descendants of each child
 	for _, child := range children {
 		descendants, err := dao.getDescendants(ctx, child.ID)
@@ -247,14 +231,14 @@ func (dao *CorporationDAO) getDescendants(ctx context.Context, parentID int64) (
 		}
 		allDescendants = append(allDescendants, descendants...)
 	}
-	
+
 	return allDescendants, nil
 }
 
 // UpdateSort updates corporation sort order
 func (dao *CorporationDAO) UpdateSort(ctx context.Context, id int64, sort int32) error {
 	updateData := map[string]interface{}{
-		dao.Query.Corporation.Sort.ColumnName().String():     sort,
+		dao.Query.Corporation.Sort.ColumnName().String():      sort,
 		dao.Query.Corporation.UpdatedAt.ColumnName().String(): time.Now().UnixMilli(),
 	}
 
@@ -290,7 +274,7 @@ func (dao *CorporationDAO) corporationDO2PO(ctx context.Context, corp *entity.Co
 		CreatedAt: time.Now().UnixMilli(),
 		UpdatedAt: time.Now().UnixMilli(),
 	}
-	
+
 	if corp.ParentID != nil {
 		po.ParentID = corp.ParentID
 	}
@@ -308,7 +292,7 @@ func (dao *CorporationDAO) corporationDO2PO(ctx context.Context, corp *entity.Co
 		}
 		po.DeletedAt = deletedAt
 	}
-	
+
 	return po
 }
 
@@ -322,7 +306,7 @@ func (dao *CorporationDAO) corporationPO2DO(ctx context.Context, po *model.Corpo
 		CreatedAt: po.CreatedAt,
 		UpdatedAt: po.UpdatedAt,
 	}
-	
+
 	if po.ParentID != nil {
 		corp.ParentID = po.ParentID
 	}
@@ -337,7 +321,7 @@ func (dao *CorporationDAO) corporationPO2DO(ctx context.Context, po *model.Corpo
 		deletedAt := po.DeletedAt.Time.UnixMilli()
 		corp.DeletedAt = &deletedAt
 	}
-	
+
 	return corp
 }
 

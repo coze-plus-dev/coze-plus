@@ -14,22 +14,6 @@
  * limitations under the License.
  */
 
-/*
- * Copyright 2025 coze-dev Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package service
 
 import (
@@ -52,7 +36,7 @@ func NewDepartmentSVC(config *DepartmentSVCConfig) Department {
 		departmentRepo:  repository.NewDepartmentRepo(config.DB, config.IDGen),
 		corporationRepo: repository.NewCorporationRepo(config.DB, config.IDGen),
 		employeeRepo:    repository.NewEmployeeRepo(config.DB, config.IDGen),
-		idgen:          config.IDGen,
+		idgen:           config.IDGen,
 	}
 }
 
@@ -66,7 +50,7 @@ type departmentSVC struct {
 	departmentRepo  repository.DepartmentRepo
 	corporationRepo repository.CorporationRepo
 	employeeRepo    repository.EmployeeRepo
-	idgen          idgen.IDGenerator
+	idgen           idgen.IDGenerator
 }
 
 // CreateDepartment creates a new department
@@ -202,7 +186,7 @@ func (s *departmentSVC) UpdateDepartment(ctx context.Context, req *UpdateDepartm
 	// Check what needs to be updated before making changes
 	nameChanged := req.Name != nil && *req.Name != existingDept.Name
 	parentChanged := req.ParentDeptID != existingDept.ParentDeptID
-	
+
 	// Update entity
 	if req.Name != nil {
 		existingDept.Name = *req.Name
@@ -224,7 +208,7 @@ func (s *departmentSVC) UpdateDepartment(ctx context.Context, req *UpdateDepartm
 
 	// Regenerate path if parent changed or name changed
 	needPathUpdate := parentChanged || nameChanged
-	
+
 	if needPathUpdate {
 		newPath, err := s.generateDepartmentPath(ctx, existingDept)
 		if err != nil {
@@ -591,15 +575,15 @@ func (s *departmentSVC) updateChildDepartmentPaths(ctx context.Context, parentDe
 		if err != nil {
 			continue // Skip on error
 		}
-		
+
 		child.FullPath = newPath
 		child.Level = s.calculateDepartmentLevel(newPath)
-		
+
 		// Update in database
 		if err := s.departmentRepo.Update(ctx, child); err != nil {
 			continue // Skip on error
 		}
-		
+
 		// Recursively update grandchildren
 		if err := s.updateChildDepartmentPaths(ctx, child.ID); err != nil {
 			continue // Skip on error
