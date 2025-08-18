@@ -79,8 +79,63 @@ require (
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/driver/sqlite v1.4.3
 	gorm.io/gen v0.3.26
-	gorm.io/gorm v1.25.11
-	gorm.io/plugin/dbresolver v1.5.2
+	gorm.io/gorm v1.30.0
+	gorm.io/plugin/dbresolver v1.6.0
+)
+
+replace parse-curl => github.com/killlowkey/parse-curl v1.0.0
+
+require github.com/alicebob/miniredis/v2 v2.34.0
+
+require (
+	github.com/DATA-DOG/go-sqlmock v1.5.2
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.84.1
+	github.com/cloudwego/eino-ext/components/embedding/ark v0.1.0
+	github.com/cloudwego/eino-ext/components/embedding/ollama v0.0.0-20250728060543-79ec300857b8
+	github.com/cloudwego/eino-ext/components/embedding/openai v0.0.0-20250522060253-ddb617598b09
+	github.com/cloudwego/eino-ext/components/model/gemini v0.1.2
+	github.com/cloudwego/eino-ext/components/model/ollama v0.1.0
+	github.com/cloudwego/eino-ext/components/model/qwen v0.0.0-20250612061754-5a3deb091dc5
+	github.com/dimchansky/utfbom v1.1.1
+	github.com/elastic/go-elasticsearch/v7 v7.17.10
+	github.com/extrame/xls v0.0.1
+	github.com/hertz-contrib/cors v0.1.0
+	github.com/jinzhu/copier v0.4.0
+	github.com/mattn/go-shellwords v1.0.12
+	github.com/nsqio/go-nsq v1.1.0
+	github.com/ollama/ollama v0.9.6
+	github.com/rbretecher/go-postman-collection v0.9.0
+	github.com/volcengine/ve-tos-golang-sdk/v2 v2.7.17
+	github.com/yuin/goldmark v1.4.13
+	golang.org/x/image v0.22.0
+	golang.org/x/oauth2 v0.23.0
+	google.golang.org/genai v1.18.0
+)
+
+require (
+	cloud.google.com/go v0.116.0 // indirect
+	cloud.google.com/go/auth v0.9.3 // indirect
+	cloud.google.com/go/compute/metadata v0.5.0 // indirect
+	github.com/alicebob/gopher-json v0.0.0-20230218143504-906a9b012302 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/v4a v1.3.37 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.7.5 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.18.18 // indirect
+	github.com/cloudwego/eino-ext/components/embedding/gemini v0.0.0-20250814083140-54b99ff82f8e // indirect
+	github.com/cloudwego/gopkg v0.1.4 // indirect
+	github.com/evanphx/json-patch v4.12.0+incompatible // indirect
+	github.com/extrame/ole2 v0.0.0-20160812065207-d69429661ad7 // indirect
+	github.com/frankban/quicktest v1.14.6 // indirect
+	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
+	github.com/google/btree v1.1.2 // indirect
+	github.com/google/s2a-go v0.1.8 // indirect
+	github.com/googleapis/enterprise-certificate-proxy v0.3.4 // indirect
+	github.com/jackc/puddle/v2 v2.2.2 // indirect
+	github.com/meguminnnnnnnnn/go-openai v0.0.0-20250620092828-0d508a1dcdde // indirect
+	github.com/peterbourgon/diskv/v3 v3.0.1 // indirect
+	github.com/rogpeppe/fastuuid v1.2.0 // indirect
+	github.com/shabbyrobe/xmlwriter v0.0.0-20200208144257-9fca06d00ffa // indirect
+	github.com/yuin/gopher-lua v1.1.1 // indirect
+	go.opencensus.io v0.24.0 // indirect
 )
 
 require (
