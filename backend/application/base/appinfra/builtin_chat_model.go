@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package buildinmodel
+package appinfra
 
 import (
 	"context"
