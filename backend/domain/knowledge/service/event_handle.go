@@ -621,7 +621,6 @@ func (k *knowledgeSVC) storeSlicesInDB(ctx context.Context, doc *entity.Document
 				return errorx.New(errno.ErrKnowledgeSystemCode,
 					errorx.KV("msg", fmt.Sprintf("convert document failed, err: %v", err)))
 			}
-			sliceModel.Content = sliceEntity.GetSliceContent()
 		}
 
 		sliceModels = append(sliceModels, sliceModel)
