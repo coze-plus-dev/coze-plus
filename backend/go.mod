@@ -83,36 +83,6 @@ require (
 	gorm.io/plugin/dbresolver v1.6.0
 )
 
-replace parse-curl => github.com/killlowkey/parse-curl v1.0.0
-
-require github.com/alicebob/miniredis/v2 v2.34.0
-
-require (
-	github.com/DATA-DOG/go-sqlmock v1.5.2
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.84.1
-	github.com/cloudwego/eino-ext/components/embedding/ark v0.1.0
-	github.com/cloudwego/eino-ext/components/embedding/gemini v0.0.0-20250814083140-54b99ff82f8e
-	github.com/cloudwego/eino-ext/components/embedding/ollama v0.0.0-20250728060543-79ec300857b8
-	github.com/cloudwego/eino-ext/components/embedding/openai v0.0.0-20250522060253-ddb617598b09
-	github.com/cloudwego/eino-ext/components/model/gemini v0.1.2
-	github.com/cloudwego/eino-ext/components/model/ollama v0.1.0
-	github.com/cloudwego/eino-ext/components/model/qwen v0.0.0-20250612061754-5a3deb091dc5
-	github.com/dimchansky/utfbom v1.1.1
-	github.com/elastic/go-elasticsearch/v7 v7.17.10
-	github.com/extrame/xls v0.0.1
-	github.com/hertz-contrib/cors v0.1.0
-	github.com/jinzhu/copier v0.4.0
-	github.com/mattn/go-shellwords v1.0.12
-	github.com/nsqio/go-nsq v1.1.0
-	github.com/ollama/ollama v0.9.6
-	github.com/rbretecher/go-postman-collection v0.9.0
-	github.com/volcengine/ve-tos-golang-sdk/v2 v2.7.17
-	github.com/yuin/goldmark v1.4.13
-	golang.org/x/image v0.22.0
-	golang.org/x/oauth2 v0.23.0
-	google.golang.org/genai v1.18.0
-)
-
 require (
 	cloud.google.com/go v0.116.0 // indirect
 	cloud.google.com/go/auth v0.9.3 // indirect
@@ -201,6 +171,7 @@ require (
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/godbus/dbus/v5 v5.0.4 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/mock v1.7.0-rc.1 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
@@ -302,6 +273,7 @@ require (
 	go.etcd.io/etcd/pkg/v3 v3.5.5 // indirect
 	go.etcd.io/etcd/raft/v3 v3.5.5 // indirect
 	go.etcd.io/etcd/server/v3 v3.5.5 // indirect
+	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.59.0 // indirect
 	go.opentelemetry.io/otel v1.36.0 // indirect
