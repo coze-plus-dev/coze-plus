@@ -138,21 +138,17 @@ func (t *s3Client) CheckAndCreateBucket(ctx context.Context) error {
 		return nil // already exist
 	}
 
-	if err != nil {
-		// bucket not exist
-		if awsErr, ok := err.(interface{ ErrorCode() string }); ok && awsErr.ErrorCode() == "404" {
-			input := &s3.CreateBucketInput{
-				Bucket: aws.String(bucket),
-			}
-			// create bucket
-			_, err := client.CreateBucket(ctx, input)
-			return err
-		}
-		// other case
+	awsErr, ok := err.(interface{ ErrorCode() string })
+	if !ok || awsErr.ErrorCode() != "404" {
 		return err
 	}
 
-	return nil
+	// bucket not exist
+	input := &s3.CreateBucketInput{
+		Bucket: aws.String(bucket),
+	}
+	_, err = client.CreateBucket(ctx, input)
+	return err
 }
 
 func (t *s3Client) PutObject(ctx context.Context, objectKey string, content []byte, opts ...storage.PutOptFn) error {
