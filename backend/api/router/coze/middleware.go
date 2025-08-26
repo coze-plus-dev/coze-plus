@@ -1735,3 +1735,43 @@ func _restoreemployeeMw() []app.HandlerFunc {
 	// your code...
 	return nil
 }
+
+func _roleMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _createroleMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _deleteroleMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _getroleMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _listrolesMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _updateroleMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _templateMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _listpermissiontemplatesMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}

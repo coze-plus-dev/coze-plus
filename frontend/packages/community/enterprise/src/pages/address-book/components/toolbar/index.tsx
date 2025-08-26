@@ -16,20 +16,21 @@
 
 import { type FC, useState } from 'react';
 
-import { t } from '../../../../utils/i18n';
-import { ENTERPRISE_I18N_KEYS } from '../../../../locales/keys';
-import { Button, Input, Dropdown } from '@coze-arch/coze-design';
-import { 
+import {
   IconCozPlus,
   IconCozTeamFill,
   IconCozFolder,
   IconCozPeople,
-  IconCozArrowRight
+  IconCozArrowRight,
 } from '@coze-arch/coze-design/icons';
+import { Button, Input, Dropdown } from '@coze-arch/coze-design';
 
 import { CreateOrganizationModal } from '../create-organization-modal';
-import { CreateDepartmentModal } from '../create-department-modal';
 import { CreateEmployeeModal } from '../create-employee-modal';
+import { CreateDepartmentModal } from '../create-department-modal';
+import { t } from '../../../../utils/i18n';
+import { ENTERPRISE_I18N_KEYS } from '../../../../locales/keys';
+
 import styles from './index.module.less';
 
 interface ToolbarProps {
@@ -40,13 +41,22 @@ interface ToolbarProps {
   onSearch?: (keyword: string) => void;
 }
 
-export const Toolbar: FC<ToolbarProps> = ({ selectedNode, onRefresh, showExpandButton, onExpand, onSearch }) => {
+export const Toolbar: FC<ToolbarProps> = ({
+  selectedNode,
+  onRefresh,
+  showExpandButton,
+  onExpand,
+  onSearch,
+}) => {
   const [createOrgModalVisible, setCreateOrgModalVisible] = useState(false);
   const [createDeptModalVisible, setCreateDeptModalVisible] = useState(false);
-  const [createEmployeeModalVisible, setCreateEmployeeModalVisible] = useState(false);
+  const [createEmployeeModalVisible, setCreateEmployeeModalVisible] =
+    useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
 
-  const handleCreateClick = (type: 'organization' | 'department' | 'member') => {
+  const handleCreateClick = (
+    type: 'organization' | 'department' | 'member',
+  ) => {
     if (type === 'organization') {
       setCreateOrgModalVisible(true);
     } else if (type === 'department') {
@@ -64,7 +74,7 @@ export const Toolbar: FC<ToolbarProps> = ({ selectedNode, onRefresh, showExpandB
   return (
     <div className={styles.toolbar}>
       <div className={styles.left}>
-        {showExpandButton && (
+        {showExpandButton ? (
           <Button
             size="small"
             color="secondary"
@@ -72,10 +82,12 @@ export const Toolbar: FC<ToolbarProps> = ({ selectedNode, onRefresh, showExpandB
             onClick={onExpand}
             className={styles.expandButton}
           />
-        )}
+        ) : null}
         <Input
           showClear
-          placeholder={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_SEARCH_EMPLOYEES_PLACEHOLDER)}
+          placeholder={t(
+            ENTERPRISE_I18N_KEYS.ENTERPRISE_SEARCH_EMPLOYEES_PLACEHOLDER,
+          )}
           style={{ width: 240 }}
           value={searchKeyword}
           onChange={setSearchKeyword}
@@ -91,10 +103,14 @@ export const Toolbar: FC<ToolbarProps> = ({ selectedNode, onRefresh, showExpandB
           render={
             <div className="min-w-[160px] py-[4px]">
               <Dropdown.Menu>
-                <Dropdown.Item onClick={() => handleCreateClick('organization')}>
+                <Dropdown.Item
+                  onClick={() => handleCreateClick('organization')}
+                >
                   <div className="flex items-center gap-[8px]">
                     <IconCozTeamFill className="text-[16px]" />
-                    <span>{t(ENTERPRISE_I18N_KEYS.ENTERPRISE_ORGANIZATION)}</span>
+                    <span>
+                      {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_ORGANIZATION)}
+                    </span>
                   </div>
                 </Dropdown.Item>
                 <Dropdown.Item onClick={() => handleCreateClick('department')}>
@@ -113,15 +129,12 @@ export const Toolbar: FC<ToolbarProps> = ({ selectedNode, onRefresh, showExpandB
             </div>
           }
         >
-          <Button
-            theme="solid"
-            icon={<IconCozPlus className="text-[16px]" />}
-          >
+          <Button theme="solid" icon={<IconCozPlus className="text-[16px]" />}>
             {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_COMMON_CREATE)}
           </Button>
         </Dropdown>
       </div>
-      
+
       <CreateOrganizationModal
         visible={createOrgModalVisible}
         onClose={() => setCreateOrgModalVisible(false)}
@@ -129,7 +142,7 @@ export const Toolbar: FC<ToolbarProps> = ({ selectedNode, onRefresh, showExpandB
           onRefresh?.();
         }}
       />
-      
+
       <CreateDepartmentModal
         visible={createDeptModalVisible}
         onClose={() => setCreateDeptModalVisible(false)}
@@ -138,7 +151,7 @@ export const Toolbar: FC<ToolbarProps> = ({ selectedNode, onRefresh, showExpandB
         }}
         defaultParentId={selectedNode?.id}
       />
-      
+
       <CreateEmployeeModal
         visible={createEmployeeModalVisible}
         onClose={() => setCreateEmployeeModalVisible(false)}

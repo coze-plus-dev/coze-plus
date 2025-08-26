@@ -15,13 +15,15 @@
  */
 
 import { type FC, useState, useEffect, useRef } from 'react';
+
+import { useRequest } from 'ahooks';
+import { Modal, Form, Toast } from '@coze-arch/coze-design';
+
 import { t } from '../../../../utils/i18n';
 import { ENTERPRISE_I18N_KEYS } from '../../../../locales/keys';
-import { Modal, Form, Toast } from '@coze-arch/coze-design';
-import { useRequest } from 'ahooks';
-import { departmentApi } from '../../../../api/corporationApi';
 import { useOrganizationTree } from '../../../../hooks/useOrganizationTree';
 import type { TreeNode } from '../../../../hooks/useOrganizationTree';
+import { departmentApi } from '../../../../api/corporationApi';
 
 import styles from './index.module.less';
 
@@ -50,16 +52,20 @@ export const EditDepartmentModal: FC<EditDepartmentModalProps> = ({
   });
 
   // Convert tree data for TreeSelect component, excluding current department and its children
-  const convertTreeDataForSelect = (nodes: TreeNode[], excludeId?: string): any[] => {
-    return nodes
+  const convertTreeDataForSelect = (
+    nodes: TreeNode[],
+    excludeId?: string,
+  ): any[] =>
+    nodes
       .filter(node => node.key !== excludeId)
       .map(node => ({
         label: node.title,
         value: node.key,
         key: node.key,
-        children: node.children ? convertTreeDataForSelect(node.children, excludeId) : undefined,
+        children: node.children
+          ? convertTreeDataForSelect(node.children, excludeId)
+          : undefined,
       }));
-  };
 
   const treeSelectData = convertTreeDataForSelect(treeData, departmentId);
 
@@ -71,23 +77,26 @@ export const EditDepartmentModal: FC<EditDepartmentModalProps> = ({
       }
       if (node.children) {
         const found = findNode(node.children, targetKey);
-        if (found) return found;
+        if (found) {
+          return found;
+        }
       }
     }
     return null;
   };
 
-
   // Get department details
   const { run: fetchDepartmentDetail } = useRequest(
     async () => {
-      if (!departmentId) return null;
+      if (!departmentId) {
+        return null;
+      }
       const result = await departmentApi.getDepartment(departmentId);
       return result;
     },
     {
       manual: true,
-      onSuccess: (data) => {
+      onSuccess: data => {
         if (data) {
           // Set parent as either parent department or corporation
           const parentId = data.parent_id || data.corp_id;
@@ -97,7 +106,7 @@ export const EditDepartmentModal: FC<EditDepartmentModalProps> = ({
           });
         }
       },
-    }
+    },
   );
 
   // Update department request
@@ -111,9 +120,11 @@ export const EditDepartmentModal: FC<EditDepartmentModalProps> = ({
       }
 
       const { name, parentId } = formApiRef.current?.getValues() || formValues;
-      
+
       if (!parentId) {
-        Toast.error(t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_PARENT_DEPARTMENT));
+        Toast.error(
+          t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_PARENT_DEPARTMENT),
+        );
         return;
       }
 
@@ -148,9 +159,11 @@ export const EditDepartmentModal: FC<EditDepartmentModalProps> = ({
         onSuccess?.();
       },
       onError: (error: any) => {
-        Toast.error(error.message || t(ENTERPRISE_I18N_KEYS.ENTERPRISE_UPDATE_FAILED));
+        Toast.error(
+          error.message || t(ENTERPRISE_I18N_KEYS.ENTERPRISE_UPDATE_FAILED),
+        );
       },
-    }
+    },
   );
 
   const handleClose = () => {
@@ -180,7 +193,7 @@ export const EditDepartmentModal: FC<EditDepartmentModalProps> = ({
       confirmLoading={loading}
     >
       <Form
-        getFormApi={(api) => (formApiRef.current = api)}
+        getFormApi={api => (formApiRef.current = api)}
         labelPosition="top"
         className={styles.form}
         key={`${departmentId}-${JSON.stringify(formValues)}`}
@@ -189,28 +202,51 @@ export const EditDepartmentModal: FC<EditDepartmentModalProps> = ({
           field="name"
           label={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_DEPARTMENT_NAME)}
           rules={[
-            { required: true, message: t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_DEPARTMENT_NAME) },
-            { max: 50, message: t(ENTERPRISE_I18N_KEYS.ENTERPRISE_DEPARTMENT_NAME_TOO_LONG) },
+            {
+              required: true,
+              message: t(
+                ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_DEPARTMENT_NAME,
+              ),
+            },
+            {
+              max: 50,
+              message: t(
+                ENTERPRISE_I18N_KEYS.ENTERPRISE_DEPARTMENT_NAME_TOO_LONG,
+              ),
+            },
           ]}
-          placeholder={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_DEPARTMENT_NAME)}
+          placeholder={t(
+            ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_DEPARTMENT_NAME,
+          )}
           maxLength={50}
           initValue={formValues.name}
-          onChange={(value) => setFormValues(prev => ({ ...prev, name: value }))}
-          suffix={<span style={{ color: '#666', fontSize: 12 }}>{(formValues.name || '').length}/50</span>}
+          onChange={value => setFormValues(prev => ({ ...prev, name: value }))}
+          suffix={
+            <span style={{ color: '#666', fontSize: 12 }}>
+              {(formValues.name || '').length}/50
+            </span>
+          }
         />
-        
+
         <Form.TreeSelect
           field="parentId"
           label={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PARENT_DEPARTMENT)}
           treeData={treeSelectData}
-          placeholder={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_PARENT_DEPARTMENT)}
+          placeholder={t(
+            ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_PARENT_DEPARTMENT,
+          )}
           dropdownStyle={{ maxHeight: 300 }}
           style={{ width: '100%' }}
           filterTreeNode
           showClear
           initValue={formValues.parentId}
           rules={[
-            { required: true, message: t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_PARENT_DEPARTMENT) },
+            {
+              required: true,
+              message: t(
+                ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_PARENT_DEPARTMENT,
+              ),
+            },
           ]}
         />
       </Form>

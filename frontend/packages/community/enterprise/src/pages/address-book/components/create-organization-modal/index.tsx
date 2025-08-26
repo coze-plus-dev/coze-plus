@@ -15,10 +15,12 @@
  */
 
 import { type FC, useState, useEffect } from 'react';
+
+import { useRequest } from 'ahooks';
+import { Modal, Form, Toast } from '@coze-arch/coze-design';
+
 import { t } from '../../../../utils/i18n';
 import { ENTERPRISE_I18N_KEYS } from '../../../../locales/keys';
-import { Modal, Form, Toast } from '@coze-arch/coze-design';
-import { useRequest } from 'ahooks';
 import { corporationApi } from '../../../../api/corporationApi';
 
 import styles from './index.module.less';
@@ -50,7 +52,9 @@ export const CreateOrganizationModal: FC<CreateOrganizationModalProps> = ({
     corp_type: undefined as any, // 不设置默认值，用户必须选择
     parent_id: undefined,
   });
-  const [organizationOptions, setOrganizationOptions] = useState<OrganizationOption[]>([]);
+  const [organizationOptions, setOrganizationOptions] = useState<
+    OrganizationOption[]
+  >([]);
 
   // 获取组织列表
   const { run: fetchOrganizations } = useRequest(
@@ -63,14 +67,14 @@ export const CreateOrganizationModal: FC<CreateOrganizationModalProps> = ({
     },
     {
       manual: true,
-      onSuccess: (data) => {
+      onSuccess: data => {
         const options = data.map((org: any) => ({
           label: org.name,
           value: org.id,
         }));
         setOrganizationOptions(options);
       },
-    }
+    },
   );
 
   // 当弹窗打开时获取组织列表
@@ -97,25 +101,33 @@ export const CreateOrganizationModal: FC<CreateOrganizationModalProps> = ({
         handleClose();
         onSuccess?.();
       },
-      onError: (error) => {
-        Toast.error(error.message || t(ENTERPRISE_I18N_KEYS.ENTERPRISE_CREATE_FAILED));
+      onError: error => {
+        Toast.error(
+          error.message || t(ENTERPRISE_I18N_KEYS.ENTERPRISE_CREATE_FAILED),
+        );
       },
-    }
+    },
   );
 
   // 处理提交
   const handleSubmit = () => {
     // 简单验证
     if (!formValues.name || !formValues.name.trim()) {
-      Toast.error(t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_ORGANIZATION_NAME));
+      Toast.error(
+        t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_ORGANIZATION_NAME),
+      );
       return;
     }
     if (formValues.name.length > 50) {
-      Toast.error(t(ENTERPRISE_I18N_KEYS.ENTERPRISE_ORGANIZATION_NAME_TOO_LONG));
+      Toast.error(
+        t(ENTERPRISE_I18N_KEYS.ENTERPRISE_ORGANIZATION_NAME_TOO_LONG),
+      );
       return;
     }
     if (!formValues.corp_type || formValues.corp_type === 0) {
-      Toast.error(t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_ORGANIZATION_TYPE));
+      Toast.error(
+        t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_ORGANIZATION_TYPE),
+      );
       return;
     }
     createOrganization(formValues);
@@ -123,7 +135,11 @@ export const CreateOrganizationModal: FC<CreateOrganizationModalProps> = ({
 
   // 处理关闭
   const handleClose = () => {
-    setFormValues({ name: '', corp_type: undefined as any, parent_id: undefined });
+    setFormValues({
+      name: '',
+      corp_type: undefined as any,
+      parent_id: undefined,
+    });
     onClose();
   };
 
@@ -152,7 +168,7 @@ export const CreateOrganizationModal: FC<CreateOrganizationModalProps> = ({
         layout="vertical"
         className={styles.form}
         initValues={formValues}
-        onValueChange={(values) => setFormValues(values)}
+        onValueChange={values => setFormValues(values)}
       >
         <Form.Input
           field="name"
@@ -162,7 +178,9 @@ export const CreateOrganizationModal: FC<CreateOrganizationModalProps> = ({
               <span style={{ color: 'red', marginLeft: 4 }}>*</span>
             </span>
           }
-          placeholder={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_ORGANIZATION_NAME)}
+          placeholder={t(
+            ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_ORGANIZATION_NAME,
+          )}
           maxLength={50}
           showClear
           suffix={
@@ -180,7 +198,9 @@ export const CreateOrganizationModal: FC<CreateOrganizationModalProps> = ({
               <span style={{ color: 'red', marginLeft: 4 }}>*</span>
             </span>
           }
-          placeholder={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_ORGANIZATION_TYPE)}
+          placeholder={t(
+            ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_ORGANIZATION_TYPE,
+          )}
           optionList={corpTypeOptions}
           style={{ width: '100%' }}
         />
@@ -188,7 +208,9 @@ export const CreateOrganizationModal: FC<CreateOrganizationModalProps> = ({
         <Form.Select
           field="parent_id"
           label={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PARENT_ORGANIZATION)}
-          placeholder={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_PARENT_ORGANIZATION)}
+          placeholder={t(
+            ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_PARENT_ORGANIZATION,
+          )}
           optionList={organizationOptions}
           style={{ width: '100%' }}
           showClear

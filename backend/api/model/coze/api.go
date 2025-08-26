@@ -26,16 +26,17 @@ import (
 	"github.com/coze-dev/coze-studio/backend/api/model/conversation/agentrun"
 	"github.com/coze-dev/coze-studio/backend/api/model/conversation/conversation"
 	"github.com/coze-dev/coze-studio/backend/api/model/conversation/message"
-	"github.com/coze-dev/coze-studio/backend/api/model/data/database"
-	"github.com/coze-dev/coze-studio/backend/api/model/data/knowledge"
-	"github.com/coze-dev/coze-studio/backend/api/model/data/variable"
 	"github.com/coze-dev/coze-studio/backend/api/model/corporation/corporation"
 	"github.com/coze-dev/coze-studio/backend/api/model/corporation/department"
 	"github.com/coze-dev/coze-studio/backend/api/model/corporation/employee"
+	"github.com/coze-dev/coze-studio/backend/api/model/data/database"
+	"github.com/coze-dev/coze-studio/backend/api/model/data/knowledge"
+	"github.com/coze-dev/coze-studio/backend/api/model/data/variable"
 	"github.com/coze-dev/coze-studio/backend/api/model/file/upload"
 	"github.com/coze-dev/coze-studio/backend/api/model/marketplace/product_public_api"
 	"github.com/coze-dev/coze-studio/backend/api/model/passport"
 	"github.com/coze-dev/coze-studio/backend/api/model/permission/openapiauth"
+	"github.com/coze-dev/coze-studio/backend/api/model/permission/permission"
 	"github.com/coze-dev/coze-studio/backend/api/model/playground"
 	"github.com/coze-dev/coze-studio/backend/api/model/plugin_develop"
 	"github.com/coze-dev/coze-studio/backend/api/model/resource"
@@ -562,6 +563,32 @@ func NewEmployeeServiceClient(c thrift.TClient) *EmployeeServiceClient {
 	}
 }
 
+type PermissionService interface {
+	permission.PermissionService
+}
+
+type PermissionServiceClient struct {
+	*permission.PermissionServiceClient
+}
+
+func NewPermissionServiceClientFactory(t thrift.TTransport, f thrift.TProtocolFactory) *PermissionServiceClient {
+	return &PermissionServiceClient{
+		PermissionServiceClient: permission.NewPermissionServiceClientFactory(t, f),
+	}
+}
+
+func NewPermissionServiceClientProtocol(t thrift.TTransport, iprot thrift.TProtocol, oprot thrift.TProtocol) *PermissionServiceClient {
+	return &PermissionServiceClient{
+		PermissionServiceClient: permission.NewPermissionServiceClientProtocol(t, iprot, oprot),
+	}
+}
+
+func NewPermissionServiceClient(c thrift.TClient) *PermissionServiceClient {
+	return &PermissionServiceClient{
+		PermissionServiceClient: permission.NewPermissionServiceClient(c),
+	}
+}
+
 type IntelligenceServiceProcessor struct {
 	*intelligence.IntelligenceServiceProcessor
 }
@@ -739,5 +766,14 @@ type EmployeeServiceProcessor struct {
 
 func NewEmployeeServiceProcessor(handler EmployeeService) *EmployeeServiceProcessor {
 	self := &EmployeeServiceProcessor{employee.NewEmployeeServiceProcessor(handler)}
+	return self
+}
+
+type PermissionServiceProcessor struct {
+	*permission.PermissionServiceProcessor
+}
+
+func NewPermissionServiceProcessor(handler PermissionService) *PermissionServiceProcessor {
+	self := &PermissionServiceProcessor{permission.NewPermissionServiceProcessor(handler)}
 	return self
 }

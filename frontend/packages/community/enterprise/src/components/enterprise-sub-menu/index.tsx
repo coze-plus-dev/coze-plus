@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import { type FC } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { type FC } from 'react';
 
 import { I18n } from '@coze-arch/i18n';
 import {
@@ -56,7 +56,7 @@ export const EnterpriseSubMenu: FC = () => {
   const navigate = useNavigate();
   const { subMenuKey } = useEnterpriseRoute();
   const menuConfig = getMenuConfig();
-  
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
       {menuConfig.map(item => (

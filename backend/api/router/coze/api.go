@@ -278,6 +278,18 @@ func Register(r *server.Hertz) {
 				_pat.GET("/list_personal_access_tokens", append(_listpersonalaccesstokensMw(), coze.ListPersonalAccessTokens)...)
 				_pat.POST("/update_personal_access_token_and_permission", append(_updatepersonalaccesstokenandpermissionMw(), coze.UpdatePersonalAccessTokenAndPermission)...)
 			}
+			{
+				_role := _permission_api.Group("/role", _roleMw()...)
+				_role.POST("/create", append(_createroleMw(), coze.CreateRole)...)
+				_role.POST("/delete", append(_deleteroleMw(), coze.DeleteRole)...)
+				_role.GET("/get", append(_getroleMw(), coze.GetRole)...)
+				_role.POST("/list", append(_listrolesMw(), coze.ListRoles)...)
+				_role.POST("/update", append(_updateroleMw(), coze.UpdateRole)...)
+			}
+			{
+				_template := _permission_api.Group("/template", _templateMw()...)
+				_template.POST("/list", append(_listpermissiontemplatesMw(), coze.ListPermissionTemplates)...)
+			}
 		}
 		{
 			_playground := _api.Group("/playground", _playgroundMw()...)

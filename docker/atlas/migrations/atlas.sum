@@ -1,4 +1,4 @@
-h1:LXljqbtQyLT17YB+Bbmz6VmSUsQfRRBfs3sHTJYF6t4=
+h1:Tn/R0IhjpiYVPevsAB2kA6ltNAs35R2B2s5OHziPAco=
 20250703095335_initial.sql h1:/joaeUTMhXqAEc0KwsSve5+bYM0qPOp+9OizJtsRc+U=
 20250703115304_update.sql h1:cbYo6Q6Lh96hB4hu5KW2Nn/Mr0VDpg7a1WPgpIb1SOc=
 20250704040445_update.sql h1:QWmoPY//oQ+GFZwET9w/oAWa8mM0KVaD5G8Yiu9bMqY=
@@ -17,4 +17,8 @@ h1:LXljqbtQyLT17YB+Bbmz6VmSUsQfRRBfs3sHTJYF6t4=
 20250806150210_add_corporation_tables.sql h1:85+4IgWrLU/Ir+KTHYAbRaQNZ5jt9/tICChjlkf5gaQ=
 20250811144124_update_employee_dept_for_multi_org.sql h1:8RPC28/zi3r4Sv9mhj3RNYWhmoBny4otObdhIMSWNvM=
 20250811154500_remove_corp_id_from_employee.sql h1:u/fJWoLovQAs0WL7yLih6hVda+/s+K0lcsX/rsU+aFU=
-20250825124000_enterprise_permission_system_init.sql h1:T9TZ7NdVNZJdFu/MshfXEAlCSUFvpHsPNZ8O7x7BizI=
+20250826120001_add_permission_system_tables.sql h1:6+tDpW/kwDEFU/m0TactyM4VDBkkRVmHKa7SiDOpPkg=
+20250826120002_extend_space_user_table.sql h1:dXAIkMwh2/dWhnyd9IxuVKVzErfFei8sn10PvRUR0m4=
+20250826120003_insert_permission_templates.sql h1:4Okz5vxJcX7MEpGDIHhEwAMgM+l11oo402tbEMnPtuY=
+20250826120004_insert_builtin_roles.sql h1:UoJageIDSus/A24X8EtqQ3eAMrtBHxeU5C9YQMu7IAo=
+20250826120005_insert_casbin_policies.sql h1:K3QDvbhe11Y1q6FTFr8Ei9POh0/MX3TLEkMsS2LWzEE=

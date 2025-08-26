@@ -15,13 +15,15 @@
  */
 
 import { type FC, useState, useEffect } from 'react';
+
+import { useRequest } from 'ahooks';
+import { Modal, Form, Toast } from '@coze-arch/coze-design';
+
 import { t } from '../../../../utils/i18n';
 import { ENTERPRISE_I18N_KEYS } from '../../../../locales/keys';
-import { Modal, Form, Toast } from '@coze-arch/coze-design';
-import { useRequest } from 'ahooks';
-import { departmentApi } from '../../../../api/corporationApi';
 import { useOrganizationTree } from '../../../../hooks/useOrganizationTree';
 import type { TreeNode } from '../../../../hooks/useOrganizationTree';
+import { departmentApi } from '../../../../api/corporationApi';
 
 import styles from './index.module.less';
 
@@ -51,14 +53,15 @@ export const CreateDepartmentModal: FC<CreateDepartmentModalProps> = ({
   });
 
   // Convert tree data for TreeSelect component
-  const convertTreeDataForSelect = (nodes: TreeNode[]): any[] => {
-    return nodes.map(node => ({
+  const convertTreeDataForSelect = (nodes: TreeNode[]): any[] =>
+    nodes.map(node => ({
       label: node.title,
       value: node.key,
       key: node.key,
-      children: node.children ? convertTreeDataForSelect(node.children) : undefined,
+      children: node.children
+        ? convertTreeDataForSelect(node.children)
+        : undefined,
     }));
-  };
 
   const treeSelectData = convertTreeDataForSelect(treeData);
 
@@ -70,7 +73,9 @@ export const CreateDepartmentModal: FC<CreateDepartmentModalProps> = ({
       }
       if (node.children) {
         const found = findNode(node.children, targetKey);
-        if (found) return found;
+        if (found) {
+          return found;
+        }
       }
     }
     return null;
@@ -89,20 +94,26 @@ export const CreateDepartmentModal: FC<CreateDepartmentModalProps> = ({
   const { loading, run: createDepartment } = useRequest(
     async () => {
       const { name, parentId } = formValues;
-      
+
       // Manual validation since Form validation API might not be available
       if (!name || !name.trim()) {
-        Toast.error(t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_DEPARTMENT_NAME));
+        Toast.error(
+          t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_DEPARTMENT_NAME),
+        );
         return;
       }
-      
+
       if (name.length > 50) {
-        Toast.error(t(ENTERPRISE_I18N_KEYS.ENTERPRISE_DEPARTMENT_NAME_TOO_LONG));
+        Toast.error(
+          t(ENTERPRISE_I18N_KEYS.ENTERPRISE_DEPARTMENT_NAME_TOO_LONG),
+        );
         return;
       }
-      
+
       if (!parentId) {
-        Toast.error(t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_PARENT_DEPARTMENT));
+        Toast.error(
+          t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_PARENT_DEPARTMENT),
+        );
         return;
       }
 
@@ -137,14 +148,19 @@ export const CreateDepartmentModal: FC<CreateDepartmentModalProps> = ({
     {
       manual: true,
       onSuccess: () => {
-        Toast.success(t(ENTERPRISE_I18N_KEYS.ENTERPRISE_DEPARTMENT_CREATED_SUCCESS));
+        Toast.success(
+          t(ENTERPRISE_I18N_KEYS.ENTERPRISE_DEPARTMENT_CREATED_SUCCESS),
+        );
         handleClose();
         onSuccess?.();
       },
       onError: (error: any) => {
-        Toast.error(error.message || t(ENTERPRISE_I18N_KEYS.ENTERPRISE_COMMON_CREATE_FAIL));
+        Toast.error(
+          error.message ||
+            t(ENTERPRISE_I18N_KEYS.ENTERPRISE_COMMON_CREATE_FAIL),
+        );
       },
-    }
+    },
   );
 
   const handleClose = () => {
@@ -160,7 +176,7 @@ export const CreateDepartmentModal: FC<CreateDepartmentModalProps> = ({
     if (visible) {
       // 每次弹出框打开时，重新获取最新的组织树数据
       refetchTreeData();
-      
+
       if (defaultParentId) {
         setFormValues(prev => ({ ...prev, parentId: defaultParentId }));
       }
@@ -182,31 +198,54 @@ export const CreateDepartmentModal: FC<CreateDepartmentModalProps> = ({
         labelPosition="top"
         className={styles.form}
         initValues={formValues}
-        onValueChange={(values) => setFormValues(values)}
+        onValueChange={values => setFormValues(values)}
       >
         <Form.Input
           field="name"
           label={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_DEPARTMENT_NAME)}
           rules={[
-            { required: true, message: t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_DEPARTMENT_NAME) },
-            { max: 50, message: t(ENTERPRISE_I18N_KEYS.ENTERPRISE_DEPARTMENT_NAME_TOO_LONG) },
+            {
+              required: true,
+              message: t(
+                ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_DEPARTMENT_NAME,
+              ),
+            },
+            {
+              max: 50,
+              message: t(
+                ENTERPRISE_I18N_KEYS.ENTERPRISE_DEPARTMENT_NAME_TOO_LONG,
+              ),
+            },
           ]}
-          placeholder={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_DEPARTMENT_NAME)}
+          placeholder={t(
+            ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_DEPARTMENT_NAME,
+          )}
           maxLength={50}
-          suffix={<span style={{ color: '#666', fontSize: 12 }}>{(formValues.name || '').length}/50</span>}
+          suffix={
+            <span style={{ color: '#666', fontSize: 12 }}>
+              {(formValues.name || '').length}/50
+            </span>
+          }
         />
-        
+
         <Form.TreeSelect
           field="parentId"
           label={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PARENT_DEPARTMENT)}
           treeData={treeSelectData}
-          placeholder={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_PARENT_DEPARTMENT)}
+          placeholder={t(
+            ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_PARENT_DEPARTMENT,
+          )}
           dropdownStyle={{ maxHeight: 300 }}
           style={{ width: '100%' }}
           filterTreeNode
           showClear
           rules={[
-            { required: true, message: t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_PARENT_DEPARTMENT) },
+            {
+              required: true,
+              message: t(
+                ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_PARENT_DEPARTMENT,
+              ),
+            },
           ]}
         />
       </Form>

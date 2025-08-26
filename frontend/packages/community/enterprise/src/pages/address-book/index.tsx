@@ -50,11 +50,16 @@ const AddressBookPage: FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
   const [searchKeyword, setSearchKeyword] = useState<string>('');
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>();
-  const [memberDetailVisible, setMemberDetailVisible] = useState<boolean>(false);
+  const [memberDetailVisible, setMemberDetailVisible] =
+    useState<boolean>(false);
   const orgTreeRef = useRef<OrgTreeRef>(null);
   const memberTableRef = useRef<MemberTableRef>(null);
 
-  const handleSelectNode = (id: string, nodeType: 'corp' | 'dept', nodeInfo?: any) => {
+  const handleSelectNode = (
+    id: string,
+    nodeType: 'corp' | 'dept',
+    nodeInfo?: any,
+  ) => {
     const selectedNodeInfo: SelectedNodeInfo = {
       id,
       type: nodeType,
@@ -117,30 +122,32 @@ const AddressBookPage: FC = () => {
     <div className={styles.addressBookLayout}>
       {!sidebarCollapsed && (
         <div className={styles.sider}>
-          <OrgTree 
+          <OrgTree
             ref={orgTreeRef}
             onSelectNode={handleSelectNode}
             onCollapse={handleToggleSidebar}
           />
         </div>
       )}
-      <div className={`${styles.content} ${sidebarCollapsed ? styles.contentExpanded : ''}`}>
-        <Toolbar 
-          selectedNode={selectedNode} 
+      <div
+        className={`${styles.content} ${sidebarCollapsed ? styles.contentExpanded : ''}`}
+      >
+        <Toolbar
+          selectedNode={selectedNode}
           onRefresh={handleRefresh}
           showExpandButton={sidebarCollapsed}
           onExpand={handleToggleSidebar}
           onSearch={handleSearch}
         />
-        <MemberTable 
+        <MemberTable
           ref={memberTableRef}
-          selectedNode={selectedNode} 
+          selectedNode={selectedNode}
           searchKeyword={searchKeyword}
           onShowDetail={handleShowMemberDetail}
         />
       </div>
-      
-      <MemberDetailPanel 
+
+      <MemberDetailPanel
         visible={memberDetailVisible}
         employeeId={selectedEmployeeId}
         onClose={handleCloseMemberDetail}
