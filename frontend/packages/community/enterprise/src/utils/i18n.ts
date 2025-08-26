@@ -20,9 +20,11 @@
  */
 
 import { I18n } from '@coze-arch/i18n';
-import { ENTERPRISE_I18N_KEYS } from '../locales/keys';
 
-type EnterpriseI18nKey = typeof ENTERPRISE_I18N_KEYS[keyof typeof ENTERPRISE_I18N_KEYS];
+import { type ENTERPRISE_I18N_KEYS } from '../locales/keys';
+
+type EnterpriseI18nKey =
+  (typeof ENTERPRISE_I18N_KEYS)[keyof typeof ENTERPRISE_I18N_KEYS];
 
 /**
  * 企业模块专用的I18n翻译函数
@@ -30,8 +32,11 @@ type EnterpriseI18nKey = typeof ENTERPRISE_I18N_KEYS[keyof typeof ENTERPRISE_I18
  * @param options - 翻译选项
  * @returns 翻译后的文本
  */
-export function t(key: EnterpriseI18nKey, options?: Record<string, any>): string {
-  return I18n.t(key as any, options);
+export function t(
+  key: EnterpriseI18nKey,
+  options?: Record<string, unknown>,
+): string {
+  return I18n.t(key as string, options);
 }
 
 /**
@@ -40,7 +45,7 @@ export function t(key: EnterpriseI18nKey, options?: Record<string, any>): string
  * @returns 翻译后的文本数组
  */
 export function tBatch(keys: EnterpriseI18nKey[]): string[] {
-  return keys.map(key => I18n.t(key as any));
+  return keys.map(key => I18n.t(key as string));
 }
 
 /**
@@ -49,11 +54,15 @@ export function tBatch(keys: EnterpriseI18nKey[]): string[] {
  * @param defaultValue - 默认值
  * @returns 翻译后的文本或默认值
  */
-export function tWithDefault(key: EnterpriseI18nKey, defaultValue: string): string {
+export function tWithDefault(
+  key: EnterpriseI18nKey,
+  defaultValue: string,
+): string {
   try {
-    const result = I18n.t(key as any);
+    const result = I18n.t(key as string);
     return result || defaultValue;
-  } catch {
+  } catch (error) {
+    console.warn('Translation failed for key:', key, error);
     return defaultValue;
   }
 }

@@ -15,10 +15,12 @@
  */
 
 import { type FC, useState, useEffect, useRef } from 'react';
+
+import { useRequest } from 'ahooks';
+import { Modal, Form, Toast } from '@coze-arch/coze-design';
+
 import { t } from '../../../../utils/i18n';
 import { ENTERPRISE_I18N_KEYS } from '../../../../locales/keys';
-import { Modal, Form, Toast } from '@coze-arch/coze-design';
-import { useRequest } from 'ahooks';
 import { corporationApi } from '../../../../api/corporationApi';
 
 import styles from './index.module.less';
@@ -42,7 +44,9 @@ export const EditOrganizationModal: FC<EditOrganizationModalProps> = ({
   onSuccess,
 }) => {
   const formApiRef = useRef<any>(null);
-  const [organizationOptions, setOrganizationOptions] = useState<OrganizationOption[]>([]);
+  const [organizationOptions, setOrganizationOptions] = useState<
+    OrganizationOption[]
+  >([]);
   const [formValues, setFormValues] = useState({
     name: '',
     corp_type: 0,
@@ -52,13 +56,15 @@ export const EditOrganizationModal: FC<EditOrganizationModalProps> = ({
   // 获取组织详情
   const { run: fetchOrganizationDetail } = useRequest(
     async () => {
-      if (!organizationId) return null;
+      if (!organizationId) {
+        return null;
+      }
       const result = await corporationApi.getCorporation(organizationId);
       return result;
     },
     {
       manual: true,
-      onSuccess: (data) => {
+      onSuccess: data => {
         if (data) {
           // 只通过state管理表单值
           setFormValues({
@@ -68,11 +74,13 @@ export const EditOrganizationModal: FC<EditOrganizationModalProps> = ({
           });
         }
       },
-      onError: (error) => {
+      onError: error => {
         console.error('Failed to fetch organization detail:', error);
-        Toast.error(error.message || t(ENTERPRISE_I18N_KEYS.ENTERPRISE_LOAD_FAILED));
+        Toast.error(
+          error.message || t(ENTERPRISE_I18N_KEYS.ENTERPRISE_LOAD_FAILED),
+        );
       },
-    }
+    },
   );
 
   // 获取组织列表（用于父组织选择）
@@ -86,7 +94,7 @@ export const EditOrganizationModal: FC<EditOrganizationModalProps> = ({
     },
     {
       manual: true,
-      onSuccess: (data) => {
+      onSuccess: data => {
         // 过滤掉当前组织，避免设置自己为父组织
         const options = data
           .filter((org: any) => org.id !== organizationId)
@@ -96,7 +104,7 @@ export const EditOrganizationModal: FC<EditOrganizationModalProps> = ({
           }));
         setOrganizationOptions(options);
       },
-    }
+    },
   );
 
   // 当弹窗打开时获取数据
@@ -116,7 +124,7 @@ export const EditOrganizationModal: FC<EditOrganizationModalProps> = ({
       } catch (errors) {
         return;
       }
-      
+
       // 使用表单的值进行更新
       const values = formApiRef.current?.getValues() || formValues;
       await corporationApi.updateCorporation({
@@ -133,10 +141,12 @@ export const EditOrganizationModal: FC<EditOrganizationModalProps> = ({
         handleClose();
         onSuccess?.();
       },
-      onError: (error) => {
-        Toast.error(error.message || t(ENTERPRISE_I18N_KEYS.ENTERPRISE_UPDATE_FAILED));
+      onError: error => {
+        Toast.error(
+          error.message || t(ENTERPRISE_I18N_KEYS.ENTERPRISE_UPDATE_FAILED),
+        );
       },
-    }
+    },
   );
 
   // 处理提交
@@ -177,7 +187,7 @@ export const EditOrganizationModal: FC<EditOrganizationModalProps> = ({
       maskClosable={false}
     >
       <Form
-        getFormApi={(api) => (formApiRef.current = api)}
+        getFormApi={api => (formApiRef.current = api)}
         layout="vertical"
         className={styles.form}
         key={`${organizationId}-${JSON.stringify(formValues)}`}
@@ -185,10 +195,22 @@ export const EditOrganizationModal: FC<EditOrganizationModalProps> = ({
         <Form.Input
           field="name"
           label={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_ORGANIZATION_NAME)}
-          placeholder={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_ORGANIZATION_NAME)}
+          placeholder={t(
+            ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_ORGANIZATION_NAME,
+          )}
           rules={[
-            { required: true, message: t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_ORGANIZATION_NAME) },
-            { max: 50, message: t(ENTERPRISE_I18N_KEYS.ENTERPRISE_ORGANIZATION_NAME_TOO_LONG) },
+            {
+              required: true,
+              message: t(
+                ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_ORGANIZATION_NAME,
+              ),
+            },
+            {
+              max: 50,
+              message: t(
+                ENTERPRISE_I18N_KEYS.ENTERPRISE_ORGANIZATION_NAME_TOO_LONG,
+              ),
+            },
           ]}
           maxLength={50}
           showClear
@@ -198,9 +220,16 @@ export const EditOrganizationModal: FC<EditOrganizationModalProps> = ({
         <Form.Select
           field="corp_type"
           label={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_ORGANIZATION_TYPE)}
-          placeholder={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_ORGANIZATION_TYPE)}
+          placeholder={t(
+            ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_ORGANIZATION_TYPE,
+          )}
           rules={[
-            { required: true, message: t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_ORGANIZATION_TYPE) },
+            {
+              required: true,
+              message: t(
+                ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_ORGANIZATION_TYPE,
+              ),
+            },
           ]}
           optionList={corpTypeOptions}
           style={{ width: '100%' }}
@@ -210,7 +239,9 @@ export const EditOrganizationModal: FC<EditOrganizationModalProps> = ({
         <Form.Select
           field="parent_id"
           label={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PARENT_ORGANIZATION)}
-          placeholder={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_PARENT_ORGANIZATION)}
+          placeholder={t(
+            ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_PARENT_ORGANIZATION,
+          )}
           optionList={organizationOptions}
           style={{ width: '100%' }}
           showClear

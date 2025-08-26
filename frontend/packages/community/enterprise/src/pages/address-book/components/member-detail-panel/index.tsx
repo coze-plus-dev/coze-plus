@@ -15,15 +15,25 @@
  */
 
 import { type FC, useEffect, useState } from 'react';
-import { useRequest } from 'ahooks';
-import { Button, Tag, Avatar, Dropdown, Spin, Input, Toast, Modal } from '@coze-arch/coze-design';
-import { IconCozLoose, IconCozMore } from '@coze-arch/coze-design/icons';
-import { t } from '../../../../utils/i18n';
-import { employee } from '@coze-studio/api-schema';
 
+import { useRequest } from 'ahooks';
+import { type employee } from '@coze-studio/api-schema';
+import { IconCozLoose, IconCozMore } from '@coze-arch/coze-design/icons';
+import {
+  Button,
+  Tag,
+  Avatar,
+  Dropdown,
+  Spin,
+  Input,
+  Toast,
+  Modal,
+} from '@coze-arch/coze-design';
+
+import { ChangeDepartmentModal } from '../change-department-modal';
+import { t } from '../../../../utils/i18n';
 import { ENTERPRISE_I18N_KEYS } from '../../../../locales/keys';
 import { employeeApi } from '../../../../api/corporationApi';
-import { ChangeDepartmentModal } from '../change-department-modal';
 
 import styles from './index.module.less';
 
@@ -60,12 +70,12 @@ interface EditFormValues {
   departments: employee.employee.EmployeeDepartmentInfo[];
 }
 
-export const MemberDetailPanel: FC<MemberDetailPanelProps> = ({ 
-  visible, 
-  employeeId, 
+export const MemberDetailPanel: FC<MemberDetailPanelProps> = ({
+  visible,
+  employeeId,
   onClose,
   onEdit,
-  onRefresh
+  onRefresh,
 }) => {
   // 编辑模式状态
   const [isEditing, setIsEditing] = useState(false);
@@ -75,25 +85,31 @@ export const MemberDetailPanel: FC<MemberDetailPanelProps> = ({
     email: '',
     departments: [],
   });
-  
+
   // 变更部门弹窗状态
   const [changeDepartmentVisible, setChangeDepartmentVisible] = useState(false);
-  
+
   // 离职确认弹窗状态
   const [resignConfirmVisible, setResignConfirmVisible] = useState(false);
-  
+
   // 恢复在职弹窗状态
   const [restoreVisible, setRestoreVisible] = useState(false);
   // 获取员工详情
-  const { data: employee, loading, refresh } = useRequest(
+  const {
+    data: employee,
+    loading,
+    refresh,
+  } = useRequest(
     async () => {
-      if (!employeeId) return null;
+      if (!employeeId) {
+        return null;
+      }
       return employeeApi.getEmployee(employeeId);
     },
     {
       ready: !!(visible && employeeId),
       refreshDeps: [employeeId, visible],
-    }
+    },
   );
 
   // 员工离职请求
@@ -112,22 +128,29 @@ export const MemberDetailPanel: FC<MemberDetailPanelProps> = ({
     {
       manual: true,
       onSuccess: () => {
-        Toast.success(t(ENTERPRISE_I18N_KEYS.ENTERPRISE_RESIGNATION_SUCCESS_MESSAGE));
+        Toast.success(
+          t(ENTERPRISE_I18N_KEYS.ENTERPRISE_RESIGNATION_SUCCESS_MESSAGE),
+        );
         setResignConfirmVisible(false);
         refresh();
         onRefresh?.();
       },
-      onError: (error) => {
-        Toast.error(error.message || t(ENTERPRISE_I18N_KEYS.ENTERPRISE_RESIGNATION_FAILED_MESSAGE));
+      onError: error => {
+        Toast.error(
+          error.message ||
+            t(ENTERPRISE_I18N_KEYS.ENTERPRISE_RESIGNATION_FAILED_MESSAGE),
+        );
       },
-    }
+    },
   );
 
   // 更新员工信息请求
   const { loading: updateLoading, run: updateEmployee } = useRequest(
     async (values: EditFormValues) => {
-      if (!employeeId) return;
-      
+      if (!employeeId) {
+        return;
+      }
+
       const result = await employeeApi.updateEmployee({
         id: employeeId,
         name: values.name,
@@ -140,15 +163,24 @@ export const MemberDetailPanel: FC<MemberDetailPanelProps> = ({
     {
       manual: true,
       onSuccess: () => {
-        Toast.success(t(ENTERPRISE_I18N_KEYS.ENTERPRISE_EDIT_ORGANIZATION_MESSAGES_UPDATE_SUCCESS));
+        Toast.success(
+          t(
+            ENTERPRISE_I18N_KEYS.ENTERPRISE_EDIT_ORGANIZATION_MESSAGES_UPDATE_SUCCESS,
+          ),
+        );
         setIsEditing(false);
         refresh();
         onRefresh?.();
       },
-      onError: (error) => {
-        Toast.error(error.message || t(ENTERPRISE_I18N_KEYS.ENTERPRISE_EDIT_ORGANIZATION_MESSAGES_UPDATE_FAILED));
+      onError: error => {
+        Toast.error(
+          error.message ||
+            t(
+              ENTERPRISE_I18N_KEYS.ENTERPRISE_EDIT_ORGANIZATION_MESSAGES_UPDATE_FAILED,
+            ),
+        );
       },
-    }
+    },
   );
 
   // 当员工数据加载完成时，初始化编辑表单值
@@ -182,7 +214,9 @@ export const MemberDetailPanel: FC<MemberDetailPanelProps> = ({
   const handleSave = () => {
     // 表单验证
     if (!editFormValues.name || !editFormValues.name.trim()) {
-      Toast.error(t(ENTERPRISE_I18N_KEYS.ENTERPRISE_CREATE_EMPLOYEE_FIELDS_NAME_REQUIRED));
+      Toast.error(
+        t(ENTERPRISE_I18N_KEYS.ENTERPRISE_CREATE_EMPLOYEE_FIELDS_NAME_REQUIRED),
+      );
       return;
     }
     if (editFormValues.name.length > 50) {
@@ -190,24 +224,36 @@ export const MemberDetailPanel: FC<MemberDetailPanelProps> = ({
       return;
     }
     if (!editFormValues.mobile || !editFormValues.mobile.trim()) {
-      Toast.error(t(ENTERPRISE_I18N_KEYS.ENTERPRISE_CREATE_EMPLOYEE_FIELDS_MOBILE_REQUIRED));
+      Toast.error(
+        t(
+          ENTERPRISE_I18N_KEYS.ENTERPRISE_CREATE_EMPLOYEE_FIELDS_MOBILE_REQUIRED,
+        ),
+      );
       return;
     }
     // 简单的手机号验证
     const mobileRegex = /^1[3-9]\d{9}$/;
     if (!mobileRegex.test(editFormValues.mobile)) {
-      Toast.error(t(ENTERPRISE_I18N_KEYS.ENTERPRISE_CREATE_EMPLOYEE_FIELDS_MOBILE_INVALID));
+      Toast.error(
+        t(
+          ENTERPRISE_I18N_KEYS.ENTERPRISE_CREATE_EMPLOYEE_FIELDS_MOBILE_INVALID,
+        ),
+      );
       return;
     }
     // 邮箱验证（可选）
     if (editFormValues.email && editFormValues.email.trim()) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(editFormValues.email)) {
-        Toast.error(t(ENTERPRISE_I18N_KEYS.ENTERPRISE_CREATE_EMPLOYEE_FIELDS_EMAIL_INVALID));
+        Toast.error(
+          t(
+            ENTERPRISE_I18N_KEYS.ENTERPRISE_CREATE_EMPLOYEE_FIELDS_EMAIL_INVALID,
+          ),
+        );
         return;
       }
     }
-    
+
     updateEmployee(editFormValues);
   };
 
@@ -259,8 +305,18 @@ export const MemberDetailPanel: FC<MemberDetailPanelProps> = ({
   };
 
   const renderDepartments = () => {
-    if (!employee || !employee.departments || employee.departments.length === 0) {
-      return <span className={styles.emptyValue}>{t(ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_DETAIL_DEPARTMENT_UNASSIGNED)}</span>;
+    if (
+      !employee ||
+      !employee.departments ||
+      employee.departments.length === 0
+    ) {
+      return (
+        <span className={styles.emptyValue}>
+          {t(
+            ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_DETAIL_DEPARTMENT_UNASSIGNED,
+          )}
+        </span>
+      );
     }
 
     const primary = employee.departments.find(d => d.is_primary);
@@ -268,25 +324,29 @@ export const MemberDetailPanel: FC<MemberDetailPanelProps> = ({
 
     return (
       <div className={styles.departmentList}>
-        {primary && (
+        {primary ? (
           <div className={styles.departmentItem}>
-            <Tag color="blue" size="small">{t(ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_DETAIL_DEPARTMENT_PRIMARY)}</Tag>
+            <Tag color="blue" size="small">
+              {t(
+                ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_DETAIL_DEPARTMENT_PRIMARY,
+              )}
+            </Tag>
             <span>{primary.department_name}</span>
-            {primary.department_path && (
+            {primary.department_path ? (
               <span className={styles.departmentPath}>
                 ({primary.department_path})
               </span>
-            )}
+            ) : null}
           </div>
-        )}
+        ) : null}
         {others.map((dept, index) => (
           <div key={index} className={styles.departmentItem}>
             <Tag size="small">{dept.department_name}</Tag>
-            {dept.department_path && (
+            {dept.department_path ? (
               <span className={styles.departmentPath}>
                 ({dept.department_path})
               </span>
-            )}
+            ) : null}
           </div>
         ))}
       </div>
@@ -320,14 +380,23 @@ export const MemberDetailPanel: FC<MemberDetailPanelProps> = ({
             <div className={styles.employeeName}>
               {employee.name}
               {employee.status === 1 ? (
-                <Tag color="green" size="small">{t(ENTERPRISE_I18N_KEYS.ENTERPRISE_STATUS_EMPLOYED)}</Tag>
+                <Tag color="green" size="small">
+                  {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_STATUS_EMPLOYED)}
+                </Tag>
               ) : (
-                <Tag color="red" size="small">{t(ENTERPRISE_I18N_KEYS.ENTERPRISE_STATUS_QUIT)}</Tag>
+                <Tag color="red" size="small">
+                  {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_STATUS_QUIT)}
+                </Tag>
               )}
             </div>
-            {employee.id && (
-              <div className={styles.userId}>{t(ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_DETAIL_USER_ID_PREFIX)}{employee.id}</div>
-            )}
+            {employee.id ? (
+              <div className={styles.userId}>
+                {t(
+                  ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_DETAIL_USER_ID_PREFIX,
+                )}
+                {employee.id}
+              </div>
+            ) : null}
           </div>
         </div>
         <div className={styles.headerActions}>
@@ -342,16 +411,32 @@ export const MemberDetailPanel: FC<MemberDetailPanelProps> = ({
                   {employee?.status === 2 ? (
                     // 离职状态，只显示恢复在职
                     <Dropdown.Item onClick={() => handleAction('restore')}>
-                      <span>{t(ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_TABLE_ACTION_RESTORE)}</span>
+                      <span>
+                        {t(
+                          ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_TABLE_ACTION_RESTORE,
+                        )}
+                      </span>
                     </Dropdown.Item>
                   ) : (
                     // 在职状态，显示完整操作菜单
                     <>
-                      <Dropdown.Item onClick={() => handleAction('changeDepartment')}>
-                        <span>{t(ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_DETAIL_ACTION_CHANGE_DEPARTMENT)}</span>
+                      <Dropdown.Item
+                        onClick={() => handleAction('changeDepartment')}
+                      >
+                        <span>
+                          {t(
+                            ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_DETAIL_ACTION_CHANGE_DEPARTMENT,
+                          )}
+                        </span>
                       </Dropdown.Item>
-                      <Dropdown.Item onClick={() => handleAction('resignation')}>
-                        <span>{t(ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_DETAIL_ACTION_RESIGNATION)}</span>
+                      <Dropdown.Item
+                        onClick={() => handleAction('resignation')}
+                      >
+                        <span>
+                          {t(
+                            ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_DETAIL_ACTION_RESIGNATION,
+                          )}
+                        </span>
                       </Dropdown.Item>
                     </>
                   )}
@@ -364,7 +449,9 @@ export const MemberDetailPanel: FC<MemberDetailPanelProps> = ({
               icon={<IconCozMore />}
               className={styles.editButton}
             >
-{t(ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_DETAIL_ACTION_MORE_ACTIONS)}
+              {t(
+                ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_DETAIL_ACTION_MORE_ACTIONS,
+              )}
             </Button>
           </Dropdown>
           <Button
@@ -378,22 +465,37 @@ export const MemberDetailPanel: FC<MemberDetailPanelProps> = ({
 
       <div className={styles.content}>
         <div className={styles.section}>
-          <div className={styles.sectionTitle}>{t(ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_DETAIL_SECTION_BASIC_INFO)}</div>
+          <div className={styles.sectionTitle}>
+            {t(
+              ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_DETAIL_SECTION_BASIC_INFO,
+            )}
+          </div>
           <div className={styles.infoGrid}>
             <div className={styles.infoItem}>
               <div className={styles.label}>
                 {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_DETAIL_FIELD_NAME)}
-                {isEditing && <span style={{ color: 'red', marginLeft: 4 }}>*</span>}
+                {isEditing ? (
+                  <span style={{ color: 'red', marginLeft: 4 }}>*</span>
+                ) : null}
               </div>
               {isEditing ? (
                 <Input
                   value={editFormValues.name}
-                  onChange={(value) => setEditFormValues({ ...editFormValues, name: value })}
-                  placeholder={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_CREATE_EMPLOYEE_FIELDS_NAME_PLACEHOLDER)}
+                  onChange={value =>
+                    setEditFormValues({ ...editFormValues, name: value })
+                  }
+                  placeholder={t(
+                    ENTERPRISE_I18N_KEYS.ENTERPRISE_CREATE_EMPLOYEE_FIELDS_NAME_PLACEHOLDER,
+                  )}
                   maxLength={50}
                   showClear
                   suffix={
-                    <span style={{ color: 'var(--semi-color-text-2)', fontSize: 12 }}>
+                    <span
+                      style={{
+                        color: 'var(--semi-color-text-2)',
+                        fontSize: 12,
+                      }}
+                    >
                       {(editFormValues.name || '').length}/50
                     </span>
                   }
@@ -405,17 +507,28 @@ export const MemberDetailPanel: FC<MemberDetailPanelProps> = ({
             <div className={styles.infoItem}>
               <div className={styles.label}>
                 {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_DETAIL_FIELD_MOBILE)}
-                {isEditing && <span style={{ color: 'red', marginLeft: 4 }}>*</span>}
+                {isEditing ? (
+                  <span style={{ color: 'red', marginLeft: 4 }}>*</span>
+                ) : null}
               </div>
               {isEditing ? (
                 <Input
                   value={editFormValues.mobile}
-                  onChange={(value) => setEditFormValues({ ...editFormValues, mobile: value })}
-                  placeholder={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_CREATE_EMPLOYEE_FIELDS_MOBILE_PLACEHOLDER)}
+                  onChange={value =>
+                    setEditFormValues({ ...editFormValues, mobile: value })
+                  }
+                  placeholder={t(
+                    ENTERPRISE_I18N_KEYS.ENTERPRISE_CREATE_EMPLOYEE_FIELDS_MOBILE_PLACEHOLDER,
+                  )}
                   maxLength={11}
                   showClear
                   suffix={
-                    <span style={{ color: 'var(--semi-color-text-2)', fontSize: 12 }}>
+                    <span
+                      style={{
+                        color: 'var(--semi-color-text-2)',
+                        fontSize: 12,
+                      }}
+                    >
                       {(editFormValues.mobile || '').length}/11
                     </span>
                   }
@@ -425,16 +538,27 @@ export const MemberDetailPanel: FC<MemberDetailPanelProps> = ({
               )}
             </div>
             <div className={styles.infoItem}>
-              <div className={styles.label}>{t(ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_DETAIL_FIELD_EMAIL)}</div>
+              <div className={styles.label}>
+                {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_DETAIL_FIELD_EMAIL)}
+              </div>
               {isEditing ? (
                 <Input
                   value={editFormValues.email}
-                  onChange={(value) => setEditFormValues({ ...editFormValues, email: value })}
-                  placeholder={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_CREATE_EMPLOYEE_FIELDS_EMAIL_PLACEHOLDER)}
+                  onChange={value =>
+                    setEditFormValues({ ...editFormValues, email: value })
+                  }
+                  placeholder={t(
+                    ENTERPRISE_I18N_KEYS.ENTERPRISE_CREATE_EMPLOYEE_FIELDS_EMAIL_PLACEHOLDER,
+                  )}
                   maxLength={100}
                   showClear
                   suffix={
-                    <span style={{ color: 'var(--semi-color-text-2)', fontSize: 12 }}>
+                    <span
+                      style={{
+                        color: 'var(--semi-color-text-2)',
+                        fontSize: 12,
+                      }}
+                    >
                       {(editFormValues.email || '').length}/100
                     </span>
                   }
@@ -448,27 +572,43 @@ export const MemberDetailPanel: FC<MemberDetailPanelProps> = ({
 
         <div className={styles.section}>
           <div className={styles.sectionTitle}>
-            {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_DETAIL_SECTION_DEPARTMENT)}
+            {t(
+              ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_DETAIL_SECTION_DEPARTMENT,
+            )}
           </div>
-          <div className={styles.departmentSection}>
-            {renderDepartments()}
-          </div>
+          <div className={styles.departmentSection}>{renderDepartments()}</div>
         </div>
       </div>
 
       <div className={styles.footer}>
         {isEditing ? (
           <div style={{ display: 'flex', gap: '8px' }}>
-            <Button theme="borderless" block onClick={handleCancelEdit} loading={updateLoading}>
-              {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_EDIT_ORGANIZATION_BUTTONS_CANCEL)}
+            <Button
+              theme="borderless"
+              block
+              onClick={handleCancelEdit}
+              loading={updateLoading}
+            >
+              {t(
+                ENTERPRISE_I18N_KEYS.ENTERPRISE_EDIT_ORGANIZATION_BUTTONS_CANCEL,
+              )}
             </Button>
-            <Button theme="solid" block onClick={handleSave} loading={updateLoading}>
-              {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_EDIT_ORGANIZATION_BUTTONS_SAVE)}
+            <Button
+              theme="solid"
+              block
+              onClick={handleSave}
+              loading={updateLoading}
+            >
+              {t(
+                ENTERPRISE_I18N_KEYS.ENTERPRISE_EDIT_ORGANIZATION_BUTTONS_SAVE,
+              )}
             </Button>
           </div>
         ) : (
           <Button theme="solid" block onClick={handleEdit}>
-            {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_DETAIL_ACTION_EDIT_BASIC_INFO)}
+            {t(
+              ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_DETAIL_ACTION_EDIT_BASIC_INFO,
+            )}
           </Button>
         )}
       </div>
@@ -492,7 +632,9 @@ export const MemberDetailPanel: FC<MemberDetailPanelProps> = ({
         okButtonProps={{ loading: resignLoading, type: 'danger' }}
         width={400}
       >
-        <p>确定要让 <strong>{employee?.name}</strong> 离职吗？</p>
+        <p>
+          确定要让 <strong>{employee?.name}</strong> 离职吗？
+        </p>
         <p style={{ color: 'var(--semi-color-text-2)', fontSize: '14px' }}>
           离职后该员工将从所有部门中移除，状态变更为离职。
         </p>

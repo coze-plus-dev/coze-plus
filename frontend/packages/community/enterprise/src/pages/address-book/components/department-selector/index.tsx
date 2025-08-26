@@ -15,28 +15,37 @@
  */
 
 import { type FC, useState, useEffect } from 'react';
+
+import { useRequest } from 'ahooks';
+import { type employee } from '@coze-studio/api-schema';
+import {
+  IconCozArrowDown,
+  IconCozTrashCan,
+} from '@coze-arch/coze-design/icons';
+import { Tree, Modal, Input, Button, Empty } from '@coze-arch/coze-design';
+
 import { t } from '../../../../utils/i18n';
 import { ENTERPRISE_I18N_KEYS } from '../../../../locales/keys';
-import { Tree, Modal, Input, Button, Empty } from '@coze-arch/coze-design';
-import { IconCozArrowDown, IconCozTrashCan } from '@coze-arch/coze-design/icons';
-import { useRequest } from 'ahooks';
-import { employee } from '@coze-studio/api-schema';
 import { corporationApi } from '../../../../api/corporationApi';
 
 import styles from './index.module.less';
 
 // 确保主部门逻辑：确保只有一个主部门，如果没有主部门则将第一个设为主部门
-const ensurePrimaryDepartment = (depts: employee.employee.EmployeeDepartmentInfo[]) => {
-  if (depts.length === 0) return depts;
-  
+const ensurePrimaryDepartment = (
+  depts: employee.employee.EmployeeDepartmentInfo[],
+) => {
+  if (depts.length === 0) {
+    return depts;
+  }
+
   // 找到所有主部门
   const primaryDepts = depts.filter(d => d.is_primary);
-  
+
   if (primaryDepts.length === 0) {
     // 如果没有主部门，将第一个设为主部门
     return depts.map((dept, index) => ({
       ...dept,
-      is_primary: index === 0
+      is_primary: index === 0,
     }));
   } else if (primaryDepts.length === 1) {
     // 如果只有一个主部门，保持现有状态
@@ -44,7 +53,7 @@ const ensurePrimaryDepartment = (depts: employee.employee.EmployeeDepartmentInfo
   } else {
     // 如果有多个主部门，只保留第一个主部门，其他的设为非主部门
     let firstPrimaryIndex = -1;
-    
+
     // 找到第一个主部门的索引
     for (let i = 0; i < depts.length; i++) {
       if (depts[i].is_primary) {
@@ -52,10 +61,10 @@ const ensurePrimaryDepartment = (depts: employee.employee.EmployeeDepartmentInfo
         break;
       }
     }
-    
+
     return depts.map((dept, index) => ({
       ...dept,
-      is_primary: index === firstPrimaryIndex
+      is_primary: index === firstPrimaryIndex,
     }));
   }
 };
@@ -92,7 +101,9 @@ export const DepartmentSelector: FC<DepartmentSelectorProps> = ({
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [expandedKeys, setExpandedKeys] = useState<string[]>([]);
   const [treeData, setTreeData] = useState<TreeNode[]>([]);
-  const [selectedDepts, setSelectedDepts] = useState<employee.employee.EmployeeDepartmentInfo[]>([]);
+  const [selectedDepts, setSelectedDepts] = useState<
+    employee.employee.EmployeeDepartmentInfo[]
+  >([]);
 
   // 获取组织架构树
   const { loading, run: fetchOrgTree } = useRequest(
@@ -105,7 +116,7 @@ export const DepartmentSelector: FC<DepartmentSelectorProps> = ({
     },
     {
       manual: true,
-      onSuccess: (data) => {
+      onSuccess: data => {
         // 构建组织名映射表
         const buildCorpNameMap = (items: any[]): Map<string, string> => {
           const map = new Map<string, string>();
@@ -125,15 +136,19 @@ export const DepartmentSelector: FC<DepartmentSelectorProps> = ({
 
         const corpNameMap = buildCorpNameMap(data);
 
-        const convertToTreeData = (items: any[], parentCorpId?: string, parentCorpName?: string): TreeNode[] => {
-          return items.map((item) => {
+        const convertToTreeData = (
+          items: any[],
+          parentCorpId?: string,
+          parentCorpName?: string,
+        ): TreeNode[] =>
+          items.map(item => {
             const isOrg = item.node_type === 'corp';
             const key = isOrg ? `org_${item.id}` : `dept_${item.id}`;
-            
+
             // 确定当前的corpId和corpName
             let currentCorpId: string;
             let currentCorpName: string;
-            
+
             if (isOrg) {
               // 如果是组织节点
               currentCorpId = item.id;
@@ -141,19 +156,19 @@ export const DepartmentSelector: FC<DepartmentSelectorProps> = ({
             } else {
               // 如果是部门节点，使用API提供的corp_id或从父级继承
               currentCorpId = item.corp_id || parentCorpId || '';
-              
+
               // 优先使用映射表查找组织名
               if (currentCorpId) {
                 currentCorpName = corpNameMap.get(currentCorpId) || '';
               } else {
                 currentCorpName = '';
               }
-              
+
               // 如果映射表查找失败，使用父级传递的组织名
               if (!currentCorpName && parentCorpName) {
                 currentCorpName = parentCorpName;
               }
-              
+
               // 如果还没有组织名，尝试从business_path提取第一段作为组织名
               if (!currentCorpName && item.business_path) {
                 const pathParts = item.business_path.split('/');
@@ -162,36 +177,39 @@ export const DepartmentSelector: FC<DepartmentSelectorProps> = ({
                 }
               }
             }
-            
+
             const node: TreeNode = {
-              key: key,
-              label: item.name,  // Semi Design Tree 使用 label 字段
+              key,
+              label: item.name, // Semi Design Tree 使用 label 字段
               title: item.name,
-              value: key,        // 添加 value 字段
-              isOrg: isOrg,
+              value: key, // 添加 value 字段
+              isOrg,
               corpId: currentCorpId,
               corpName: currentCorpName,
               disabled: isOrg, // 组织节点不可选
             };
-            
+
             // 如果是部门节点，添加部门相关信息
             if (!isOrg) {
               node.deptId = item.dept_id || item.id;
               node.deptName = item.name;
             }
-            
+
             // 递归处理子节点
             if (item.children && item.children.length > 0) {
-              node.children = convertToTreeData(item.children, currentCorpId, currentCorpName);
+              node.children = convertToTreeData(
+                item.children,
+                currentCorpId,
+                currentCorpName,
+              );
             }
-            
+
             return node;
           });
-        };
 
         const treeNodes = convertToTreeData(data);
         setTreeData(treeNodes);
-        
+
         // 默认展开所有节点
         const getAllKeys = (nodes: TreeNode[]): string[] => {
           const keys: string[] = [];
@@ -207,9 +225,8 @@ export const DepartmentSelector: FC<DepartmentSelectorProps> = ({
           return keys;
         };
         setExpandedKeys(getAllKeys(treeNodes));
-        
       },
-    }
+    },
   );
 
   // 打开选择器时加载数据
@@ -224,7 +241,7 @@ export const DepartmentSelector: FC<DepartmentSelectorProps> = ({
     // 确保主部门逻辑一致
     const initDepts = ensurePrimaryDepartment([...value]);
     setSelectedDepts(initDepts);
-    const keys = initDepts.map((item) => `dept_${item.department_id}`);
+    const keys = initDepts.map(item => `dept_${item.department_id}`);
     setSelectedKeys(keys);
   }, [value]);
 
@@ -249,10 +266,12 @@ export const DepartmentSelector: FC<DepartmentSelectorProps> = ({
 
   // 处理节点选择
   const handleNodeSelect = (key: string, checked: boolean, node: TreeNode) => {
-    if (node.isOrg) return undefined;
+    if (node.isOrg) {
+      return undefined;
+    }
     let newKeys = [...selectedKeys];
     let newDepts = [...selectedDepts];
-    
+
     if (checked) {
       if (!selectedKeys.includes(key)) {
         newKeys.push(key);
@@ -270,24 +289,23 @@ export const DepartmentSelector: FC<DepartmentSelectorProps> = ({
       newKeys = selectedKeys.filter(k => k !== key);
       newDepts = selectedDepts.filter(d => `dept_${d.department_id}` !== key);
     }
-    
+
     // 重新整理主部门状态
     newDepts = ensurePrimaryDepartment(newDepts);
-    
+
     setSelectedKeys(newKeys);
     setSelectedDepts(newDepts);
   };
-
 
   // 移除已选部门
   const handleRemoveDept = (deptId: string) => {
     const key = `dept_${deptId}`;
     const newKeys = selectedKeys.filter(k => k !== key);
     let newDepts = selectedDepts.filter(d => d.department_id !== deptId);
-    
+
     // 统一使用ensurePrimaryDepartment处理主部门逻辑
     newDepts = ensurePrimaryDepartment(newDepts);
-    
+
     setSelectedKeys(newKeys);
     setSelectedDepts(newDepts);
   };
@@ -297,7 +315,7 @@ export const DepartmentSelector: FC<DepartmentSelectorProps> = ({
     // 确保只有指定的部门是主部门，其他都不是主部门
     const newDepts = selectedDepts.map(dept => ({
       ...dept,
-      is_primary: dept.department_id === deptId
+      is_primary: dept.department_id === deptId,
     }));
     setSelectedDepts(newDepts);
   };
@@ -305,20 +323,26 @@ export const DepartmentSelector: FC<DepartmentSelectorProps> = ({
   // 渲染trigger
   const renderTrigger = () => {
     if (value.length === 0) {
-      return <span style={{ color: 'var(--semi-color-text-2)' }}>{placeholder}</span>;
+      return (
+        <span style={{ color: 'var(--semi-color-text-2)' }}>{placeholder}</span>
+      );
     }
 
     return (
       <div className={styles.selectedTags}>
-        {value.map((dept) => (
+        {value.map(dept => (
           <div key={dept.department_id} className={styles.tagItem}>
-            <span>{dept.corp_name} - {dept.department_name}</span>
-            <IconCozTrashCan 
+            <span>
+              {dept.corp_name} - {dept.department_name}
+            </span>
+            <IconCozTrashCan
               className={styles.removeIcon}
-              onClick={(e) => {
+              onClick={e => {
                 e.stopPropagation();
-                const newValue = value.filter((item) => item.department_id !== dept.department_id);
-                
+                const newValue = value.filter(
+                  item => item.department_id !== dept.department_id,
+                );
+
                 // 重新整理主部门状态：确保有主部门且只有一个主部门
                 const finalValue = ensurePrimaryDepartment(newValue);
                 onChange?.(finalValue);
@@ -331,17 +355,24 @@ export const DepartmentSelector: FC<DepartmentSelectorProps> = ({
   };
 
   // 过滤树节点
-  const filterTreeData = (data: TreeNode[], searchValue: string): TreeNode[] => {
-    if (!searchValue) return data;
-    
+  const filterTreeData = (
+    data: TreeNode[],
+    searchValue: string,
+  ): TreeNode[] => {
+    if (!searchValue) {
+      return data;
+    }
+
     const filterNode = (node: TreeNode): TreeNode | null => {
-      const matches = node.title.toLowerCase().includes(searchValue.toLowerCase());
-      
+      const matches = node.title
+        .toLowerCase()
+        .includes(searchValue.toLowerCase());
+
       if (node.children) {
         const filteredChildren = node.children
           .map(child => filterNode(child))
           .filter(Boolean) as TreeNode[];
-        
+
         if (filteredChildren.length > 0 || matches) {
           return {
             ...node,
@@ -349,26 +380,19 @@ export const DepartmentSelector: FC<DepartmentSelectorProps> = ({
           };
         }
       }
-      
+
       return matches ? node : null;
     };
-    
-    return data
-      .map(node => filterNode(node))
-      .filter(Boolean) as TreeNode[];
+
+    return data.map(node => filterNode(node)).filter(Boolean) as TreeNode[];
   };
 
   const filteredTreeData = filterTreeData(treeData, searchValue);
 
   return (
     <>
-      <div
-        className={styles.selectorTrigger}
-        onClick={() => setVisible(true)}
-      >
-        <div className={styles.valueContainer}>
-          {renderTrigger()}
-        </div>
+      <div className={styles.selectorTrigger} onClick={() => setVisible(true)}>
+        <div className={styles.valueContainer}>{renderTrigger()}</div>
         <IconCozArrowDown className={styles.arrow} />
       </div>
 
@@ -380,8 +404,8 @@ export const DepartmentSelector: FC<DepartmentSelectorProps> = ({
             <Button onClick={() => setVisible(false)}>
               {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_CANCEL)}
             </Button>
-            <Button 
-              theme="solid" 
+            <Button
+              theme="solid"
               onClick={handleConfirm}
               disabled={selectedDepts.length === 0}
             >
@@ -401,16 +425,18 @@ export const DepartmentSelector: FC<DepartmentSelectorProps> = ({
               <Input
                 placeholder={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_SEARCH)}
                 value={searchValue}
-                onChange={(value) => setSearchValue(value)}
+                onChange={value => setSearchValue(value)}
                 showClear
               />
             </div>
             <div className={styles.treeWrapper}>
               {loading ? (
-                <div className={styles.loading}>{t(ENTERPRISE_I18N_KEYS.ENTERPRISE_LOADING)}</div>
+                <div className={styles.loading}>
+                  {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_LOADING)}
+                </div>
               ) : filteredTreeData.length === 0 ? (
-                <Empty 
-                  description={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_NO_DATA)} 
+                <Empty
+                  description={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_NO_DATA)}
                 />
               ) : (
                 <Tree
@@ -421,16 +447,26 @@ export const DepartmentSelector: FC<DepartmentSelectorProps> = ({
                   onExpand={(expandedKeys: string[]) => {
                     setExpandedKeys(expandedKeys);
                   }}
-                   onSelect = {(selectedKey: string, selected: boolean, selectedNode: any) =>{
-                          handleNodeSelect(selectedKey, selected, selectedNode);
-                   }}  
+                  onSelect={(
+                    selectedKey: string,
+                    selected: boolean,
+                    selectedNode: any,
+                  ) => {
+                    handleNodeSelect(selectedKey, selected, selectedNode);
+                  }}
                   renderLabel={(label: React.ReactNode, node?: any) => {
-                    if (!node) return label;
-                    
+                    if (!node) {
+                      return label;
+                    }
+
                     const isDisabled = node.isOrg;
-                    
+
                     return (
-                      <span className={isDisabled ? styles.orgNode : styles.deptNode}>
+                      <span
+                        className={
+                          isDisabled ? styles.orgNode : styles.deptNode
+                        }
+                      >
                         {label}
                       </span>
                     );
@@ -439,10 +475,16 @@ export const DepartmentSelector: FC<DepartmentSelectorProps> = ({
               )}
             </div>
           </div>
-          
+
           <div className={styles.rightPanel}>
             <div className={styles.selectedHeader}>
-              <span>{t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PUBLISH_PERMISSION_CONTROL_PAGE_REMOVE_CHOSEN)}：{selectedDepts.length} {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_DEPARTMENT)}</span>
+              <span>
+                {t(
+                  ENTERPRISE_I18N_KEYS.ENTERPRISE_PUBLISH_PERMISSION_CONTROL_PAGE_REMOVE_CHOSEN,
+                )}
+                ：{selectedDepts.length}{' '}
+                {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_DEPARTMENT)}
+              </span>
               <Button
                 size="small"
                 theme="borderless"
@@ -454,23 +496,26 @@ export const DepartmentSelector: FC<DepartmentSelectorProps> = ({
             </div>
             <div className={styles.selectedList}>
               {selectedDepts.length === 0 ? (
-                <Empty 
-                  description={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_QUERY_DATA_EMPTY)} 
+                <Empty
+                  description={t(
+                    ENTERPRISE_I18N_KEYS.ENTERPRISE_QUERY_DATA_EMPTY,
+                  )}
                 />
-              ) :  
-              (
-                selectedDepts.map((dept) => (
+              ) : (
+                selectedDepts.map(dept => (
                   <div key={dept.department_id} className={styles.selectedItem}>
                     <div className={styles.deptInfo}>
                       <div className={styles.deptNameWithTag}>
                         <div className={styles.corpName}>{dept.corp_name}</div>
                         <div className={styles.deptName}>
                           {dept.department_name}
-                          {dept.is_primary && (
+                          {dept.is_primary ? (
                             <span className={styles.primaryTag}>
-                              {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PRIMARY_DEPARTMENT_TAG)}
+                              {t(
+                                ENTERPRISE_I18N_KEYS.ENTERPRISE_PRIMARY_DEPARTMENT_TAG,
+                              )}
                             </span>
-                          )}
+                          ) : null}
                         </div>
                       </div>
                       {!dept.is_primary && selectedDepts.length > 1 && (
@@ -480,7 +525,9 @@ export const DepartmentSelector: FC<DepartmentSelectorProps> = ({
                           className={styles.setPrimaryBtn}
                           onClick={() => handleSetPrimary(dept.department_id)}
                         >
-                          {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_SET_PRIMARY_DEPARTMENT)}
+                          {t(
+                            ENTERPRISE_I18N_KEYS.ENTERPRISE_SET_PRIMARY_DEPARTMENT,
+                          )}
                         </Button>
                       )}
                     </div>

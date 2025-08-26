@@ -304,10 +304,7 @@ export class EmployeeApiService {
   /**
    * 员工离职
    */
-  async resignEmployee(params: {
-    id: string;
-    reason?: string;
-  }) {
+  async resignEmployee(params: { id: string; reason?: string }) {
     const response = await employee.ResignEmployee({
       id: params.id,
       reason: params.reason,

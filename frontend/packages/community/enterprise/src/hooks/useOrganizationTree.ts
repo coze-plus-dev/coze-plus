@@ -15,6 +15,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+
 import { corporationApi } from '../api/corporationApi';
 
 export interface TreeNode {
@@ -43,47 +44,59 @@ interface UseOrganizationTreeOptions {
   depth?: number;
 }
 
-export const useOrganizationTree = (options: UseOrganizationTreeOptions = {}) => {
+export const useOrganizationTree = (
+  options: UseOrganizationTreeOptions = {},
+) => {
   const [treeData, setTreeData] = useState<TreeNode[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const { corpId, includeDepartments = true, includeEmployeeCount = true, depth = 0 } = options;
+  const {
+    corpId,
+    includeDepartments = true,
+    includeEmployeeCount = true,
+    depth = 0,
+  } = options;
 
-  const transformToTreeNode = useCallback((node: any): TreeNode => {
-    const treeNode: TreeNode = {
-      key: node.id,
-      title: node.name,
-      nodeType: node.node_type === 'corp' ? 'corp' : 'dept',
-      isLeaf: !node.has_children,
-      selectable: node.node_type === 'dept',
-      // 映射优化后的字段
-      parentId: node.parent_id,
-      businessParentId: node.business_parent_id,
-      corpId: node.corp_id,
-      deptId: node.dept_id,
-      level: node.level,
-      businessPath: node.business_path,
-      treePath: node.tree_path,
-    };
+  const transformToTreeNode = useCallback(
+    (node: any): TreeNode => {
+      const treeNode: TreeNode = {
+        key: node.id,
+        title: node.name,
+        nodeType: node.node_type === 'corp' ? 'corp' : 'dept',
+        isLeaf: !node.has_children,
+        selectable: node.node_type === 'dept',
+        // 映射优化后的字段
+        parentId: node.parent_id,
+        businessParentId: node.business_parent_id,
+        corpId: node.corp_id,
+        deptId: node.dept_id,
+        level: node.level,
+        businessPath: node.business_path,
+        treePath: node.tree_path,
+      };
 
-    // 保存员工数量但不在标题中显示
-    if (includeEmployeeCount && node.employee_count !== undefined) {
-      treeNode.employeeCount = node.employee_count;
-    }
+      // 保存员工数量但不在标题中显示
+      if (includeEmployeeCount && node.employee_count !== undefined) {
+        treeNode.employeeCount = node.employee_count;
+      }
 
-    if (node.children && node.children.length > 0) {
-      treeNode.children = node.children.map((child: any) => transformToTreeNode(child));
-    }
+      if (node.children && node.children.length > 0) {
+        treeNode.children = node.children.map((child: any) =>
+          transformToTreeNode(child),
+        );
+      }
 
-    return treeNode;
-  }, [includeEmployeeCount]);
+      return treeNode;
+    },
+    [includeEmployeeCount],
+  );
 
   const fetchOrganizationTree = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const data = await corporationApi.getOrganizationTree({
         corp_id: corpId,
         include_departments: includeDepartments,
@@ -91,7 +104,9 @@ export const useOrganizationTree = (options: UseOrganizationTreeOptions = {}) =>
         depth,
       });
 
-      const transformedData = data.map((node: any) => transformToTreeNode(node));
+      const transformedData = data.map((node: any) =>
+        transformToTreeNode(node),
+      );
       setTreeData(transformedData);
     } catch (err) {
       setError(err as Error);
@@ -99,7 +114,13 @@ export const useOrganizationTree = (options: UseOrganizationTreeOptions = {}) =>
     } finally {
       setLoading(false);
     }
-  }, [corpId, includeDepartments, includeEmployeeCount, depth, transformToTreeNode]);
+  }, [
+    corpId,
+    includeDepartments,
+    includeEmployeeCount,
+    depth,
+    transformToTreeNode,
+  ]);
 
   useEffect(() => {
     fetchOrganizationTree();

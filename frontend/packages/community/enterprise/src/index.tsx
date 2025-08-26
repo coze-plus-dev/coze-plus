@@ -19,5 +19,5 @@ export { EnterpriseSubMenu } from './components/enterprise-sub-menu';
 
 // Page exports
 export { default as AddressBookPage } from './pages/address-book';
-export { default as RolePage } from './pages/role';  
+export { default as RolePage } from './pages/role';
 export { default as AccountPage } from './pages/account';

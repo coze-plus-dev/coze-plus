@@ -15,13 +15,15 @@
  */
 
 import { type FC, useState, useEffect } from 'react';
+
+import { useRequest } from 'ahooks';
+import { type employee } from '@coze-studio/api-schema';
+import { Modal, Form, Input, Toast } from '@coze-arch/coze-design';
+
+import { DepartmentSelector } from '../department-selector';
 import { t } from '../../../../utils/i18n';
 import { ENTERPRISE_I18N_KEYS } from '../../../../locales/keys';
-import { Modal, Form, Input, Toast } from '@coze-arch/coze-design';
-import { useRequest } from 'ahooks';
-import { employee } from '@coze-studio/api-schema';
 import { employeeApi } from '../../../../api/corporationApi';
-import { DepartmentSelector } from '../department-selector';
 
 import styles from './index.module.less';
 
@@ -77,17 +79,21 @@ export const CreateEmployeeModal: FC<CreateEmployeeModalProps> = ({
         handleClose();
         onSuccess?.();
       },
-      onError: (error) => {
-        Toast.error(error.message || t(ENTERPRISE_I18N_KEYS.ENTERPRISE_CREATE_FAILED));
+      onError: error => {
+        Toast.error(
+          error.message || t(ENTERPRISE_I18N_KEYS.ENTERPRISE_CREATE_FAILED),
+        );
       },
-    }
+    },
   );
 
   // 处理提交
   const handleSubmit = () => {
     // 表单验证
     if (!formValues.name || !formValues.name.trim()) {
-      Toast.error(t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_EMPLOYEE_NAME));
+      Toast.error(
+        t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_EMPLOYEE_NAME),
+      );
       return;
     }
     if (formValues.name.length > 50) {
@@ -116,7 +122,7 @@ export const CreateEmployeeModal: FC<CreateEmployeeModalProps> = ({
         return;
       }
     }
-    
+
     createEmployee(formValues);
   };
 
@@ -140,21 +146,23 @@ export const CreateEmployeeModal: FC<CreateEmployeeModalProps> = ({
       className={styles.createEmployeeModal}
       maskClosable={false}
     >
-      <Form
-        layout="vertical"
-        className={styles.form}
-      >
+      <Form layout="vertical" className={styles.form}>
         <div className="semi-form-field" style={{ marginBottom: 20 }}>
-          <label className="semi-form-field-label" style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
+          <label
+            className="semi-form-field-label"
+            style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}
+          >
             <span>
               {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_EMPLOYEE_NAME)}
               <span style={{ color: 'red', marginLeft: 4 }}>*</span>
             </span>
           </label>
           <Input
-            placeholder={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_EMPLOYEE_NAME)}
+            placeholder={t(
+              ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_EMPLOYEE_NAME,
+            )}
             value={formValues.name}
-            onChange={(value) => setFormValues({ ...formValues, name: value })}
+            onChange={value => setFormValues({ ...formValues, name: value })}
             maxLength={50}
             showClear
             suffix={
@@ -166,7 +174,10 @@ export const CreateEmployeeModal: FC<CreateEmployeeModalProps> = ({
         </div>
 
         <div className="semi-form-field" style={{ marginBottom: 20 }}>
-          <label className="semi-form-field-label" style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
+          <label
+            className="semi-form-field-label"
+            style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}
+          >
             <span>
               {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_DEPARTMENT)}
               <span style={{ color: 'red', marginLeft: 4 }}>*</span>
@@ -174,14 +185,21 @@ export const CreateEmployeeModal: FC<CreateEmployeeModalProps> = ({
           </label>
           <DepartmentSelector
             value={formValues.departments}
-            onChange={(departments) => setFormValues({ ...formValues, departments })}
-            placeholder={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_DEPARTMENT)}
+            onChange={departments =>
+              setFormValues({ ...formValues, departments })
+            }
+            placeholder={t(
+              ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_DEPARTMENT,
+            )}
             multiple={true}
           />
         </div>
 
         <div className="semi-form-field" style={{ marginBottom: 20 }}>
-          <label className="semi-form-field-label" style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
+          <label
+            className="semi-form-field-label"
+            style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}
+          >
             <span>
               {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_MOBILE)}
               <span style={{ color: 'red', marginLeft: 4 }}>*</span>
@@ -190,20 +208,23 @@ export const CreateEmployeeModal: FC<CreateEmployeeModalProps> = ({
           <Input
             placeholder={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_MOBILE)}
             value={formValues.mobile}
-            onChange={(value) => setFormValues({ ...formValues, mobile: value })}
+            onChange={value => setFormValues({ ...formValues, mobile: value })}
             maxLength={11}
             showClear
           />
         </div>
 
         <div className="semi-form-field" style={{ marginBottom: 20 }}>
-          <label className="semi-form-field-label" style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
+          <label
+            className="semi-form-field-label"
+            style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}
+          >
             {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_EMAIL)}
           </label>
           <Input
             placeholder={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_EMAIL)}
             value={formValues.email}
-            onChange={(value) => setFormValues({ ...formValues, email: value })}
+            onChange={value => setFormValues({ ...formValues, email: value })}
             maxLength={100}
             showClear
           />

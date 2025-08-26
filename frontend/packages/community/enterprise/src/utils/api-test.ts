@@ -89,19 +89,20 @@ export const testEmployeeAPI = () => {
 // 测试API函数调用（仅类型检查，不实际执行）
 export const testAPIFunctions = async () => {
   // 这些函数调用仅用于类型检查，不会实际执行
+  // eslint-disable-next-line no-constant-condition -- This is intentional for type-only testing
   if (false) {
     // 企业API
     const corpResult = await corporation.CreateCorporation({
       name: '测试企业',
       corp_type: corporation.corporation.common.CorporationType.COMPANY,
     });
-    
+
     // 部门API
     const deptResult = await department.CreateDepartment({
       name: '技术部',
       corp_id: '1',
     });
-    
+
     // 员工API
     const empResult = await employee.CreateEmployee({
       name: '张三',
@@ -111,7 +112,7 @@ export const testAPIFunctions = async () => {
 
     // 避免未使用变量警告
     void corpResult;
-    void deptResult; 
+    void deptResult;
     void empResult;
   }
 };
