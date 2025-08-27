@@ -99,9 +99,7 @@ export const usePermissionAssignment = ({
       setSelectedPermissions(currentSelectedPermissions);
     } catch (error) {
       console.error('Failed to load permission templates:', error);
-      Toast.error(
-        t(ENTERPRISE_I18N_KEYS.ROLE_PERMISSION_DATA_LOAD_FAILED),
-      );
+      Toast.error(t(ENTERPRISE_I18N_KEYS.ROLE_PERMISSION_DATA_LOAD_FAILED));
     } finally {
       setLoading(false);
     }

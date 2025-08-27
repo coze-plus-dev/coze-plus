@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-import { type FC, useState, useEffect } from 'react';
+import { type FC } from 'react';
 
-import { useRequest } from 'ahooks';
-import { Modal, Form, Toast } from '@coze-arch/coze-design';
+import { Modal, Form } from '@coze-arch/coze-design';
 
 import { t } from '@/utils/i18n';
 import { ENTERPRISE_I18N_KEYS } from '@/locales/keys';
-import { corporationApi } from '@/api/corporation-api';
+
+import { useOrganizationCreation } from './hooks/use-organization-creation';
 
 import styles from './index.module.less';
 
@@ -31,117 +31,23 @@ interface CreateOrganizationModalProps {
   onSuccess?: () => void;
 }
 
-interface FormValues {
-  name: string;
-  corp_type?: number;
-  parent_id?: string;
-}
-
-interface OrganizationOption {
-  label: string;
-  value: string;
-}
-
 export const CreateOrganizationModal: FC<CreateOrganizationModalProps> = ({
   visible,
   onClose,
   onSuccess,
 }) => {
-  const [formValues, setFormValues] = useState<FormValues>({
-    name: '',
-    corp_type: undefined as any, // 不设置默认值，用户必须选择
-    parent_id: undefined,
+  const {
+    formValues,
+    setFormValues,
+    organizationOptions,
+    loading,
+    handleSubmit,
+    handleClose,
+  } = useOrganizationCreation({
+    visible,
+    onSuccess,
+    onClose,
   });
-  const [organizationOptions, setOrganizationOptions] = useState<
-    OrganizationOption[]
-  >([]);
-
-  // 获取组织列表
-  const { run: fetchOrganizations } = useRequest(
-    async () => {
-      const result = await corporationApi.listCorporations({
-        page: 1,
-        page_size: 1000, // 获取所有组织
-      });
-      return result.data || [];
-    },
-    {
-      manual: true,
-      onSuccess: data => {
-        const options = data.map((org: any) => ({
-          label: org.name,
-          value: org.id,
-        }));
-        setOrganizationOptions(options);
-      },
-    },
-  );
-
-  // 当弹窗打开时获取组织列表
-  useEffect(() => {
-    if (visible) {
-      fetchOrganizations();
-    }
-  }, [visible, fetchOrganizations]);
-
-  // 创建组织请求
-  const { loading, run: createOrganization } = useRequest(
-    async (values: FormValues) => {
-      const result = await corporationApi.createCorporation({
-        name: values.name,
-        corp_type: values.corp_type,
-        parent_id: values.parent_id,
-      });
-      return result;
-    },
-    {
-      manual: true,
-      onSuccess: () => {
-        Toast.success(t(ENTERPRISE_I18N_KEYS.ENTERPRISE_CREATE_SUCCESS));
-        handleClose();
-        onSuccess?.();
-      },
-      onError: error => {
-        Toast.error(
-          error.message || t(ENTERPRISE_I18N_KEYS.ENTERPRISE_CREATE_FAILED),
-        );
-      },
-    },
-  );
-
-  // 处理提交
-  const handleSubmit = () => {
-    // 简单验证
-    if (!formValues.name || !formValues.name.trim()) {
-      Toast.error(
-        t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_ORGANIZATION_NAME),
-      );
-      return;
-    }
-    if (formValues.name.length > 50) {
-      Toast.error(
-        t(ENTERPRISE_I18N_KEYS.ENTERPRISE_ORGANIZATION_NAME_TOO_LONG),
-      );
-      return;
-    }
-    if (!formValues.corp_type || formValues.corp_type === 0) {
-      Toast.error(
-        t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_ORGANIZATION_TYPE),
-      );
-      return;
-    }
-    createOrganization(formValues);
-  };
-
-  // 处理关闭
-  const handleClose = () => {
-    setFormValues({
-      name: '',
-      corp_type: undefined as any,
-      parent_id: undefined,
-    });
-    onClose();
-  };
 
   // 组织类型选项
   const corpTypeOptions = [

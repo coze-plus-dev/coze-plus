@@ -24,8 +24,7 @@ import { ENTERPRISE_I18N_KEYS } from '@/locales/keys';
 import type { TreeNode } from '@/hooks/use-organization-tree';
 
 import { TreeNodeRenderer } from './tree-node-renderer';
-
-import styles from './index.module.less';
+import styles from '../index.module.less';
 
 interface TreeContentProps {
   loading: boolean;

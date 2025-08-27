@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-import { type FC, useState, useEffect } from 'react';
+import { type FC } from 'react';
 
-import { useRequest } from 'ahooks';
-import { Modal, Form, Toast } from '@coze-arch/coze-design';
+import { Modal, Form } from '@coze-arch/coze-design';
 
 import { t } from '@/utils/i18n';
 import { ENTERPRISE_I18N_KEYS } from '@/locales/keys';
-import { useOrganizationTree } from '@/hooks/use-organization-tree';
-import type { TreeNode } from '@/hooks/use-organization-tree';
-import { departmentApi } from '@/api/corporation-api';
+
+import { useDepartmentCreation } from './hooks/use-department-creation';
 
 import styles from './index.module.less';
 
@@ -42,146 +40,20 @@ export const CreateDepartmentModal: FC<CreateDepartmentModalProps> = ({
   defaultCorpId,
   defaultParentId,
 }) => {
-  const [formValues, setFormValues] = useState({
-    name: '',
-    parentId: defaultParentId || defaultCorpId || '',
+  const {
+    formValues,
+    setFormValues,
+    treeSelectData,
+    loading,
+    handleClose,
+    handleOk,
+  } = useDepartmentCreation({
+    visible,
+    defaultCorpId,
+    defaultParentId,
+    onSuccess,
+    onClose,
   });
-
-  const { treeData, refetch: refetchTreeData } = useOrganizationTree({
-    includeDepartments: true,
-    includeEmployeeCount: false,
-  });
-
-  // Convert tree data for TreeSelect component
-  const convertTreeDataForSelect = (nodes: TreeNode[]): any[] =>
-    nodes.map(node => ({
-      label: node.title,
-      value: node.key,
-      key: node.key,
-      children: node.children
-        ? convertTreeDataForSelect(node.children)
-        : undefined,
-    }));
-
-  const treeSelectData = convertTreeDataForSelect(treeData);
-
-  // Find node helper
-  const findNode = (nodes: TreeNode[], targetKey: string): TreeNode | null => {
-    for (const node of nodes) {
-      if (node.key === targetKey) {
-        return node;
-      }
-      if (node.children) {
-        const found = findNode(node.children, targetKey);
-        if (found) {
-          return found;
-        }
-      }
-    }
-    return null;
-  };
-
-  // Get corp ID from node directly using the optimized field
-  const getCorpIdFromNode = (node: TreeNode): string => {
-    if (node.nodeType === 'corp') {
-      return node.key;
-    }
-    // For department nodes, use the corpId field directly
-    return node.corpId || '';
-  };
-
-  // Create department request
-  const { loading, run: createDepartment } = useRequest(
-    async () => {
-      const { name, parentId } = formValues;
-
-      // Manual validation since Form validation API might not be available
-      if (!name || !name.trim()) {
-        Toast.error(
-          t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_DEPARTMENT_NAME),
-        );
-        return;
-      }
-
-      if (name.length > 50) {
-        Toast.error(
-          t(ENTERPRISE_I18N_KEYS.ENTERPRISE_DEPARTMENT_NAME_TOO_LONG),
-        );
-        return;
-      }
-
-      if (!parentId) {
-        Toast.error(
-          t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_PARENT_DEPARTMENT),
-        );
-        return;
-      }
-
-      // Parse parent ID to determine if it's a corp or dept
-      const parentNode = findNode(treeData, parentId);
-      if (!parentNode) {
-        Toast.error(t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PARENT_NOT_FOUND));
-        return;
-      }
-
-      let corpId: string;
-      let parentDeptId: string | undefined;
-
-      if (parentNode.nodeType === 'corp') {
-        corpId = parentId;
-        parentDeptId = undefined;
-      } else {
-        // Use the optimized corpId field directly from the node
-        corpId = getCorpIdFromNode(parentNode);
-        // Use deptId field if available, otherwise fall back to key
-        parentDeptId = parentNode.deptId || parentId;
-      }
-
-      const result = await departmentApi.createDepartment({
-        name,
-        corp_id: corpId,
-        parent_id: parentDeptId,
-      });
-
-      return result;
-    },
-    {
-      manual: true,
-      onSuccess: () => {
-        Toast.success(
-          t(ENTERPRISE_I18N_KEYS.ENTERPRISE_DEPARTMENT_CREATED_SUCCESS),
-        );
-        handleClose();
-        onSuccess?.();
-      },
-      onError: (error: any) => {
-        Toast.error(
-          error.message ||
-            t(ENTERPRISE_I18N_KEYS.ENTERPRISE_COMMON_CREATE_FAIL),
-        );
-      },
-    },
-  );
-
-  const handleClose = () => {
-    setFormValues({ name: '', parentId: '' });
-    onClose();
-  };
-
-  const handleOk = () => {
-    createDepartment();
-  };
-
-  useEffect(() => {
-    if (visible) {
-      // 每次弹出框打开时，重新获取最新的组织树数据
-      refetchTreeData();
-
-      if (defaultParentId) {
-        setFormValues(prev => ({ ...prev, parentId: defaultParentId }));
-      }
-    }
-  }, [visible, defaultParentId, refetchTreeData]);
 
   return (
     <Modal

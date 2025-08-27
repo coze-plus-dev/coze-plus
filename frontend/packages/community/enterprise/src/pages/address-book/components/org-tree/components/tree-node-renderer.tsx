@@ -27,12 +27,12 @@ import { t } from '@/utils/i18n';
 import { ENTERPRISE_I18N_KEYS } from '@/locales/keys';
 
 interface TreeNode {
-  key: string; 
-  title: string; 
-  nodeType: 'corp' | 'dept'; 
-  businessParentId?: string | null; 
-  level?: number; 
-  parentId?: string | null; 
+  key: string;
+  title: string;
+  nodeType: 'corp' | 'dept';
+  businessParentId?: string | null;
+  level?: number;
+  parentId?: string | null;
 }
 
 interface TreeNodeRendererProps {

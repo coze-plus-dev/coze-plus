@@ -23,7 +23,7 @@ import { t } from '@/utils/i18n';
 import { ENTERPRISE_I18N_KEYS } from '@/locales/keys';
 import type { RoleData } from '@/api/role-api';
 
-import { usePermissionAssignment } from './use-permission-assignment';
+import { usePermissionAssignment } from './hooks/use-permission-assignment';
 
 import styles from './index.module.less';
 
@@ -58,27 +58,24 @@ export const AssignPermissionsModal: FC<AssignPermissionsModalProps> = ({
       actionDescription: string;
       resourceName: string;
     }>
-  > = permissionTemplates.reduce(
-    (acc, group) => {
-      group.resources?.forEach(resource => {
-        const resourceName = resource.resource_name || resource.resource || '';
-        if (!acc[resourceName]) {
-          acc[resourceName] = [];
-        }
+  > = permissionTemplates.reduce((acc, group) => {
+    group.resources?.forEach(resource => {
+      const resourceName = resource.resource_name || resource.resource || '';
+      if (!acc[resourceName]) {
+        acc[resourceName] = [];
+      }
 
-        resource.actions?.forEach(action => {
-          acc[resourceName].push({
-            id: action.id,
-            actionName: action.action_name || action.action || '',
-            actionDescription: action.description || '',
-            resourceName,
-          });
+      resource.actions?.forEach(action => {
+        acc[resourceName].push({
+          id: action.id,
+          actionName: action.action_name || action.action || '',
+          actionDescription: action.description || '',
+          resourceName,
         });
       });
-      return acc;
-    },
-    {},
-  );
+    });
+    return acc;
+  }, {});
 
   return (
     <Modal

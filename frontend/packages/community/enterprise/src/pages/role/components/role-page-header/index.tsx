@@ -28,19 +28,13 @@ interface RolePageHeaderProps {
   onCreateRole: () => void;
 }
 
-export const RolePageHeader: FC<RolePageHeaderProps> = ({ onCreateRole }) => {
-  return (
-    <div className={styles.header}>
-      <h1 className={styles.title}>
-        {t(ENTERPRISE_I18N_KEYS.ROLE_MANAGEMENT_TITLE)}
-      </h1>
-      <Button
-        theme="solid"
-        icon={<IconCozPlus />}
-        onClick={onCreateRole}
-      >
-        {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_CREATE)}
-      </Button>
-    </div>
-  );
-};
+export const RolePageHeader: FC<RolePageHeaderProps> = ({ onCreateRole }) => (
+  <div className={styles.header}>
+    <h1 className={styles.title}>
+      {t(ENTERPRISE_I18N_KEYS.ROLE_MANAGEMENT_TITLE)}
+    </h1>
+    <Button theme="solid" icon={<IconCozPlus />} onClick={onCreateRole}>
+      {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_CREATE)}
+    </Button>
+  </div>
+);

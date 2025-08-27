@@ -29,9 +29,7 @@ export const NoRoleSelected: FC = () => (
     <div className={styles.emptyContainer}>
       <EmptyState
         icon={<IconCozEmpty className="w-[64px] h-[64px] coz-fg-dim" />}
-        title={t(
-          ENTERPRISE_I18N_KEYS.ROLE_PERMISSION_MATRIX_SELECT_ROLE_TITLE,
-        )}
+        title={t(ENTERPRISE_I18N_KEYS.ROLE_PERMISSION_MATRIX_SELECT_ROLE_TITLE)}
         description={t(
           ENTERPRISE_I18N_KEYS.ROLE_PERMISSION_MATRIX_SELECT_ROLE_DESCRIPTION,
         )}
@@ -52,9 +50,9 @@ export const NoPermissions: FC = () => (
   <div className={styles.emptyContainer}>
     <EmptyState
       icon={<IconCozEmpty className="w-[48px] h-[48px] coz-fg-dim" />}
-      title={t(ENTERPRISE_I18N_KEYS.ROLE_PERMISSION_MATRIX_NO_PERMISSIONS_TITLE)}
+      title={t(ENTERPRISE_I18N_KEYS.ROLE_PERMISSION_MATRIX_NO_DATA_TITLE)}
       description={t(
-        ENTERPRISE_I18N_KEYS.ROLE_PERMISSION_MATRIX_NO_PERMISSIONS_DESCRIPTION,
+        ENTERPRISE_I18N_KEYS.ROLE_PERMISSION_MATRIX_NO_DATA_DESCRIPTION,
       )}
     />
   </div>

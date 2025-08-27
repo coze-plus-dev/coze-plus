@@ -14,16 +14,15 @@
  * limitations under the License.
  */
 
-import { type FC, useState, useEffect } from 'react';
+import { type FC } from 'react';
 
-import { useRequest } from 'ahooks';
-import { type employee } from '@coze-studio/api-schema';
-import { Modal, Form, Input, Toast } from '@coze-arch/coze-design';
+import { Modal, Form, Input } from '@coze-arch/coze-design';
 
-import { DepartmentSelector } from '../department-selector';
 import { t } from '@/utils/i18n';
 import { ENTERPRISE_I18N_KEYS } from '@/locales/keys';
-import { employeeApi } from '@/api/corporation-api';
+
+import { useEmployeeCreation } from './hooks/use-employee-creation';
+import { DepartmentSelector } from '../department-selector';
 
 import styles from './index.module.less';
 
@@ -33,110 +32,23 @@ interface CreateEmployeeModalProps {
   onSuccess?: () => void;
 }
 
-interface FormValues {
-  name: string;
-  departments: employee.employee.EmployeeDepartmentInfo[];
-  mobile: string;
-  email?: string;
-}
-
-const initialFormValues: FormValues = {
-  name: '',
-  departments: [],
-  mobile: '',
-  email: '',
-};
-
 export const CreateEmployeeModal: FC<CreateEmployeeModalProps> = ({
   visible,
   onClose,
   onSuccess,
 }) => {
-  const [formValues, setFormValues] = useState<FormValues>(initialFormValues);
-
-  // 当弹窗打开时重置表单
-  useEffect(() => {
-    if (visible) {
-      setFormValues(initialFormValues);
-    }
-  }, [visible]);
-
-  // 创建员工请求
-  const { loading, run: createEmployee } = useRequest(
-    async (values: FormValues) => {
-      const result = await employeeApi.createEmployee({
-        name: values.name,
-        department_ids: values.departments,
-        mobile: values.mobile,
-        email: values.email || undefined,
-      });
-      return result;
-    },
-    {
-      manual: true,
-      onSuccess: () => {
-        Toast.success(t(ENTERPRISE_I18N_KEYS.ENTERPRISE_CREATE_SUCCESS));
-        handleClose();
-        onSuccess?.();
-      },
-      onError: error => {
-        Toast.error(
-          error.message || t(ENTERPRISE_I18N_KEYS.ENTERPRISE_CREATE_FAILED),
-        );
-      },
-    },
-  );
-
-  // 处理提交
-  const handleSubmit = () => {
-    // 表单验证
-    if (!formValues.name || !formValues.name.trim()) {
-      Toast.error(
-        t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_EMPLOYEE_NAME),
-      );
-      return;
-    }
-    if (formValues.name.length > 50) {
-      Toast.error(t(ENTERPRISE_I18N_KEYS.ENTERPRISE_EMPLOYEE_NAME_TOO_LONG));
-      return;
-    }
-    if (!formValues.departments || formValues.departments.length === 0) {
-      Toast.error(t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_DEPARTMENT));
-      return;
-    }
-    if (!formValues.mobile || !formValues.mobile.trim()) {
-      Toast.error(t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_MOBILE));
-      return;
-    }
-    // 简单的手机号验证
-    const mobileRegex = /^1[3-9]\d{9}$/;
-    if (!mobileRegex.test(formValues.mobile)) {
-      Toast.error(t(ENTERPRISE_I18N_KEYS.ENTERPRISE_MOBILE_FORMAT_ERROR));
-      return;
-    }
-    // 邮箱验证（可选）
-    if (formValues.email && formValues.email.trim()) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formValues.email)) {
-        Toast.error(t(ENTERPRISE_I18N_KEYS.ENTERPRISE_EMAIL_FORMAT_ERROR));
-        return;
-      }
-    }
-
-    createEmployee(formValues);
-  };
-
-  // 处理关闭
-  const handleClose = () => {
-    setFormValues(initialFormValues);
-    onClose();
-  };
+  const { formValues, loading, handleFormChange, handleSubmit } =
+    useEmployeeCreation({
+      visible,
+      onSuccess,
+      onClose,
+    });
 
   return (
     <Modal
       visible={visible}
       onOk={handleSubmit}
-      onCancel={handleClose}
+      onCancel={onClose}
       title={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_CREATE_EMPLOYEE)}
       okText={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_CREATE)}
       cancelText={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_CANCEL)}
@@ -162,7 +74,7 @@ export const CreateEmployeeModal: FC<CreateEmployeeModalProps> = ({
               ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_EMPLOYEE_NAME,
             )}
             value={formValues.name}
-            onChange={value => setFormValues({ ...formValues, name: value })}
+            onChange={value => handleFormChange('name', value)}
             maxLength={50}
             showClear
             suffix={
@@ -186,7 +98,7 @@ export const CreateEmployeeModal: FC<CreateEmployeeModalProps> = ({
           <DepartmentSelector
             value={formValues.departments}
             onChange={departments =>
-              setFormValues({ ...formValues, departments })
+              handleFormChange('departments', departments)
             }
             placeholder={t(
               ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_DEPARTMENT,
@@ -208,7 +120,7 @@ export const CreateEmployeeModal: FC<CreateEmployeeModalProps> = ({
           <Input
             placeholder={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_MOBILE)}
             value={formValues.mobile}
-            onChange={value => setFormValues({ ...formValues, mobile: value })}
+            onChange={value => handleFormChange('mobile', value)}
             maxLength={11}
             showClear
           />
@@ -224,7 +136,7 @@ export const CreateEmployeeModal: FC<CreateEmployeeModalProps> = ({
           <Input
             placeholder={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_EMAIL)}
             value={formValues.email}
-            onChange={value => setFormValues({ ...formValues, email: value })}
+            onChange={value => handleFormChange('email', value)}
             maxLength={100}
             showClear
           />

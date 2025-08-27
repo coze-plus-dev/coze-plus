@@ -26,17 +26,17 @@ interface ModalsContainerProps {
   // Add Role Modal
   isAddRoleModalVisible: boolean;
   setIsAddRoleModalVisible: (visible: boolean) => void;
-  
+
   // Edit Role Modal
   isEditRoleModalVisible: boolean;
   setIsEditRoleModalVisible: (visible: boolean) => void;
   roleToEdit: RoleData | null;
-  
+
   // Assign Permissions Modal
   isAssignPermissionsModalVisible: boolean;
   setIsAssignPermissionsModalVisible: (visible: boolean) => void;
   roleToAssign: RoleData | null;
-  
+
   // Callbacks
   onRoleUpdated: () => void;
 }
@@ -51,37 +51,35 @@ export const ModalsContainer: FC<ModalsContainerProps> = ({
   setIsAssignPermissionsModalVisible,
   roleToAssign,
   onRoleUpdated,
-}) => {
-  return (
-    <>
-      <AddRoleModal
-        visible={isAddRoleModalVisible}
-        onClose={() => setIsAddRoleModalVisible(false)}
-        onSuccess={() => {
-          setIsAddRoleModalVisible(false);
-          onRoleUpdated();
-        }}
-      />
+}) => (
+  <>
+    <AddRoleModal
+      visible={isAddRoleModalVisible}
+      onClose={() => setIsAddRoleModalVisible(false)}
+      onSuccess={() => {
+        setIsAddRoleModalVisible(false);
+        onRoleUpdated();
+      }}
+    />
 
-      <EditRoleModal
-        visible={isEditRoleModalVisible}
-        onClose={() => setIsEditRoleModalVisible(false)}
-        role={roleToEdit}
-        onSuccess={() => {
-          setIsEditRoleModalVisible(false);
-          onRoleUpdated();
-        }}
-      />
+    <EditRoleModal
+      visible={isEditRoleModalVisible}
+      onClose={() => setIsEditRoleModalVisible(false)}
+      role={roleToEdit}
+      onSuccess={() => {
+        setIsEditRoleModalVisible(false);
+        onRoleUpdated();
+      }}
+    />
 
-      <AssignPermissionsModal
-        visible={isAssignPermissionsModalVisible}
-        onClose={() => setIsAssignPermissionsModalVisible(false)}
-        role={roleToAssign}
-        onSuccess={() => {
-          setIsAssignPermissionsModalVisible(false);
-          onRoleUpdated();
-        }}
-      />
-    </>
-  );
-};
+    <AssignPermissionsModal
+      visible={isAssignPermissionsModalVisible}
+      onClose={() => setIsAssignPermissionsModalVisible(false)}
+      role={roleToAssign}
+      onSuccess={() => {
+        setIsAssignPermissionsModalVisible(false);
+        onRoleUpdated();
+      }}
+    />
+  </>
+);

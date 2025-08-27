@@ -47,7 +47,9 @@ export const EditRoleModal: FC<EditRoleModalProps> = ({
     MAX_DESCRIPTION_LENGTH,
   } = useEditRole({ visible, role, onSuccess });
 
-  const formRef = useRef<{ formApi?: { setValues: (values: Record<string, unknown>) => void } }>(null);
+  const formRef = useRef<{
+    formApi?: { setValues: (values: Record<string, unknown>) => void };
+  }>(null);
 
   useEffect(() => {
     if (visible && role && formRef.current?.formApi) {

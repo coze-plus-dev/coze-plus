@@ -20,7 +20,12 @@ import type { RoleData } from '@/api/role-api';
 
 import { usePermissionData } from './hooks/use-permission-data';
 import { PermissionTable } from './components/permission-table';
-import { NoRoleSelected, LoadingState, NoPermissions } from './components/empty-states';
+import {
+  NoRoleSelected,
+  LoadingState,
+  NoPermissions,
+} from './components/empty-states';
+
 import styles from './index.module.less';
 
 interface PermissionMatrixProps {
@@ -61,7 +66,6 @@ export const PermissionMatrix: FC<PermissionMatrixProps> = ({
           <NoPermissions />
         ) : (
           <div className={styles.permissionList}>
-
             <PermissionTable
               permissionData={permissionData}
               isEditing={isEditing}
