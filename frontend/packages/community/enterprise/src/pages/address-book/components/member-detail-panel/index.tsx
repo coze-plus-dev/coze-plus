@@ -33,7 +33,7 @@ import {
 import { ChangeDepartmentModal } from '../change-department-modal';
 import { t } from '../../../../utils/i18n';
 import { ENTERPRISE_I18N_KEYS } from '../../../../locales/keys';
-import { employeeApi } from '../../../../api/corporationApi';
+import { employeeApi } from '../../../../api/corporation-api';
 
 import styles from './index.module.less';
 

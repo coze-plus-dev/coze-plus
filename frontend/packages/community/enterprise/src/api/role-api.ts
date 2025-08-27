@@ -46,7 +46,7 @@ export const roleApi = {
   async listRoles(params: ListRolesRequest = {}): Promise<ListRolesResponse> {
     const response = await ListRoles({
       page: params.page || 1,
-      page_size: params.page_size || 10, // eslint-disable-line @typescript-eslint/no-magic-numbers
+      page_size: params.page_size || 10, // eslint-disable-line @typescript-eslint/no-magic-numbers -- Default page size
       ...params,
     });
     return response;

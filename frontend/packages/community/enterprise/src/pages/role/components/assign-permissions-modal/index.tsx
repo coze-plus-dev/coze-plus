@@ -50,34 +50,42 @@ export const AssignPermissionsModal: FC<AssignPermissionsModalProps> = ({
   } = usePermissionAssignment({ visible, role, onSuccess });
 
   // 按resource_name分组，参考权限矩阵的显示方式
-  const groupedByResource = permissionTemplates.reduce((acc, group) => {
-    group.resources?.forEach(resource => {
-      const resourceName = resource.resource_name || resource.resource || '';
-      if (!acc[resourceName]) {
-        acc[resourceName] = [];
-      }
-      
-      resource.actions?.forEach(action => {
-        acc[resourceName].push({
-          id: action.id,
-          actionName: action.action_name || action.action || '',
-          actionDescription: action.description || '',
-          resourceName: resourceName,
+  const groupedByResource: Record<
+    string,
+    Array<{
+      id: string;
+      actionName: string;
+      actionDescription: string;
+      resourceName: string;
+    }>
+  > = permissionTemplates.reduce(
+    (acc, group) => {
+      group.resources?.forEach(resource => {
+        const resourceName = resource.resource_name || resource.resource || '';
+        if (!acc[resourceName]) {
+          acc[resourceName] = [];
+        }
+
+        resource.actions?.forEach(action => {
+          acc[resourceName].push({
+            id: action.id,
+            actionName: action.action_name || action.action || '',
+            actionDescription: action.description || '',
+            resourceName,
+          });
         });
       });
-    });
-    return acc;
-  }, {} as Record<string, Array<{
-    id: string;
-    actionName: string;
-    actionDescription: string;
-    resourceName: string;
-  }>>);
+      return acc;
+    },
+    {},
+  );
 
   return (
     <Modal
       visible={visible}
-      title={t(ENTERPRISE_I18N_KEYS.ROLE_PERMISSION_ASSIGN_TITLE, { roleName: role?.role_name || '' })}
+      title={t(ENTERPRISE_I18N_KEYS.ROLE_PERMISSION_ASSIGN_TITLE, {
+        roleName: role?.role_name || '',
+      })}
       onCancel={onClose}
       onOk={handleSubmit}
       okText={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_SAVE)}
@@ -95,59 +103,77 @@ export const AssignPermissionsModal: FC<AssignPermissionsModalProps> = ({
           <EmptyState
             icon={<IconCozEmpty className="w-[64px] h-[64px] coz-fg-dim" />}
             title={t(ENTERPRISE_I18N_KEYS.ROLE_PERMISSION_TEMPLATE_EMPTY_TITLE)}
-            description={t(ENTERPRISE_I18N_KEYS.ROLE_PERMISSION_TEMPLATE_EMPTY_DESCRIPTION)}
+            description={t(
+              ENTERPRISE_I18N_KEYS.ROLE_PERMISSION_TEMPLATE_EMPTY_DESCRIPTION,
+            )}
           />
         </div>
       ) : (
         <div className={styles.permissionTable}>
           <div className={styles.tableHeader}>
-            <div className={styles.permissionColumn}>{t(ENTERPRISE_I18N_KEYS.ROLE_PERMISSION_TABLE_PERMISSION_COLUMN)}</div>
-            <div className={styles.actionColumn}>{t(ENTERPRISE_I18N_KEYS.ROLE_PERMISSION_TABLE_ACTION_COLUMN)}</div>
+            <div className={styles.permissionColumn}>
+              {t(ENTERPRISE_I18N_KEYS.ROLE_PERMISSION_TABLE_PERMISSION_COLUMN)}
+            </div>
+            <div className={styles.actionColumn}>
+              {t(ENTERPRISE_I18N_KEYS.ROLE_PERMISSION_TABLE_ACTION_COLUMN)}
+            </div>
           </div>
-          
+
           <div className={styles.tableBody}>
-            {Object.entries(groupedByResource).map(([resourceName, actions], groupIndex) => 
-              actions.map((action, index) => {
-                const isLastInGroup = index === actions.length - 1;
-                const isLastGroup = groupIndex === Object.entries(groupedByResource).length - 1;
-                
-                return (
-                  <div key={action.id} className={styles.tableRow}>
-                    {/* 只在每个资源组的第一行显示resource_name */}
-                    {index === 0 && (
-                      <div 
-                        className={styles.permissionCell} 
-                        style={{ 
-                          gridRowEnd: `span ${actions.length}`,
+            {Object.entries(groupedByResource).map(
+              ([resourceName, actions], groupIndex) =>
+                actions.map((action, index) => {
+                  const isLastInGroup = index === actions.length - 1;
+                  const isLastGroup =
+                    groupIndex === Object.entries(groupedByResource).length - 1;
+
+                  return (
+                    <div key={action.id} className={styles.tableRow}>
+                      {/* 只在每个资源组的第一行显示resource_name */}
+                      {index === 0 && (
+                        <div
+                          className={styles.permissionCell}
+                          style={{
+                            gridRowEnd: `span ${actions.length}`,
+                          }}
+                        >
+                          <div className={styles.permissionName}>
+                            {resourceName}
+                          </div>
+                        </div>
+                      )}
+                      <div
+                        className={styles.actionCell}
+                        style={{
+                          borderBottom:
+                            isLastInGroup && !isLastGroup
+                              ? '2px solid var(--semi-color-border)'
+                              : '1px solid var(--semi-color-fill-1)',
                         }}
                       >
-                        <div className={styles.permissionName}>{resourceName}</div>
-                      </div>
-                    )}
-                    <div 
-                      className={styles.actionCell}
-                      style={{
-                        borderBottom: (isLastInGroup && !isLastGroup) 
-                          ? '2px solid var(--semi-color-border)' 
-                          : '1px solid var(--semi-color-fill-1)'
-                      }}
-                    >
-                      <div className={styles.actionItem}>
-                        <div className={styles.actionContent}>
-                          <div className={styles.actionName}>{action.actionName}</div>
-                          <div className={styles.actionDesc}>{action.actionDescription}</div>
+                        <div className={styles.actionItem}>
+                          <div className={styles.actionContent}>
+                            <div className={styles.actionName}>
+                              {action.actionName}
+                            </div>
+                            <div className={styles.actionDesc}>
+                              {action.actionDescription}
+                            </div>
+                          </div>
+                          <Checkbox
+                            checked={selectedPermissions.includes(action.id)}
+                            onChange={e =>
+                              handlePermissionChange(
+                                action.id,
+                                e.target.checked || false,
+                              )
+                            }
+                          />
                         </div>
-                        <Checkbox
-                          checked={selectedPermissions.includes(action.id)}
-                          onChange={(e) =>
-                            handlePermissionChange(action.id, e.target.checked || false)
-                          }
-                        />
                       </div>
                     </div>
-                  </div>
-                );
-              })
+                  );
+                }),
             )}
           </div>
         </div>

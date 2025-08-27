@@ -270,41 +270,45 @@ export const ENTERPRISE_I18N_KEYS = {
   // 角色管理相关
   ROLE_VALIDATION_NAME_REQUIRED: 'role_validation_name_required',
   ROLE_INVALID_PARAM_ERROR: 'role_invalid_param_error',
-  
+
   // 角色管理页面
   ROLE_MANAGEMENT_TITLE: 'role_management_title',
   ROLE_LIST_TITLE: 'role_list_title',
-  
+
   // 角色删除
   ROLE_DELETE_CONFIRM_TITLE: 'role_delete_confirm_title',
   ROLE_DELETE_CONFIRM_CONTENT: 'role_delete_confirm_content',
-  
+
   // 权限编辑
   ROLE_PERMISSION_SAVE_SUCCESS: 'role_permission_save_success',
   ROLE_PERMISSION_SAVE_FAILED: 'role_permission_save_failed',
-  
+
   // 角色管理消息
   ROLE_LIST_LOAD_FAILED: 'role_list_load_failed',
-  
+
   // 角色列表空状态
   ROLE_LIST_EMPTY_TITLE: 'role_list_empty_title',
   ROLE_LIST_EMPTY_DESCRIPTION: 'role_list_empty_description',
-  
+
   // 权限分配
   ROLE_PERMISSION_ASSIGN_TITLE: 'role_permission_assign_title',
   ROLE_PERMISSION_TEMPLATE_EMPTY_TITLE: 'role_permission_template_empty_title',
-  ROLE_PERMISSION_TEMPLATE_EMPTY_DESCRIPTION: 'role_permission_template_empty_description',
+  ROLE_PERMISSION_TEMPLATE_EMPTY_DESCRIPTION:
+    'role_permission_template_empty_description',
   ROLE_PERMISSION_ASSIGN_SUCCESS: 'role_permission_assign_success',
   ROLE_PERMISSION_ASSIGN_FAILED: 'role_permission_assign_failed',
   ROLE_PERMISSION_DATA_LOAD_FAILED: 'role_permission_data_load_failed',
-  
+
   // 权限矩阵
-  ROLE_PERMISSION_MATRIX_SELECT_ROLE_TITLE: 'role_permission_matrix_select_role_title',
-  ROLE_PERMISSION_MATRIX_SELECT_ROLE_DESCRIPTION: 'role_permission_matrix_select_role_description',
+  ROLE_PERMISSION_MATRIX_SELECT_ROLE_TITLE:
+    'role_permission_matrix_select_role_title',
+  ROLE_PERMISSION_MATRIX_SELECT_ROLE_DESCRIPTION:
+    'role_permission_matrix_select_role_description',
   ROLE_PERMISSION_MATRIX_NO_DATA_TITLE: 'role_permission_matrix_no_data_title',
-  ROLE_PERMISSION_MATRIX_NO_DATA_DESCRIPTION: 'role_permission_matrix_no_data_description',
+  ROLE_PERMISSION_MATRIX_NO_DATA_DESCRIPTION:
+    'role_permission_matrix_no_data_description',
   ROLE_PERMISSION_MATRIX_OTHER_DOMAIN: 'role_permission_matrix_other_domain',
-  
+
   // 编辑角色模态框
   ROLE_EDIT_MODAL_TITLE: 'role_edit_modal_title',
   ROLE_EDIT_NAME_LABEL: 'role_edit_name_label',
@@ -316,7 +320,7 @@ export const ENTERPRISE_I18N_KEYS = {
   ROLE_EDIT_DESCRIPTION_LABEL: 'role_edit_description_label',
   ROLE_EDIT_DESCRIPTION_PLACEHOLDER: 'role_edit_description_placeholder',
   ROLE_EDIT_DESCRIPTION_TOO_LONG: 'role_edit_description_too_long',
-  
+
   // 创建角色模态框
   ROLE_CREATE_MODAL_TITLE: 'role_create_modal_title',
   ROLE_CREATE_NAME_LABEL: 'role_create_name_label',
@@ -329,17 +333,18 @@ export const ENTERPRISE_I18N_KEYS = {
   ROLE_CREATE_DESCRIPTION_LABEL: 'role_create_description_label',
   ROLE_CREATE_DESCRIPTION_PLACEHOLDER: 'role_create_description_placeholder',
   ROLE_CREATE_DESCRIPTION_TOO_LONG: 'role_create_description_too_long',
-  
+
   // 角色标签
   ROLE_BUILTIN_TAG: 'role_builtin_tag',
   ROLE_CUSTOM_TAG: 'role_custom_tag',
   ROLE_NO_PERMISSION_TAG: 'role_no_permission_tag',
   ROLE_NO_DESCRIPTION: 'role_no_description',
-  
+
   // 权限分配表格
-  ROLE_PERMISSION_TABLE_PERMISSION_COLUMN: 'role_permission_table_permission_column',
+  ROLE_PERMISSION_TABLE_PERMISSION_COLUMN:
+    'role_permission_table_permission_column',
   ROLE_PERMISSION_TABLE_ACTION_COLUMN: 'role_permission_table_action_column',
-  
+
   // 权限矩阵操作按钮
   ROLE_PERMISSION_EDIT_BUTTON: 'role_permission_edit_button',
   ROLE_PERMISSION_CANCEL_BUTTON: 'role_permission_cancel_button',

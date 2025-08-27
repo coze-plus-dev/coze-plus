@@ -21,7 +21,7 @@ import { Modal, Form, Toast } from '@coze-arch/coze-design';
 
 import { t } from '../../../../utils/i18n';
 import { ENTERPRISE_I18N_KEYS } from '../../../../locales/keys';
-import { corporationApi } from '../../../../api/corporationApi';
+import { corporationApi } from '../../../../api/corporation-api';
 
 import styles from './index.module.less';
 

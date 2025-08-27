@@ -19,11 +19,11 @@ import { type FC, useState, useEffect } from 'react';
 import { useRequest } from 'ahooks';
 import { Modal, Form, Toast } from '@coze-arch/coze-design';
 
-import { t } from '../../../../utils/i18n';
-import { ENTERPRISE_I18N_KEYS } from '../../../../locales/keys';
-import { useOrganizationTree } from '../../../../hooks/useOrganizationTree';
-import type { TreeNode } from '../../../../hooks/useOrganizationTree';
-import { departmentApi } from '../../../../api/corporationApi';
+import { t } from '@/utils/i18n';
+import { ENTERPRISE_I18N_KEYS } from '@/locales/keys';
+import { useOrganizationTree } from '@/hooks/use-organization-tree';
+import type { TreeNode } from '@/hooks/use-organization-tree';
+import { departmentApi } from '@/api/corporation-api';
 
 import styles from './index.module.less';
 
