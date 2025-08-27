@@ -30,8 +30,8 @@ const AccountPage: FC = () => (
     }}
   >
     <Empty
-      title={I18n.t('account_management_coming_soon' as any)}
-      description={I18n.t('account_management_description' as any)}
+      title={I18n.t('account_management_coming_soon' as never)}
+      description={I18n.t('account_management_description' as never)}
     />
   </div>
 );
