@@ -58,7 +58,7 @@ const AddressBookPage: FC = () => {
   const handleSelectNode = (
     id: string,
     nodeType: 'corp' | 'dept',
-    nodeInfo?: any,
+    nodeInfo?: { corp_id?: string; name?: string },
   ) => {
     const selectedNodeInfo: SelectedNodeInfo = {
       id,

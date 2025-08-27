@@ -21,7 +21,7 @@ import { Modal, Form, FormInput, FormTextArea } from '@coze-arch/coze-design';
 import { t } from '@/utils/i18n';
 import { ENTERPRISE_I18N_KEYS } from '@/locales/keys';
 
-import { useRoleForm } from './use-role-form';
+import { useRoleForm } from './hooks/use-role-form';
 
 import styles from './index.module.less';
 
@@ -36,7 +36,7 @@ export const AddRoleModal: FC<AddRoleModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  console.log('AddRoleModal渲染，visible:', visible);
+  console.log('AddRoleModal render, visible:', visible);
   const {
     setFormValues,
     loading,
@@ -45,7 +45,9 @@ export const AddRoleModal: FC<AddRoleModalProps> = ({
     MAX_DESCRIPTION_LENGTH,
   } = useRoleForm({ visible, onSuccess });
 
-  const formRef = useRef<{ formApi?: { setValue: (field: string, value: string) => void } }>(null);
+  const formRef = useRef<{
+    formApi?: { setValue: (field: string, value: string) => void };
+  }>(null);
 
   useEffect(() => {
     if (!visible && formRef.current?.formApi) {

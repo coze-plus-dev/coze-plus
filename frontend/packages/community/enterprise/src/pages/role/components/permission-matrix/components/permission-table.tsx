@@ -27,8 +27,8 @@ import { t } from '@/utils/i18n';
 import { ENTERPRISE_I18N_KEYS } from '@/locales/keys';
 import type { RoleData } from '@/api/role-api';
 
-import type { PermissionRow } from '../hooks/use-permission-data';
 import styles from '../index.module.less';
+import type { PermissionRow } from '../hooks/use-permission-data';
 
 interface PermissionTableProps {
   permissionData: PermissionRow[];
@@ -50,17 +50,15 @@ export const PermissionTable: FC<PermissionTableProps> = ({
   onCancel,
 }) => {
   // 按resource_name分组，参考权限分配弹出框的显示方式
-  const groupedByResource: Record<string, PermissionRow[]> = permissionData.reduce(
-    (acc, permission) => {
-      const resourceName = permission.resourceName;
+  const groupedByResource: Record<string, PermissionRow[]> =
+    permissionData.reduce((acc, permission) => {
+      const { resourceName } = permission;
       if (!acc[resourceName]) {
         acc[resourceName] = [];
       }
       acc[resourceName].push(permission);
       return acc;
-    },
-    {},
-  );
+    }, {});
 
   return (
     <div className={styles.permissionTable}>
@@ -70,11 +68,13 @@ export const PermissionTable: FC<PermissionTableProps> = ({
         </div>
         <div className={styles.actionColumn}>
           <div className={styles.actionColumnContent}>
-            <span>{t(ENTERPRISE_I18N_KEYS.ROLE_PERMISSION_TABLE_ACTION_COLUMN)}</span>
+            <span>
+              {t(ENTERPRISE_I18N_KEYS.ROLE_PERMISSION_TABLE_ACTION_COLUMN)}
+            </span>
             <div className={styles.headerActions}>
               {selectedRole?.is_builtin === 1 ? (
                 <span className={styles.builtinNotice}>
-                  内置角色不支持编辑权限
+                  {t(ENTERPRISE_I18N_KEYS.ROLE_PERMISSION_BUILTIN_NOTICE)}
                 </span>
               ) : (
                 <>
@@ -159,7 +159,10 @@ export const PermissionTable: FC<PermissionTableProps> = ({
                         disabled={!isEditing}
                         checked={action.isChecked}
                         onChange={e =>
-                          onPermissionChange(action.permissionId, e.target.checked || false)
+                          onPermissionChange(
+                            action.permissionId,
+                            e.target.checked || false,
+                          )
                         }
                       />
                     </div>

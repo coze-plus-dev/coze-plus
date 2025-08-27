@@ -34,7 +34,7 @@ export const usePermissionData = (
 ) => {
   const permissionData = useMemo((): PermissionRow[] => {
     const permissionTemplates = selectedRole?.permissions || [];
-    
+
     if (!permissionTemplates || permissionTemplates.length === 0) {
       return [];
     }
@@ -54,13 +54,23 @@ export const usePermissionData = (
     > = {};
 
     permissionTemplates.forEach(group => {
-      group.resources?.forEach(resource => {
+      // 检查group是否有resources
+      if (!group.resources || group.resources.length === 0) {
+        return;
+      }
+
+      group.resources.forEach(resource => {
+        // 检查resource是否有actions
+        if (!resource.actions || resource.actions.length === 0) {
+          return;
+        }
+
         const resourceName = resource.resource_name || resource.resource || '';
         if (!resourceGroups[resourceName]) {
           resourceGroups[resourceName] = [];
         }
 
-        resource.actions?.forEach(action => {
+        resource.actions.forEach(action => {
           const permissionId = `${group.domain}_${resource.resource}_${action.action}`;
           resourceGroups[resourceName].push({
             actionName: action.action_name || action.action || '',

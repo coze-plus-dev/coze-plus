@@ -16,16 +16,15 @@
 
 import { forwardRef, useImperativeHandle } from 'react';
 
-import { Table } from '@douyinfe/semi-ui';
 import { IconCozEmpty } from '@coze-arch/coze-design/icons';
-import { EmptyState, Spin } from '@coze-arch/coze-design';
+import { Table, EmptyState, Spin } from '@coze-arch/coze-design';
 
 import { t } from '@/utils/i18n';
 import { ENTERPRISE_I18N_KEYS } from '@/locales/keys';
+import type { EmployeeData } from '../hooks/use-member-table';
 
-import { useMemberTableData } from './hooks/use-member-table-data';
-
-import styles from './index.module.less';
+import styles from '../index.module.less';
+import { useMemberTableData } from '../hooks/use-member-table-data';
 
 interface SelectedNodeInfo {
   id: string;
@@ -111,7 +110,7 @@ export const MemberTableSimple = forwardRef<MemberTableRef, MemberTableProps>(
           showSizeChanger: false,
         }}
         rowKey="id"
-        onRow={(record: any) => ({
+        onRow={(record: EmployeeData) => ({
           onClick: () => onSelectEmployee?.(record.id),
         })}
         empty={

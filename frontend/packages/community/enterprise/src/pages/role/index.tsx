@@ -19,18 +19,18 @@ import { type FC, useState, useEffect } from 'react';
 import { IconCozPlus } from '@coze-arch/coze-design/icons';
 import { Button } from '@coze-arch/coze-design';
 
+import { t } from '@/utils/i18n';
+import { ENTERPRISE_I18N_KEYS } from '@/locales/keys';
 import type { RoleData } from '@/api/role-api';
+
 import { useRoleManagement } from './hooks/use-role-management';
 import { useRoleDeletion } from './hooks/use-role-deletion';
 import { usePermissionEditor } from './hooks/use-permission-editor';
 import { RoleList } from './components/role-list';
 import { PermissionMatrix } from './components/permission-matrix';
-import { AddRoleModal } from './components/add-role-modal';
 import { EditRoleModal } from './components/edit-role-modal';
 import { AssignPermissionsModal } from './components/assign-permissions-modal';
-
-import { t } from '@/utils/i18n';
-import { ENTERPRISE_I18N_KEYS } from '@/locales/keys';
+import { AddRoleModal } from './components/add-role-modal';
 
 import styles from './index.module.less';
 
@@ -75,7 +75,7 @@ const RolePage: FC = () => {
           {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_CREATE)}
         </Button>
       </div>
-      
+
       {/* Content */}
       <div className={styles.content}>
         <div className={styles.leftPanel}>
@@ -93,7 +93,9 @@ const RolePage: FC = () => {
           <PermissionMatrix
             selectedRole={selectedRole}
             permissionMatrix={editableMatrix}
-            setPermissionMatrix={() => { /* Not used anymore */ }}
+            setPermissionMatrix={() => {
+              /* Not used anymore */
+            }}
             onPermissionChange={handlePermissionChange}
             isEditing={isEditing}
             onEdit={handleEdit}
@@ -142,7 +144,8 @@ const useRolePageLogic = () => {
   const [selectedRole, setSelectedRole] = useState<RoleData | null>(null);
   const [isAddRoleModalVisible, setIsAddRoleModalVisible] = useState(false);
   const [isEditRoleModalVisible, setIsEditRoleModalVisible] = useState(false);
-  const [isAssignPermissionsModalVisible, setIsAssignPermissionsModalVisible] = useState(false);
+  const [isAssignPermissionsModalVisible, setIsAssignPermissionsModalVisible] =
+    useState(false);
   const [roleToEdit, setRoleToEdit] = useState<RoleData | null>(null);
   const [roleToAssign, setRoleToAssign] = useState<RoleData | null>(null);
 
@@ -151,22 +154,25 @@ const useRolePageLogic = () => {
     if (!rolesLoading && roles.length > 0 && !selectedRole) {
       const firstRole = roles[0];
       setSelectedRole(firstRole);
-      
+
       // 检查第一个角色是否未分配权限，如果未分配则打开分配权限弹出框
-      const hasPermissions = firstRole.permissions && 
-        Array.isArray(firstRole.permissions) && 
+      const hasPermissions =
+        firstRole.permissions &&
+        Array.isArray(firstRole.permissions) &&
         firstRole.permissions.length > 0 &&
-        firstRole.permissions.some(group => 
-          group.resources && 
-          Array.isArray(group.resources) && 
-          group.resources.length > 0 &&
-          group.resources.some(resource => 
-            resource.actions && 
-            Array.isArray(resource.actions) && 
-            resource.actions.some(action => action.is_default === 1)
-          )
+        firstRole.permissions.some(
+          group =>
+            group.resources &&
+            Array.isArray(group.resources) &&
+            group.resources.length > 0 &&
+            group.resources.some(
+              resource =>
+                resource.actions &&
+                Array.isArray(resource.actions) &&
+                resource.actions.some(action => action.is_default === 1),
+            ),
         );
-      
+
       if (!hasPermissions) {
         setRoleToAssign(firstRole);
         setIsAssignPermissionsModalVisible(true);
@@ -190,8 +196,12 @@ const useRolePageLogic = () => {
     refreshRoles,
     selectedRole,
     setSelectedRole,
-    setPermissionMatrix: () => { /* no-op */ },
-    setRolePermissions: () => { /* no-op */ },
+    setPermissionMatrix: () => {
+      /* no-op */
+    },
+    setRolePermissions: () => {
+      /* no-op */
+    },
   });
 
   const handleRoleSelect = (role: RoleData) => {

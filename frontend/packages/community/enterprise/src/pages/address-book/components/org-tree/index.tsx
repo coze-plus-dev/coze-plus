@@ -14,18 +14,14 @@
  * limitations under the License.
  */
 
-import {
-  useMemo,
-  forwardRef,
-  useImperativeHandle,
-  useEffect,
-} from 'react';
+import { useMemo, forwardRef, useImperativeHandle, useEffect } from 'react';
 
+import { useOrganizationTree } from '@/hooks/use-organization-tree';
+
+import { useTreeHandlers } from './hooks/use-tree-handlers';
+import { TreeContent } from './components/tree-content';
 import { EditOrganizationModal } from '../edit-organization-modal';
 import { EditDepartmentModal } from '../edit-department-modal';
-import { TreeContent } from './tree-content';
-import { useTreeHandlers } from './use-tree-handlers';
-import { useOrganizationTree } from '@/hooks/use-organization-tree';
 
 interface NodeInfo {
   name: string;

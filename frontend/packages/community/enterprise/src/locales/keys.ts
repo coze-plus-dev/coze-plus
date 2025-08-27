@@ -178,6 +178,7 @@ export const ENTERPRISE_I18N_KEYS = {
   // 恢复在职相关
   ENTERPRISE_RESTORE_CONFIRM_TITLE: 'enterprise_restore_confirm_title',
   ENTERPRISE_RESTORE_CONFIRM_OK_TEXT: 'enterprise_restore_confirm_ok_text',
+  ENTERPRISE_RESTORE_CONFIRM_CONTENT: 'enterprise_restore_confirm_content',
   ENTERPRISE_RESTORE_SUCCESS_MESSAGE: 'enterprise_restore_success_message',
   ENTERPRISE_RESTORE_FAILED_MESSAGE: 'enterprise_restore_failed_message',
   ENTERPRISE_RESTORE_EMPLOYEE_TITLE: 'enterprise_restore_employee_title',

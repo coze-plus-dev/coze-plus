@@ -18,9 +18,9 @@ import { type FC } from 'react';
 
 import { Modal } from '@coze-arch/coze-design';
 
+import { useDepartmentChange } from './hooks/use-department-change';
+import { getModalConfig } from './hooks/modal-config';
 import { DepartmentSelector } from '../department-selector';
-import { useDepartmentChange } from './use-department-change';
-import { getModalConfig } from './modal-config';
 
 import styles from './index.module.less';
 
