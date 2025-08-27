@@ -16,20 +16,14 @@
 
 import React from 'react';
 
-import {
-  IconCozEmpty,
-  IconCozArrowLeft,
-} from '@coze-arch/coze-design/icons';
-import {
-  Tree,
-  EmptyState,
-  Spin,
-} from '@coze-arch/coze-design';
+import { IconCozEmpty, IconCozArrowLeft } from '@coze-arch/coze-design/icons';
+import { Tree, EmptyState, Spin } from '@coze-arch/coze-design';
 
-import { TreeNodeRenderer } from './tree-node-renderer';
-import type { TreeNode } from '@/hooks/use-organization-tree';
 import { t } from '@/utils/i18n';
 import { ENTERPRISE_I18N_KEYS } from '@/locales/keys';
+import type { TreeNode } from '@/hooks/use-organization-tree';
+
+import { TreeNodeRenderer } from './tree-node-renderer';
 
 import styles from './index.module.less';
 
@@ -41,9 +35,16 @@ interface TreeContentProps {
   expandedKeys: string[];
   defaultExpandedKeys: string[];
   dropdownVisible: string | null;
-  onSelect: (selectedKey: string, selected: boolean, selectedNode: unknown) => void;
+  onSelect: (
+    selectedKey: string,
+    selected: boolean,
+    selectedNode: unknown,
+  ) => void;
   onExpand: (expandedKeys: string[]) => void;
-  onMenuClick: (action: string, node: { key: string; title: string; nodeType: 'corp' | 'dept' }) => void;
+  onMenuClick: (
+    action: string,
+    node: { key: string; title: string; nodeType: 'corp' | 'dept' },
+  ) => void;
   setDropdownVisible: (visible: string | null) => void;
   onCollapse?: () => void;
 }
@@ -62,18 +63,17 @@ export const TreeContent: React.FC<TreeContentProps> = ({
   setDropdownVisible,
   onCollapse,
 }) => {
-  const renderTreeNode = (
-    label?: React.ReactNode, 
-    treeNode?: unknown,
-  ) => {
-    const node = treeNode as { 
-      key: string; 
-      title: string; 
-      nodeType: 'corp' | 'dept'; 
-      businessParentId?: string | null; 
-      level?: number; 
-      parentId?: string | null; 
-    } | undefined;
+  const renderTreeNode = (label?: React.ReactNode, treeNode?: unknown) => {
+    const node = treeNode as
+      | {
+          key: string;
+          title: string;
+          nodeType: 'corp' | 'dept';
+          businessParentId?: string | null;
+          level?: number;
+          parentId?: string | null;
+        }
+      | undefined;
     return (
       <TreeNodeRenderer
         label={label}
@@ -152,9 +152,7 @@ export const TreeContent: React.FC<TreeContentProps> = ({
         <button
           className={styles.collapseButton}
           onClick={onCollapse}
-          title={t(
-            ENTERPRISE_I18N_KEYS.ENTERPRISE_ORG_TREE_COLLAPSE_SIDEBAR,
-          )}
+          title={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_ORG_TREE_COLLAPSE_SIDEBAR)}
         >
           <IconCozArrowLeft />
         </button>
@@ -173,6 +171,7 @@ export const TreeContent: React.FC<TreeContentProps> = ({
           showLine={false}
           blockNode={true}
           style={
+            /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- CSS custom properties */
             {
               '--semi-tree-option-indent': '0px',
               '--semi-spacing-base-tight': '0px',

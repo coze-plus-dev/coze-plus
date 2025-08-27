@@ -39,6 +39,30 @@ interface UseTreeHandlersProps {
   refetch: () => void;
 }
 
+const createDeleteHandler =
+  (
+    node: { key: string; title: string; nodeType: 'corp' | 'dept' },
+    refetch: () => void,
+    onRefresh?: () => void,
+  ) =>
+  async () => {
+    try {
+      if (node.nodeType === 'corp') {
+        await corporationApi.deleteCorporation(node.key);
+      } else {
+        await departmentApi.deleteDepartment(node.key);
+      }
+      Toast.success(t(ENTERPRISE_I18N_KEYS.ENTERPRISE_DELETE_SUCCESS));
+      refetch();
+      onRefresh?.();
+    } catch (deleteError: unknown) {
+      const errorObj = deleteError as { message?: string };
+      Toast.error(
+        errorObj.message || t(ENTERPRISE_I18N_KEYS.ENTERPRISE_DELETE_FAILED),
+      );
+    }
+  };
+
 export const useTreeHandlers = ({
   onSelectNode,
   onRefresh,
@@ -51,77 +75,65 @@ export const useTreeHandlers = ({
   const [editingNodeId, setEditingNodeId] = useState<string>('');
   const [dropdownVisible, setDropdownVisible] = useState<string | null>(null);
 
-  const handleSelect = useCallback((
-    selectedKey: string,
-    selected: boolean,
-    selectedNode: unknown,
-  ) => {
-    const node = selectedNode as { nodeType: 'corp' | 'dept'; title: string; corpId?: string; deptId?: string };
-    if (selected) {
-      setSelectedKeys([selectedKey]);
-      onSelectNode?.(selectedKey, node.nodeType, {
-        name: node.title,
-        corpId: node.corpId,
-        deptId: node.deptId,
-      });
-    } else {
-      setSelectedKeys([]);
-      onSelectNode?.('', node.nodeType);
-    }
-  }, [onSelectNode]);
+  const handleSelect = useCallback(
+    (selectedKey: string, selected: boolean, selectedNode: unknown) => {
+      const node = selectedNode as {
+        nodeType: 'corp' | 'dept';
+        title: string;
+        corpId?: string;
+        deptId?: string;
+      };
+      if (selected) {
+        setSelectedKeys([selectedKey]);
+        onSelectNode?.(selectedKey, node.nodeType, {
+          name: node.title,
+          corpId: node.corpId,
+          deptId: node.deptId,
+        });
+      } else {
+        setSelectedKeys([]);
+        onSelectNode?.('', node.nodeType);
+      }
+    },
+    [onSelectNode],
+  );
 
   const handleExpand = useCallback((newExpandedKeys: string[]) => {
     setExpandedKeys(newExpandedKeys);
   }, []);
 
-  const handleMenuClick = useCallback((
-    action: string, 
-    node: { key: string; title: string; nodeType: 'corp' | 'dept' }
-  ) => {
-    switch (action) {
-      case 'edit':
-        setEditingNodeId(node.key);
-        if (node.nodeType === 'corp') {
-          setEditOrgVisible(true);
-        } else {
-          setEditDeptVisible(true);
-        }
-        break;
-      case 'delete':
-        Modal.confirm({
-          title: t(ENTERPRISE_I18N_KEYS.ENTERPRISE_DELETE_TITLE),
-          content: `${t(ENTERPRISE_I18N_KEYS.ENTERPRISE_DELETE_TITLE)} "${node.title}"?`,
-          okText: t(ENTERPRISE_I18N_KEYS.ENTERPRISE_DELETE),
-          cancelText: t(ENTERPRISE_I18N_KEYS.ENTERPRISE_CANCEL),
-          okButtonColor: 'red',
-          centered: true,
-          maskClosable: false,
-          onOk: async () => {
-            try {
-              if (node.nodeType === 'corp') {
-                await corporationApi.deleteCorporation(node.key);
-              } else {
-                await departmentApi.deleteDepartment(node.key);
-              }
-              Toast.success(
-                t(ENTERPRISE_I18N_KEYS.ENTERPRISE_DELETE_SUCCESS),
-              );
-              refetch();
-              onRefresh?.();
-            } catch (deleteError: unknown) {
-              const errorObj = deleteError as { message?: string };
-              Toast.error(
-                errorObj.message ||
-                  t(ENTERPRISE_I18N_KEYS.ENTERPRISE_DELETE_FAILED),
-              );
-            }
-          },
-        });
-        break;
-      default:
-        break;
-    }
-  }, [refetch, onRefresh]);
+  const handleMenuClick = useCallback(
+    (
+      action: string,
+      node: { key: string; title: string; nodeType: 'corp' | 'dept' },
+    ) => {
+      switch (action) {
+        case 'edit':
+          setEditingNodeId(node.key);
+          if (node.nodeType === 'corp') {
+            setEditOrgVisible(true);
+          } else {
+            setEditDeptVisible(true);
+          }
+          break;
+        case 'delete':
+          Modal.confirm({
+            title: t(ENTERPRISE_I18N_KEYS.ENTERPRISE_DELETE_TITLE),
+            content: `${t(ENTERPRISE_I18N_KEYS.ENTERPRISE_DELETE_TITLE)} "${node.title}"?`,
+            okText: t(ENTERPRISE_I18N_KEYS.ENTERPRISE_DELETE),
+            cancelText: t(ENTERPRISE_I18N_KEYS.ENTERPRISE_CANCEL),
+            okButtonColor: 'red',
+            centered: true,
+            maskClosable: false,
+            onOk: createDeleteHandler(node, refetch, onRefresh),
+          });
+          break;
+        default:
+          break;
+      }
+    },
+    [refetch, onRefresh],
+  );
 
   const handleEditOrgSuccess = useCallback(() => {
     setEditOrgVisible(false);
