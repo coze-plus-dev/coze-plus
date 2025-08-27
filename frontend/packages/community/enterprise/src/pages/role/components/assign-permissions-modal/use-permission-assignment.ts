@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import { Toast } from '@coze-arch/coze-design';
 
@@ -36,7 +36,28 @@ export const usePermissionAssignment = ({
   visible,
   role,
   onSuccess,
-}: UsePermissionAssignmentProps) => {
+}: UsePermissionAssignmentProps): {
+  permissionTemplates: Array<{
+    domain: string;
+    domain_name: string;
+    resources?: Array<{
+      resource: string;
+      resource_name: string;
+      actions?: Array<{
+        id: string;
+        action: string;
+        action_name: string;
+        description: string;
+        is_default?: number;
+      }>;
+    }>;
+  }>;
+  selectedPermissions: string[];
+  loading: boolean;
+  submitting: boolean;
+  handlePermissionChange: (permissionId: string, checked: boolean) => void;
+  handleSubmit: () => void;
+} => {
   const [permissionTemplates, setPermissionTemplates] = useState<
     PermissionTemplate[]
   >([]);
@@ -45,13 +66,7 @@ export const usePermissionAssignment = ({
   const [submitting, setSubmitting] = useState(false);
 
   // 加载权限模板和当前角色权限
-  useEffect(() => {
-    if (visible && role) {
-      loadData();
-    }
-  }, [visible, role]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!role) {
       return;
     }
@@ -60,16 +75,20 @@ export const usePermissionAssignment = ({
     try {
       // 调用权限模板列表API，只获取全局权限
       const templates = await roleApi.listPermissionTemplates('global');
-      
+
       // 获取角色当前权限（如果角色已有权限的话）
-      let currentSelectedPermissions: string[] = [];
-      if (role.permissions && Array.isArray(role.permissions) && role.permissions.length > 0) {
+      const currentSelectedPermissions: string[] = [];
+      if (
+        role.permissions &&
+        Array.isArray(role.permissions) &&
+        role.permissions.length > 0
+      ) {
         // 从角色现有权限中提取已选权限ID
         role.permissions.forEach(group => {
           group.resources?.forEach(resource => {
             resource.actions?.forEach(action => {
-              if (action.is_default === 1 && action.id) {
-                currentSelectedPermissions.push(action.id.toString());
+              if (action.is_default === 1) {
+                currentSelectedPermissions.push(action.id?.toString() || '');
               }
             });
           });
@@ -77,16 +96,22 @@ export const usePermissionAssignment = ({
       }
 
       setPermissionTemplates(templates);
-
-      // 设置当前角色已有的权限
       setSelectedPermissions(currentSelectedPermissions);
     } catch (error) {
-      console.error('Load permission data failed:', error);
-      Toast.error(t(ENTERPRISE_I18N_KEYS.ROLE_PERMISSION_DATA_LOAD_FAILED));
+      console.error('Failed to load permission templates:', error);
+      Toast.error(
+        t(ENTERPRISE_I18N_KEYS.ROLE_PERMISSION_DATA_LOAD_FAILED),
+      );
     } finally {
       setLoading(false);
     }
-  };
+  }, [role]); // 移除 't' 依赖，因为它不会改变
+
+  useEffect(() => {
+    if (visible && role) {
+      loadData();
+    }
+  }, [visible, role, loadData]);
 
   const handlePermissionChange = (permissionId: string, checked: boolean) => {
     setSelectedPermissions(prev => {
@@ -109,22 +134,29 @@ export const usePermissionAssignment = ({
       const permissions = permissionTemplates.map(group => ({
         domain: group.domain,
         domain_name: group.domain_name,
-        resources: group.resources?.map(resource => ({
-          resource: resource.resource,
-          resource_name: resource.resource_name,
-          actions: resource.actions?.map(action => {
-            return {
-              ...action,
-              is_default: selectedPermissions.includes(action.id?.toString() || '') ? 1 : 0
-            };
-          }) || []
-        })) || []
+        resources:
+          group.resources?.map(resource => ({
+            resource: resource.resource,
+            resource_name: resource.resource_name,
+            actions:
+              resource.actions?.map(action => ({
+                ...action,
+                is_default: selectedPermissions.includes(
+                  action.id?.toString() || '',
+                )
+                  ? 1
+                  : 0,
+              })) || [],
+          })) || [],
       }));
 
       // 调用角色更新API
+      if (!role.id) {
+        throw new Error('Role ID is required');
+      }
       await roleApi.updateRole({
-        id: role.id!,
-        permissions: permissions
+        id: role.id,
+        permissions,
       });
 
       Toast.success(t(ENTERPRISE_I18N_KEYS.ROLE_PERMISSION_ASSIGN_SUCCESS));

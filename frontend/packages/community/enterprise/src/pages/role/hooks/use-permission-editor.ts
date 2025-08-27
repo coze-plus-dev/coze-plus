@@ -58,8 +58,8 @@ const buildPermissionMatrix = (
 const buildPermissionData = (
   permissionTemplates: PermissionTemplateGroup[],
   permissionMatrix: Record<string, boolean>,
-): PermissionTemplateGroup[] => {
-  return permissionTemplates.map(group => ({
+): PermissionTemplateGroup[] =>
+  permissionTemplates.map(group => ({
     domain: group.domain,
     domain_name: group.domain_name,
     resources:
@@ -76,7 +76,6 @@ const buildPermissionData = (
           }) || [],
       })) || [],
   }));
-};
 
 export const usePermissionEditor = ({
   selectedRole,
@@ -91,14 +90,16 @@ export const usePermissionEditor = ({
     Record<string, boolean>
   >({});
   // 原始权限矩阵（用于取消编辑）
-  const [originalMatrix, setOriginalMatrix] = useState<
-    Record<string, boolean>
-  >({});
+  const [originalMatrix, setOriginalMatrix] = useState<Record<string, boolean>>(
+    {},
+  );
   // 编辑状态
   const [isEditing, setIsEditing] = useState(false);
 
   const loadRolePermissionData = useCallback(async () => {
-    if (!selectedRole?.id) return;
+    if (!selectedRole?.id) {
+      return;
+    }
 
     try {
       // 获取角色详情
@@ -152,7 +153,9 @@ export const usePermissionEditor = ({
   };
 
   const handleSave = async () => {
-    if (!selectedRole?.id) return;
+    if (!selectedRole?.id) {
+      return;
+    }
 
     try {
       // 构建完整的权限数据结构，基于当前加载的角色权限模板

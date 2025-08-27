@@ -21,9 +21,9 @@ import { type employee } from '@coze-studio/api-schema';
 import { Modal, Form, Input, Toast } from '@coze-arch/coze-design';
 
 import { DepartmentSelector } from '../department-selector';
-import { t } from '../../../../utils/i18n';
-import { ENTERPRISE_I18N_KEYS } from '../../../../locales/keys';
-import { employeeApi } from '../../../../api/corporationApi';
+import { t } from '@/utils/i18n';
+import { ENTERPRISE_I18N_KEYS } from '@/locales/keys';
+import { employeeApi } from '@/api/corporation-api';
 
 import styles from './index.module.less';
 

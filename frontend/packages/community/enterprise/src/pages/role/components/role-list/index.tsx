@@ -75,18 +75,21 @@ export const RoleList: FC<RoleListProps> = ({
   return (
     <div className={styles.roleList}>
       {roles.map(role => {
-        const hasNoPermissions = !role.permissions || 
-          !Array.isArray(role.permissions) || 
+        const hasNoPermissions =
+          !role.permissions ||
+          !Array.isArray(role.permissions) ||
           role.permissions.length === 0 ||
-          role.permissions.every(group => 
-            !group.resources || 
-            !Array.isArray(group.resources) || 
-            group.resources.length === 0 ||
-            group.resources.every(resource => 
-              !resource.actions || 
-              !Array.isArray(resource.actions) || 
-              resource.actions.length === 0
-            )
+          role.permissions.every(
+            group =>
+              !group.resources ||
+              !Array.isArray(group.resources) ||
+              group.resources.length === 0 ||
+              group.resources.every(
+                resource =>
+                  !resource.actions ||
+                  !Array.isArray(resource.actions) ||
+                  resource.actions.length === 0,
+              ),
           );
 
         return (
@@ -108,14 +111,13 @@ export const RoleList: FC<RoleListProps> = ({
             <div className={styles.cardHeader}>
               <div className={styles.headerLeft}>
                 <h3 className={styles.roleName}>{role.role_name}</h3>
-                <Tag 
+                <Tag
                   className={styles.roleTag}
                   color={role.is_builtin === 1 ? 'blue' : 'default'}
                 >
-                  {role.is_builtin === 1 
+                  {role.is_builtin === 1
                     ? t(ENTERPRISE_I18N_KEYS.ROLE_BUILTIN_TAG)
-                    : t(ENTERPRISE_I18N_KEYS.ROLE_CUSTOM_TAG)
-                  }
+                    : t(ENTERPRISE_I18N_KEYS.ROLE_CUSTOM_TAG)}
                 </Tag>
               </div>
               {role.is_builtin !== 1 && (
@@ -123,25 +125,31 @@ export const RoleList: FC<RoleListProps> = ({
                   trigger="click"
                   position="bottomRight"
                   visible={openDropdownId === role.id.toString()}
-                  onVisibleChange={(visible) => {
+                  onVisibleChange={visible => {
                     setOpenDropdownId(visible ? role.id.toString() : null);
                   }}
                   render={
                     <div className="min-w-[120px] py-[4px]">
                       <Dropdown.Menu>
-                        <Dropdown.Item onClick={(e: any) => {
-                          e?.stopPropagation?.();
-                          setOpenDropdownId(null); // 关闭下拉菜单
-                          onEditRole(role);
-                        }}>
+                        <Dropdown.Item
+                          onClick={(e: React.MouseEvent) => {
+                            e?.stopPropagation?.();
+                            setOpenDropdownId(null); // 关闭下拉菜单
+                            onEditRole(role);
+                          }}
+                        >
                           <span>{t(ENTERPRISE_I18N_KEYS.ENTERPRISE_EDIT)}</span>
                         </Dropdown.Item>
-                        <Dropdown.Item onClick={(e: any) => {
-                          e?.stopPropagation?.();
-                          setOpenDropdownId(null); // 关闭下拉菜单
-                          onDeleteRole(role);
-                        }}>
-                          <span>{t(ENTERPRISE_I18N_KEYS.ENTERPRISE_DELETE)}</span>
+                        <Dropdown.Item
+                          onClick={(e: React.MouseEvent) => {
+                            e?.stopPropagation?.();
+                            setOpenDropdownId(null); // 关闭下拉菜单
+                            onDeleteRole(role);
+                          }}
+                        >
+                          <span>
+                            {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_DELETE)}
+                          </span>
                         </Dropdown.Item>
                       </Dropdown.Menu>
                     </div>
@@ -152,23 +160,24 @@ export const RoleList: FC<RoleListProps> = ({
                     icon={<IconCozMore />}
                     size="small"
                     className={styles.moreButton}
-                    onClick={(e) => e?.stopPropagation?.()}
+                    onClick={e => e?.stopPropagation?.()}
                   />
                 </Dropdown>
               )}
             </div>
-            
+
             <div className={styles.cardContent}>
               <p className={styles.roleDescription}>
-                {role.description || t(ENTERPRISE_I18N_KEYS.ROLE_NO_DESCRIPTION)}
+                {role.description ||
+                  t(ENTERPRISE_I18N_KEYS.ROLE_NO_DESCRIPTION)}
               </p>
               <div className={styles.roleCodeRow}>
                 <div className={styles.roleCode}>{role.role_code}</div>
-                {hasNoPermissions && (
+                {hasNoPermissions ? (
                   <div className={styles.noPermissionBadge}>
                     {t(ENTERPRISE_I18N_KEYS.ROLE_NO_PERMISSION_TAG)}
                   </div>
-                )}
+                ) : null}
               </div>
             </div>
           </div>

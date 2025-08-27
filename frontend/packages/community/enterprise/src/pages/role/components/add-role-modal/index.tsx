@@ -45,7 +45,7 @@ export const AddRoleModal: FC<AddRoleModalProps> = ({
     MAX_DESCRIPTION_LENGTH,
   } = useRoleForm({ visible, onSuccess });
 
-  const formRef = useRef<any>(null);
+  const formRef = useRef<{ formApi?: { setValue: (field: string, value: string) => void } }>(null);
 
   useEffect(() => {
     if (!visible && formRef.current?.formApi) {
@@ -89,7 +89,12 @@ export const AddRoleModal: FC<AddRoleModalProps> = ({
         <FormInput
           field="role_name"
           label={t(ENTERPRISE_I18N_KEYS.ROLE_CREATE_NAME_LABEL)}
-          rules={[{ required: true, message: t(ENTERPRISE_I18N_KEYS.ROLE_CREATE_NAME_REQUIRED) }]}
+          rules={[
+            {
+              required: true,
+              message: t(ENTERPRISE_I18N_KEYS.ROLE_CREATE_NAME_REQUIRED),
+            },
+          ]}
           placeholder={t(ENTERPRISE_I18N_KEYS.ROLE_CREATE_NAME_PLACEHOLDER)}
           maxLength={MAX_NAME_LENGTH}
           showClear
@@ -99,11 +104,14 @@ export const AddRoleModal: FC<AddRoleModalProps> = ({
           field="role_code"
           label={t(ENTERPRISE_I18N_KEYS.ROLE_CREATE_CODE_LABEL)}
           rules={[
-            { required: true, message: t(ENTERPRISE_I18N_KEYS.ROLE_CREATE_CODE_REQUIRED) },
+            {
+              required: true,
+              message: t(ENTERPRISE_I18N_KEYS.ROLE_CREATE_CODE_REQUIRED),
+            },
             {
               pattern: /^[A-Za-z_][A-Za-z0-9_]*$/,
-              message: t(ENTERPRISE_I18N_KEYS.ROLE_CREATE_CODE_INVALID)
-            }
+              message: t(ENTERPRISE_I18N_KEYS.ROLE_CREATE_CODE_INVALID),
+            },
           ]}
           placeholder={t(ENTERPRISE_I18N_KEYS.ROLE_CREATE_CODE_PLACEHOLDER)}
           showClear
@@ -112,11 +120,18 @@ export const AddRoleModal: FC<AddRoleModalProps> = ({
         <FormTextArea
           field="description"
           label={t(ENTERPRISE_I18N_KEYS.ROLE_CREATE_DESCRIPTION_LABEL)}
-          rules={[{
-            max: MAX_DESCRIPTION_LENGTH,
-            message: t(ENTERPRISE_I18N_KEYS.ROLE_CREATE_DESCRIPTION_TOO_LONG, { maxLength: MAX_DESCRIPTION_LENGTH })
-          }]}
-          placeholder={t(ENTERPRISE_I18N_KEYS.ROLE_CREATE_DESCRIPTION_PLACEHOLDER)}
+          rules={[
+            {
+              max: MAX_DESCRIPTION_LENGTH,
+              message: t(
+                ENTERPRISE_I18N_KEYS.ROLE_CREATE_DESCRIPTION_TOO_LONG,
+                { maxLength: MAX_DESCRIPTION_LENGTH },
+              ),
+            },
+          ]}
+          placeholder={t(
+            ENTERPRISE_I18N_KEYS.ROLE_CREATE_DESCRIPTION_PLACEHOLDER,
+          )}
           maxLength={MAX_DESCRIPTION_LENGTH}
           rows={3}
           showClear

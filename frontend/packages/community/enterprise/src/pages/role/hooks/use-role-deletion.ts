@@ -38,7 +38,9 @@ export const useRoleDeletion = ({
   const handleDeleteRole = (role: RoleData) => {
     Modal.confirm({
       title: t(ENTERPRISE_I18N_KEYS.ROLE_DELETE_CONFIRM_TITLE),
-      content: t(ENTERPRISE_I18N_KEYS.ROLE_DELETE_CONFIRM_CONTENT, { roleName: role.role_name }),
+      content: t(ENTERPRISE_I18N_KEYS.ROLE_DELETE_CONFIRM_CONTENT, {
+        roleName: role.role_name,
+      }),
       okText: t(ENTERPRISE_I18N_KEYS.ENTERPRISE_DELETE),
       cancelText: t(ENTERPRISE_I18N_KEYS.ENTERPRISE_CANCEL),
       okType: 'danger',

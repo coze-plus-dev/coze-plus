@@ -47,7 +47,7 @@ export const EditRoleModal: FC<EditRoleModalProps> = ({
     MAX_DESCRIPTION_LENGTH,
   } = useEditRole({ visible, role, onSuccess });
 
-  const formRef = useRef<any>(null);
+  const formRef = useRef<{ formApi?: { setValues: (values: Record<string, unknown>) => void } }>(null);
 
   useEffect(() => {
     if (visible && role && formRef.current?.formApi) {
@@ -58,7 +58,10 @@ export const EditRoleModal: FC<EditRoleModalProps> = ({
       };
       formRef.current.formApi.setValue('role_name', initialValues.role_name);
       formRef.current.formApi.setValue('role_code', initialValues.role_code);
-      formRef.current.formApi.setValue('description', initialValues.description);
+      formRef.current.formApi.setValue(
+        'description',
+        initialValues.description,
+      );
       setFormValues(initialValues);
     } else if (!visible && formRef.current?.formApi) {
       formRef.current.formApi.setValue('role_name', '');
@@ -101,10 +104,15 @@ export const EditRoleModal: FC<EditRoleModalProps> = ({
           field="role_name"
           label={t(ENTERPRISE_I18N_KEYS.ROLE_EDIT_NAME_LABEL)}
           rules={[
-            { required: true, message: t(ENTERPRISE_I18N_KEYS.ROLE_EDIT_NAME_REQUIRED) },
+            {
+              required: true,
+              message: t(ENTERPRISE_I18N_KEYS.ROLE_EDIT_NAME_REQUIRED),
+            },
             {
               max: MAX_NAME_LENGTH,
-              message: t(ENTERPRISE_I18N_KEYS.ROLE_EDIT_NAME_TOO_LONG, { maxLength: MAX_NAME_LENGTH }),
+              message: t(ENTERPRISE_I18N_KEYS.ROLE_EDIT_NAME_TOO_LONG, {
+                maxLength: MAX_NAME_LENGTH,
+              }),
             },
           ]}
           placeholder={t(ENTERPRISE_I18N_KEYS.ROLE_EDIT_NAME_PLACEHOLDER)}
@@ -125,10 +133,14 @@ export const EditRoleModal: FC<EditRoleModalProps> = ({
           rules={[
             {
               max: MAX_DESCRIPTION_LENGTH,
-              message: t(ENTERPRISE_I18N_KEYS.ROLE_EDIT_DESCRIPTION_TOO_LONG, { maxLength: MAX_DESCRIPTION_LENGTH }),
+              message: t(ENTERPRISE_I18N_KEYS.ROLE_EDIT_DESCRIPTION_TOO_LONG, {
+                maxLength: MAX_DESCRIPTION_LENGTH,
+              }),
             },
           ]}
-          placeholder={t(ENTERPRISE_I18N_KEYS.ROLE_EDIT_DESCRIPTION_PLACEHOLDER)}
+          placeholder={t(
+            ENTERPRISE_I18N_KEYS.ROLE_EDIT_DESCRIPTION_PLACEHOLDER,
+          )}
           maxLength={MAX_DESCRIPTION_LENGTH}
           rows={3}
           showClear

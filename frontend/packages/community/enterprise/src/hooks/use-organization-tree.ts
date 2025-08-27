@@ -16,7 +16,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 
-import { corporationApi } from '../api/corporationApi';
+import type { corporation } from '@coze-studio/api-schema';
+
+import { corporationApi } from '../api/corporation-api';
 
 export interface TreeNode {
   key: string;
@@ -33,9 +35,9 @@ export interface TreeNode {
   corpId?: string;
   deptId?: string;
   level?: number;
-  businessPath?: string;
-  treePath?: string;
 }
+
+type ApiNodeData = corporation.corporation.CorporationTreeNode;
 
 interface UseOrganizationTreeOptions {
   corpId?: string;
@@ -59,11 +61,11 @@ export const useOrganizationTree = (
   } = options;
 
   const transformToTreeNode = useCallback(
-    (node: any): TreeNode => {
+    (node: ApiNodeData): TreeNode => {
       const treeNode: TreeNode = {
         key: node.id,
         title: node.name,
-        nodeType: node.node_type === 'corp' ? 'corp' : 'dept',
+        nodeType: node.node_type as 'corp' | 'dept',
         isLeaf: !node.has_children,
         selectable: node.node_type === 'dept',
         // 映射优化后的字段
@@ -71,9 +73,6 @@ export const useOrganizationTree = (
         businessParentId: node.business_parent_id,
         corpId: node.corp_id,
         deptId: node.dept_id,
-        level: node.level,
-        businessPath: node.business_path,
-        treePath: node.tree_path,
       };
 
       // 保存员工数量但不在标题中显示
@@ -82,7 +81,7 @@ export const useOrganizationTree = (
       }
 
       if (node.children && node.children.length > 0) {
-        treeNode.children = node.children.map((child: any) =>
+        treeNode.children = node.children.map((child: ApiNodeData) =>
           transformToTreeNode(child),
         );
       }
@@ -104,7 +103,7 @@ export const useOrganizationTree = (
         depth,
       });
 
-      const transformedData = data.map((node: any) =>
+      const transformedData = data.map((node: ApiNodeData) =>
         transformToTreeNode(node),
       );
       setTreeData(transformedData);
