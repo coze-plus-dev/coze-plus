@@ -24,9 +24,6 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"gopkg.in/yaml.v3"
-	"os"
-
 	"github.com/cloudwego/eino/callbacks"
 	"github.com/cloudwego/eino/compose"
 	"gorm.io/gorm"
