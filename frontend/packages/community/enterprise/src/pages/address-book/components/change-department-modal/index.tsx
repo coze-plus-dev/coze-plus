@@ -16,6 +16,7 @@
 
 import { type FC } from 'react';
 
+import { type employee } from '@coze-studio/api-schema';
 import { Modal } from '@coze-arch/coze-design';
 
 import { useDepartmentChange } from './hooks/use-department-change';
@@ -24,19 +25,8 @@ import { DepartmentSelector } from '../department-selector';
 
 import styles from './index.module.less';
 
-interface EmployeeData {
-  id: string;
-  name: string;
-  departments?: Array<{
-    department_id: string;
-    department_name: string;
-    department_path: string;
-    is_primary: boolean;
-    corp_id: string;
-    corp_name: string;
-    job_title?: string;
-  }>;
-}
+// 使用API schema中的EmployeeData类型
+type EmployeeData = employee.employee.EmployeeData;
 
 interface ChangeDepartmentModalProps {
   visible: boolean;

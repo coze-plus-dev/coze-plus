@@ -16,15 +16,18 @@
 
 import { useMemo } from 'react';
 
+import { type employee } from '@coze-studio/api-schema';
 import { IconCozMore } from '@coze-arch/coze-design/icons';
 import { Tag, Dropdown, Button } from '@coze-arch/coze-design';
 
 import { t } from '@/utils/i18n';
 import { ENTERPRISE_I18N_KEYS } from '@/locales/keys';
 
-import { DepartmentRenderer } from '../components/department-renderer';
-import type { EmployeeData } from './use-member-table';
 import styles from '../index.module.less';
+import { DepartmentRenderer } from '../components/department-renderer';
+
+// 使用API schema中的EmployeeData类型
+type EmployeeData = employee.employee.EmployeeData;
 
 interface UseTableColumnsProps {
   handleShowDetail: (record: EmployeeData) => void;

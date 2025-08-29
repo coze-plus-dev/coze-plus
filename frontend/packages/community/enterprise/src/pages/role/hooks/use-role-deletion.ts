@@ -18,14 +18,18 @@ import { Modal, Toast } from '@coze-arch/coze-design';
 
 import { t } from '@/utils/i18n';
 import { ENTERPRISE_I18N_KEYS } from '@/locales/keys';
-import { roleApi, type RoleData, type RolePermission } from '@/api/role-api';
+import {
+  roleApi,
+  type RoleData,
+  type PermissionTemplateGroup,
+} from '@/api/role-api';
 
 interface UseRoleDeletionProps {
   refreshRoles: () => void;
   selectedRole: RoleData | null;
   setSelectedRole: (role: RoleData | null) => void;
   setPermissionMatrix: (matrix: Record<string, boolean>) => void;
-  setRolePermissions: (permissions: RolePermission[]) => void;
+  setRolePermissions: (permissions: PermissionTemplateGroup[]) => void;
 }
 
 export const useRoleDeletion = ({
@@ -36,6 +40,11 @@ export const useRoleDeletion = ({
   setRolePermissions,
 }: UseRoleDeletionProps) => {
   const handleDeleteRole = (role: RoleData) => {
+    if (!role.id) {
+      Toast.error(t(ENTERPRISE_I18N_KEYS.ENTERPRISE_DELETE_FAILED));
+      return;
+    }
+
     Modal.confirm({
       title: t(ENTERPRISE_I18N_KEYS.ROLE_DELETE_CONFIRM_TITLE),
       content: t(ENTERPRISE_I18N_KEYS.ROLE_DELETE_CONFIRM_CONTENT, {
@@ -46,6 +55,10 @@ export const useRoleDeletion = ({
       okType: 'danger',
       onOk: async () => {
         try {
+          if (!role.id) {
+            Toast.error(t(ENTERPRISE_I18N_KEYS.ENTERPRISE_DELETE_FAILED));
+            return;
+          }
           await roleApi.deleteRole(role.id);
           Toast.success(t(ENTERPRISE_I18N_KEYS.ENTERPRISE_DELETE_SUCCESS));
 

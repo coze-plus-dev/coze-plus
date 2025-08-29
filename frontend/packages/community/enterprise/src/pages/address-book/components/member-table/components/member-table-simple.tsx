@@ -90,8 +90,12 @@ export const MemberTableSimple = forwardRef<MemberTableRef, MemberTableProps>(
       return (
         <EmptyState
           icon={<IconCozEmpty />}
-          title={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_NO_NODE_SELECTED)}
-          description={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_SELECT_NODE_TO_VIEW)}
+          title={t(
+            ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_TABLE_EMPTY_SELECT_NODE_TITLE,
+          )}
+          description={t(
+            ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_TABLE_EMPTY_SELECT_NODE_DESCRIPTION,
+          )}
         />
       );
     }
@@ -99,20 +103,22 @@ export const MemberTableSimple = forwardRef<MemberTableRef, MemberTableProps>(
     return (
       <Table
         className={styles.memberTable}
-        dataSource={employeeList}
-        columns={columns}
-        loading={loading}
-        pagination={{
-          currentPage: pagination.current,
-          pageSize: pagination.pageSize,
-          total: pagination.total,
-          onPageChange: handlePageChange,
-          showSizeChanger: false,
+        tableProps={{
+          dataSource: employeeList,
+          columns,
+          loading,
+          pagination: {
+            currentPage: pagination.current,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            onChange: handlePageChange,
+            showSizeChanger: false,
+          },
+          rowKey: 'id',
+          onRow: (record: EmployeeData) => ({
+            onClick: () => onSelectEmployee?.(record.id),
+          }),
         }}
-        rowKey="id"
-        onRow={(record: EmployeeData) => ({
-          onClick: () => onSelectEmployee?.(record.id),
-        })}
         empty={
           <EmptyState
             icon={<IconCozEmpty />}

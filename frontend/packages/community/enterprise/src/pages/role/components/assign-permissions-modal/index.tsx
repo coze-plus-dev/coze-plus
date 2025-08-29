@@ -27,6 +27,14 @@ import { usePermissionAssignment } from './hooks/use-permission-assignment';
 
 import styles from './index.module.less';
 
+// 权限操作项类型
+interface PermissionAction {
+  id: string;
+  actionName: string;
+  actionDescription: string;
+  resourceName: string;
+}
+
 interface AssignPermissionsModalProps {
   visible: boolean;
   role: RoleData | null;
@@ -50,32 +58,32 @@ export const AssignPermissionsModal: FC<AssignPermissionsModalProps> = ({
   } = usePermissionAssignment({ visible, role, onSuccess });
 
   // 按resource_name分组，参考权限矩阵的显示方式
-  const groupedByResource: Record<
-    string,
-    Array<{
-      id: string;
-      actionName: string;
-      actionDescription: string;
-      resourceName: string;
-    }>
-  > = permissionTemplates.reduce((acc, group) => {
-    group.resources?.forEach(resource => {
-      const resourceName = resource.resource_name || resource.resource || '';
-      if (!acc[resourceName]) {
-        acc[resourceName] = [];
-      }
+  const groupedByResource: Record<string, PermissionAction[]> =
+    permissionTemplates.reduce<Record<string, PermissionAction[]>>(
+      (acc, group) => {
+        group.resources?.forEach(resource => {
+          const resourceName =
+            resource.resource_name || resource.resource || '';
+          if (!acc[resourceName]) {
+            acc[resourceName] = [];
+          }
 
-      resource.actions?.forEach(action => {
-        acc[resourceName].push({
-          id: action.id,
-          actionName: action.action_name || action.action || '',
-          actionDescription: action.description || '',
-          resourceName,
+          resource.actions?.forEach(action => {
+            // 确保action.id存在才添加到结果中
+            if (action.id) {
+              acc[resourceName].push({
+                id: action.id,
+                actionName: action.action_name || action.action || '',
+                actionDescription: action.description || '',
+                resourceName,
+              });
+            }
+          });
         });
-      });
-    });
-    return acc;
-  }, {});
+        return acc;
+      },
+      {},
+    );
 
   return (
     <Modal

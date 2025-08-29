@@ -30,23 +30,8 @@ const MAX_NAME_LENGTH = 50;
 const MAX_MOBILE_LENGTH = 11;
 const MAX_EMAIL_LENGTH = 100;
 
-interface EmployeeData {
-  id: string;
-  name: string;
-  email: string;
-  mobile: string;
-  status: number;
-  departments?: Array<{
-    department_id: string;
-    department_name: string;
-    department_path?: string;
-    is_primary: boolean;
-    corp_id?: string;
-    corp_name?: string;
-    job_title?: string;
-  }>;
-  user_id?: string;
-}
+// 使用API schema中的EmployeeData类型
+type EmployeeData = employee.employee.EmployeeData;
 
 interface EditFormValues {
   name: string;

@@ -95,14 +95,11 @@ func (dao *CorporationDAO) Update(ctx context.Context, corp *entity.Corporation)
 
 // Delete soft deletes corporation
 func (dao *CorporationDAO) Delete(ctx context.Context, id int64) error {
-	updateData := map[string]interface{}{
-		dao.Query.Corporation.DeletedAt.ColumnName().String(): time.Now().UnixMilli(),
-		dao.Query.Corporation.UpdatedAt.ColumnName().String(): time.Now().UnixMilli(),
-	}
-
+	// 使用GORM的软删除机制，只需要调用Delete方法
+	// deleted_at字段会自动设置为当前时间
 	_, err := dao.Query.Corporation.WithContext(ctx).
 		Where(dao.Query.Corporation.ID.Eq(id)).
-		UpdateColumns(updateData)
+		Delete()
 	return err
 }
 

@@ -16,6 +16,7 @@
 
 import { forwardRef, useImperativeHandle } from 'react';
 
+import { type employee } from '@coze-studio/api-schema';
 import { IconCozEmpty } from '@coze-arch/coze-design/icons';
 import { Table, Modal, EmptyState } from '@coze-arch/coze-design';
 
@@ -23,10 +24,13 @@ import { t } from '@/utils/i18n';
 import { ENTERPRISE_I18N_KEYS } from '@/locales/keys';
 
 import { useTableColumns } from './hooks/use-table-columns';
-import { useMemberTable, type EmployeeData } from './hooks/use-member-table';
+import { useMemberTable } from './hooks/use-member-table';
 import { ChangeDepartmentModal } from '../change-department-modal';
 
 import styles from './index.module.less';
+
+// 使用API schema中的EmployeeData类型
+type EmployeeData = employee.employee.EmployeeData;
 
 interface SelectedNodeInfo {
   id: string;
@@ -189,4 +193,5 @@ export const MemberTable = forwardRef<MemberTableRef, MemberTableProps>(
 
 MemberTable.displayName = 'MemberTable';
 
-export { type EmployeeData } from './hooks/use-member-table';
+// 导出统一的EmployeeData类型
+export type { EmployeeData };
