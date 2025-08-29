@@ -39,6 +39,8 @@ struct CreateEmployeeRequest {
     8: required string mobile (api.body = "mobile")
     9: optional string out_employee_id (api.body = "out_employee_id")
     10: optional common.DataSource employee_source (api.body = "employee_source")
+    11: optional common.CreateAccountType create_account (api.body = "create_account") // Whether to create account type
+    12: optional string password (api.body = "password") // Login password (required when create_account is CREATE_BY_EMAIL)
     255: optional base.Base base
 }
 

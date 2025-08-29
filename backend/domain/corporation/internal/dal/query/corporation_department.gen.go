@@ -85,7 +85,7 @@ type corporationDepartment struct {
 	CreatorID        field.Int64  // Creator ID
 	CreatedAt        field.Int64  // Create Time in Milliseconds
 	UpdatedAt        field.Int64  // Update Time in Milliseconds
-	DeletedAt        field.Field  // Delete Time in Milliseconds
+	DeletedAt        field.Field  // Deletion timestamp
 
 	fieldMap map[string]field.Expr
 }

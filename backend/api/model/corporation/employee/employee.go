@@ -1228,7 +1228,11 @@ type CreateEmployeeRequest struct {
 	Mobile         string                    `thrift:"mobile,8,required" form:"mobile,required" json:"mobile,required"`
 	OutEmployeeID  *string                   `thrift:"out_employee_id,9,optional" form:"out_employee_id" json:"out_employee_id,omitempty"`
 	EmployeeSource *common.DataSource        `thrift:"employee_source,10,optional" form:"employee_source" json:"employee_source,omitempty"`
-	Base           *base.Base                `thrift:"base,255,optional" form:"base" json:"base,omitempty" query:"base"`
+	// Whether to create account type
+	CreateAccount *common.CreateAccountType `thrift:"create_account,11,optional" form:"create_account" json:"create_account,omitempty"`
+	// Login password (required when create_account is CREATE_BY_EMAIL)
+	Password *string    `thrift:"password,12,optional" form:"password" json:"password,omitempty"`
+	Base     *base.Base `thrift:"base,255,optional" form:"base" json:"base,omitempty" query:"base"`
 }
 
 func NewCreateEmployeeRequest() *CreateEmployeeRequest {
@@ -1313,6 +1317,24 @@ func (p *CreateEmployeeRequest) GetEmployeeSource() (v common.DataSource) {
 	return *p.EmployeeSource
 }
 
+var CreateEmployeeRequest_CreateAccount_DEFAULT common.CreateAccountType
+
+func (p *CreateEmployeeRequest) GetCreateAccount() (v common.CreateAccountType) {
+	if !p.IsSetCreateAccount() {
+		return CreateEmployeeRequest_CreateAccount_DEFAULT
+	}
+	return *p.CreateAccount
+}
+
+var CreateEmployeeRequest_Password_DEFAULT string
+
+func (p *CreateEmployeeRequest) GetPassword() (v string) {
+	if !p.IsSetPassword() {
+		return CreateEmployeeRequest_Password_DEFAULT
+	}
+	return *p.Password
+}
+
 var CreateEmployeeRequest_Base_DEFAULT *base.Base
 
 func (p *CreateEmployeeRequest) GetBase() (v *base.Base) {
@@ -1333,6 +1355,8 @@ var fieldIDToName_CreateEmployeeRequest = map[int16]string{
 	8:   "mobile",
 	9:   "out_employee_id",
 	10:  "employee_source",
+	11:  "create_account",
+	12:  "password",
 	255: "base",
 }
 
@@ -1362,6 +1386,14 @@ func (p *CreateEmployeeRequest) IsSetOutEmployeeID() bool {
 
 func (p *CreateEmployeeRequest) IsSetEmployeeSource() bool {
 	return p.EmployeeSource != nil
+}
+
+func (p *CreateEmployeeRequest) IsSetCreateAccount() bool {
+	return p.CreateAccount != nil
+}
+
+func (p *CreateEmployeeRequest) IsSetPassword() bool {
+	return p.Password != nil
 }
 
 func (p *CreateEmployeeRequest) IsSetBase() bool {
@@ -1467,6 +1499,22 @@ func (p *CreateEmployeeRequest) Read(iprot thrift.TProtocol) (err error) {
 		case 10:
 			if fieldTypeId == thrift.I32 {
 				if err = p.ReadField10(iprot); err != nil {
+					goto ReadFieldError
+				}
+			} else if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		case 11:
+			if fieldTypeId == thrift.I32 {
+				if err = p.ReadField11(iprot); err != nil {
+					goto ReadFieldError
+				}
+			} else if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		case 12:
+			if fieldTypeId == thrift.STRING {
+				if err = p.ReadField12(iprot); err != nil {
 					goto ReadFieldError
 				}
 			} else if err = iprot.Skip(fieldTypeId); err != nil {
@@ -1648,6 +1696,29 @@ func (p *CreateEmployeeRequest) ReadField10(iprot thrift.TProtocol) error {
 	p.EmployeeSource = _field
 	return nil
 }
+func (p *CreateEmployeeRequest) ReadField11(iprot thrift.TProtocol) error {
+
+	var _field *common.CreateAccountType
+	if v, err := iprot.ReadI32(); err != nil {
+		return err
+	} else {
+		tmp := common.CreateAccountType(v)
+		_field = &tmp
+	}
+	p.CreateAccount = _field
+	return nil
+}
+func (p *CreateEmployeeRequest) ReadField12(iprot thrift.TProtocol) error {
+
+	var _field *string
+	if v, err := iprot.ReadString(); err != nil {
+		return err
+	} else {
+		_field = &v
+	}
+	p.Password = _field
+	return nil
+}
 func (p *CreateEmployeeRequest) ReadField255(iprot thrift.TProtocol) error {
 	_field := base.NewBase()
 	if err := _field.Read(iprot); err != nil {
@@ -1701,6 +1772,14 @@ func (p *CreateEmployeeRequest) Write(oprot thrift.TProtocol) (err error) {
 		}
 		if err = p.writeField10(oprot); err != nil {
 			fieldId = 10
+			goto WriteFieldError
+		}
+		if err = p.writeField11(oprot); err != nil {
+			fieldId = 11
+			goto WriteFieldError
+		}
+		if err = p.writeField12(oprot); err != nil {
+			fieldId = 12
 			goto WriteFieldError
 		}
 		if err = p.writeField255(oprot); err != nil {
@@ -1906,6 +1985,42 @@ WriteFieldBeginError:
 	return thrift.PrependError(fmt.Sprintf("%T write field 10 begin error: ", p), err)
 WriteFieldEndError:
 	return thrift.PrependError(fmt.Sprintf("%T write field 10 end error: ", p), err)
+}
+func (p *CreateEmployeeRequest) writeField11(oprot thrift.TProtocol) (err error) {
+	if p.IsSetCreateAccount() {
+		if err = oprot.WriteFieldBegin("create_account", thrift.I32, 11); err != nil {
+			goto WriteFieldBeginError
+		}
+		if err := oprot.WriteI32(int32(*p.CreateAccount)); err != nil {
+			return err
+		}
+		if err = oprot.WriteFieldEnd(); err != nil {
+			goto WriteFieldEndError
+		}
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 11 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 11 end error: ", p), err)
+}
+func (p *CreateEmployeeRequest) writeField12(oprot thrift.TProtocol) (err error) {
+	if p.IsSetPassword() {
+		if err = oprot.WriteFieldBegin("password", thrift.STRING, 12); err != nil {
+			goto WriteFieldBeginError
+		}
+		if err := oprot.WriteString(*p.Password); err != nil {
+			return err
+		}
+		if err = oprot.WriteFieldEnd(); err != nil {
+			goto WriteFieldEndError
+		}
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 12 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 12 end error: ", p), err)
 }
 func (p *CreateEmployeeRequest) writeField255(oprot thrift.TProtocol) (err error) {
 	if p.IsSetBase() {

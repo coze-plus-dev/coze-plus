@@ -200,6 +200,28 @@ export const ENTERPRISE_I18N_KEYS = {
   ENTERPRISE_PLEASE_INPUT_EMAIL: 'enterprise_please_input_email',
   ENTERPRISE_EMAIL_FORMAT_ERROR: 'enterprise_email_format_error',
 
+  // 工作邮箱相关
+  ENTERPRISE_WORK_EMAIL: 'enterprise_work_email',
+  ENTERPRISE_PLEASE_INPUT_WORK_EMAIL: 'enterprise_please_input_work_email',
+  ENTERPRISE_WORK_EMAIL_FORMAT_ERROR: 'enterprise_work_email_format_error',
+
+  // 创建登录账号相关
+  ENTERPRISE_CREATE_LOGIN_ACCOUNT: 'enterprise_create_login_account',
+  ENTERPRISE_CREATE_LOGIN_WITH_WORK_EMAIL:
+    'enterprise_create_login_with_work_email',
+  ENTERPRISE_NOT_CREATE_LOGIN_ACCOUNT: 'enterprise_not_create_login_account',
+
+  // 登录密码相关
+  ENTERPRISE_LOGIN_PASSWORD: 'enterprise_login_password',
+  ENTERPRISE_PLEASE_INPUT_LOGIN_PASSWORD:
+    'enterprise_please_input_login_password',
+  ENTERPRISE_PASSWORD_TOO_SHORT: 'enterprise_password_too_short',
+  ENTERPRISE_GENERATE_RANDOM_PASSWORD: 'enterprise_generate_random_password',
+  ENTERPRISE_PASSWORD_COPY_SUCCESS: 'enterprise_password_copy_success',
+  ENTERPRISE_PASSWORD_COPY_FAILED: 'enterprise_password_copy_failed',
+  ENTERPRISE_PASSWORD_COPY_EMPTY_WARNING:
+    'enterprise_password_copy_empty_warning',
+
   // 创建部门相关
   ENTERPRISE_CREATE_DEPARTMENT: 'enterprise_create_department',
   ENTERPRISE_DEPARTMENT_NAME: 'enterprise_department_name',

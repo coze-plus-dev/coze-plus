@@ -28,6 +28,7 @@ type Employee struct {
 	Name       string         `json:"name"`
 	Email      *string        `json:"email"`
 	Phone      *string        `json:"phone"`
+	UserID     *int64         `json:"user_id"`    // Associated User ID (NULL if no user account)
 	EmployeeID *string        `json:"employee_id"`
 	Position   *string        `json:"position"`
 	AvatarURI  *string        `json:"avatar_uri"` // Storage URI for avatar image

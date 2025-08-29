@@ -282,8 +282,8 @@ func (dao *CorporationDAO) corporationDO2PO(ctx context.Context, corp *entity.Co
 		po.OutCorpID = corp.OutCorpID
 	}
 	if corp.CorpSource != 0 {
-		corpSource := int32(corp.CorpSource)
-		po.CorpSource = &corpSource
+		source := int32(corp.CorpSource)
+		po.CorpSource = &source
 	}
 	if corp.DeletedAt != nil {
 		deletedAt := gorm.DeletedAt{
@@ -307,13 +307,13 @@ func (dao *CorporationDAO) corporationPO2DO(ctx context.Context, po *model.Corpo
 		UpdatedAt: po.UpdatedAt,
 	}
 
-	if po.ParentID != nil {
+	if po.ParentID != nil && *po.ParentID != 0 {
 		corp.ParentID = po.ParentID
 	}
-	if po.OutCorpID != nil {
+	if po.OutCorpID != nil && *po.OutCorpID != "" {
 		corp.OutCorpID = po.OutCorpID
 	}
-	if po.CorpSource != nil {
+	if po.CorpSource != nil && *po.CorpSource != 0 {
 		corpSource := entity.CorporationSource(*po.CorpSource)
 		corp.CorpSource = corpSource
 	}

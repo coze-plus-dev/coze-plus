@@ -268,8 +268,8 @@ func (dao *DepartmentDAO) departmentDO2PO(ctx context.Context, dept *entity.Depa
 		po.OutDepartmentID = dept.OutDeptID
 	}
 	if dept.DeptSource != 0 {
-		deptSource := int32(dept.DeptSource)
-		po.DepartmentSource = &deptSource
+		source := int32(dept.DeptSource)
+		po.DepartmentSource = &source
 	}
 	if dept.DeletedAt != nil {
 		deletedAt := gorm.DeletedAt{
@@ -295,17 +295,17 @@ func (dao *DepartmentDAO) departmentPO2DO(ctx context.Context, po *model.Corpora
 	}
 
 	// Set FullPath
-	if po.FullPath != nil {
+	if po.FullPath != nil && *po.FullPath != "" {
 		dept.FullPath = *po.FullPath
 	}
 
-	if po.ParentID != nil {
+	if po.ParentID != nil && *po.ParentID != 0 {
 		dept.ParentDeptID = po.ParentID
 	}
-	if po.OutDepartmentID != nil {
+	if po.OutDepartmentID != nil && *po.OutDepartmentID != "" {
 		dept.OutDeptID = po.OutDepartmentID
 	}
-	if po.DepartmentSource != nil {
+	if po.DepartmentSource != nil && *po.DepartmentSource != 0 {
 		deptSource := entity.DepartmentSource(*po.DepartmentSource)
 		dept.DeptSource = deptSource
 	}

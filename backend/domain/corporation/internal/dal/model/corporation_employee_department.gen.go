@@ -38,7 +38,7 @@ type CorporationEmployeeDepartment struct {
 	CreatorID    int64          `gorm:"column:creator_id;not null;comment:Creator ID" json:"creator_id"`                                       // Creator ID
 	CreatedAt    int64          `gorm:"column:created_at;not null;autoCreateTime:milli;comment:Create Time in Milliseconds" json:"created_at"` // Create Time in Milliseconds
 	UpdatedAt    int64          `gorm:"column:updated_at;not null;autoUpdateTime:milli;comment:Update Time in Milliseconds" json:"updated_at"` // Update Time in Milliseconds
-	DeletedAt    gorm.DeletedAt `gorm:"column:deleted_at;comment:Delete Time in Milliseconds" json:"deleted_at"`                               // Delete Time in Milliseconds
+	DeletedAt    gorm.DeletedAt `gorm:"column:deleted_at;comment:Deletion timestamp" json:"deleted_at"`                                        // Deletion timestamp
 }
 
 // TableName CorporationEmployeeDepartment's table name

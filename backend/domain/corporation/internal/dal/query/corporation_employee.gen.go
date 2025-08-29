@@ -51,6 +51,7 @@ func newCorporationEmployee(db *gorm.DB, opts ...gen.DOOption) corporationEmploy
 	_corporationEmployee.Avatar = field.NewString(tableName, "avatar")
 	_corporationEmployee.Email = field.NewString(tableName, "email")
 	_corporationEmployee.Mobile = field.NewString(tableName, "mobile")
+	_corporationEmployee.UserID = field.NewInt64(tableName, "user_id")
 	_corporationEmployee.Status = field.NewInt32(tableName, "status")
 	_corporationEmployee.OutEmployeeID = field.NewString(tableName, "out_employee_id")
 	_corporationEmployee.EmployeeSource = field.NewInt32(tableName, "employee_source")
@@ -70,20 +71,21 @@ type corporationEmployee struct {
 
 	ALL            field.Asterisk
 	ID             field.Int64  // Employee ID
-	EmployeeNo     field.String // Employee Number (unique in corporation)
+	EmployeeNo     field.String // Employee Number (globally unique)
 	Name           field.String // Employee Name
 	EnName         field.String // English Name
 	Nickname       field.String // Nickname
 	Avatar         field.String // Avatar URL
 	Email          field.String // Email Address
 	Mobile         field.String // Mobile Phone
+	UserID         field.Int64  // Associated User ID (NULL if no user account)
 	Status         field.Int32  // Employee Status: 1-Active, 2-Resigned
 	OutEmployeeID  field.String // External Employee ID
 	EmployeeSource field.Int32  // Data Source: 1-Enterprise WeChat,2-DingTalk,3-Feishu,4-Manual
 	CreatorID      field.Int64  // Creator ID
 	CreatedAt      field.Int64  // Create Time in Milliseconds
 	UpdatedAt      field.Int64  // Update Time in Milliseconds
-	DeletedAt      field.Field  // Delete Time in Milliseconds
+	DeletedAt      field.Field  // Deletion timestamp
 
 	fieldMap map[string]field.Expr
 }
@@ -108,6 +110,7 @@ func (c *corporationEmployee) updateTableName(table string) *corporationEmployee
 	c.Avatar = field.NewString(table, "avatar")
 	c.Email = field.NewString(table, "email")
 	c.Mobile = field.NewString(table, "mobile")
+	c.UserID = field.NewInt64(table, "user_id")
 	c.Status = field.NewInt32(table, "status")
 	c.OutEmployeeID = field.NewString(table, "out_employee_id")
 	c.EmployeeSource = field.NewInt32(table, "employee_source")
@@ -131,7 +134,7 @@ func (c *corporationEmployee) GetFieldByName(fieldName string) (field.OrderExpr,
 }
 
 func (c *corporationEmployee) fillFieldMap() {
-	c.fieldMap = make(map[string]field.Expr, 15)
+	c.fieldMap = make(map[string]field.Expr, 16)
 	c.fieldMap["id"] = c.ID
 	c.fieldMap["employee_no"] = c.EmployeeNo
 	c.fieldMap["name"] = c.Name
@@ -140,6 +143,7 @@ func (c *corporationEmployee) fillFieldMap() {
 	c.fieldMap["avatar"] = c.Avatar
 	c.fieldMap["email"] = c.Email
 	c.fieldMap["mobile"] = c.Mobile
+	c.fieldMap["user_id"] = c.UserID
 	c.fieldMap["status"] = c.Status
 	c.fieldMap["out_employee_id"] = c.OutEmployeeID
 	c.fieldMap["employee_source"] = c.EmployeeSource

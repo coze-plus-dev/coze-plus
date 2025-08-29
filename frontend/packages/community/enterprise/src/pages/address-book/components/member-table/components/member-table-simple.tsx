@@ -21,10 +21,10 @@ import { Table, EmptyState, Spin } from '@coze-arch/coze-design';
 
 import { t } from '@/utils/i18n';
 import { ENTERPRISE_I18N_KEYS } from '@/locales/keys';
-import type { EmployeeData } from '../hooks/use-member-table';
 
 import styles from '../index.module.less';
 import { useMemberTableData } from '../hooks/use-member-table-data';
+import type { EmployeeData } from '../hooks/use-member-table';
 
 interface SelectedNodeInfo {
   id: string;

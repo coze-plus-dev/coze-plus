@@ -387,7 +387,7 @@ func (dao *EmployeeDAO) employeeDO2PO(ctx context.Context, emp *entity.Employee)
 	if emp.Phone != nil {
 		po.Mobile = *emp.Phone
 	}
-	if emp.EmployeeID != nil {
+	if emp.EmployeeID != nil && *emp.EmployeeID != "" {
 		po.EmployeeNo = emp.EmployeeID
 	}
 	// Position field not available in generated model
@@ -398,8 +398,11 @@ func (dao *EmployeeDAO) employeeDO2PO(ctx context.Context, emp *entity.Employee)
 		po.OutEmployeeID = emp.OutEmpID
 	}
 	if emp.EmpSource != 0 {
-		empSource := int32(emp.EmpSource)
-		po.EmployeeSource = &empSource
+		source := int32(emp.EmpSource)
+		po.EmployeeSource = &source
+	}
+	if emp.UserID != nil {
+		po.UserID = emp.UserID
 	}
 	if emp.DeletedAt != nil {
 		deletedAt := gorm.DeletedAt{
@@ -422,25 +425,28 @@ func (dao *EmployeeDAO) employeePO2DO(ctx context.Context, po *model.Corporation
 		UpdatedAt: po.UpdatedAt,
 	}
 
-	if po.Email != nil {
+	if po.Email != nil && *po.Email != "" {
 		emp.Email = po.Email
 	}
 	if po.Mobile != "" {
 		emp.Phone = &po.Mobile
 	}
-	if po.EmployeeNo != nil {
+	if po.EmployeeNo != nil && *po.EmployeeNo != "" {
 		emp.EmployeeID = po.EmployeeNo
 	}
 	// Position field not available in generated model
 	// if po.Position != "" {
 	//	emp.Position = &po.Position
 	// }
-	if po.OutEmployeeID != nil {
+	if po.OutEmployeeID != nil && *po.OutEmployeeID != "" {
 		emp.OutEmpID = po.OutEmployeeID
 	}
-	if po.EmployeeSource != nil {
+	if po.EmployeeSource != nil && *po.EmployeeSource != 0 {
 		empSource := entity.EmployeeSource(*po.EmployeeSource)
 		emp.EmpSource = empSource
+	}
+	if po.UserID != nil && *po.UserID != 0 {
+		emp.UserID = po.UserID
 	}
 	if po.DeletedAt.Valid {
 		deletedAt := po.DeletedAt.Time.UnixMilli()
@@ -569,7 +575,7 @@ func (dao *EmployeeDAO) GetEmployeeDepartments(ctx context.Context, empID int64)
 
 		if err == nil && dept != nil {
 			fullPath := ""
-			if dept.FullPath != nil {
+			if dept.FullPath != nil && *dept.FullPath != "" {
 				fullPath = *dept.FullPath
 			}
 			relation.Department = &entity.Department{
@@ -617,7 +623,7 @@ func (dao *EmployeeDAO) employeeDepartmentPO2DO(ctx context.Context, po *model.C
 		UpdatedAt: po.UpdatedAt,
 	}
 
-	if po.JobTitle != nil {
+	if po.JobTitle != nil && *po.JobTitle != "" {
 		relation.JobTitle = po.JobTitle
 	}
 	if po.DeletedAt.Valid {
