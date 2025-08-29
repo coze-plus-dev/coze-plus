@@ -54,18 +54,47 @@ interface UseMemberTableProps {
   onShowDetail?: (employee: EmployeeData) => void;
 }
 
-export const useMemberTable = ({
-  selectedNode,
-  searchKeyword,
-  onShowDetail,
-}: UseMemberTableProps) => {
-  const [pagination, setPagination] = useState({
-    current: 1,
-    pageSize: 20,
-    total: 0,
-  });
+// Helper function to build API params
+const buildEmployeeParams = (options: {
+  selectedNode: SelectedNodeInfo | undefined;
+  searchKeyword: string | undefined;
+  page: number;
+  pageSize: number;
+}) => {
+  const { selectedNode, searchKeyword, page, pageSize } = options;
 
-  // Modal states
+  if (!selectedNode) {
+    return null;
+  }
+
+  const params: Record<string, unknown> = {
+    page,
+    page_size: pageSize,
+  };
+
+  if (searchKeyword && searchKeyword.trim()) {
+    params.keyword = searchKeyword.trim();
+  }
+
+  if (selectedNode.type === 'corp') {
+    params.corp_id = selectedNode.id;
+  } else if (selectedNode.type === 'dept') {
+    params.department_id = selectedNode.id;
+    if (selectedNode.corpId) {
+      params.corp_id = selectedNode.corpId;
+    }
+  }
+
+  if (!params.corp_id) {
+    console.warn('Missing corp_id for employee list request', selectedNode);
+    return null;
+  }
+
+  return params as Parameters<typeof employeeApi.listEmployees>[0];
+};
+
+// Hook for modal states management
+const useModalStates = () => {
   const [changeDepartmentVisible, setChangeDepartmentVisible] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeData | null>(
     null,
@@ -79,7 +108,33 @@ export const useMemberTable = ({
     null,
   );
 
-  // Fetch employees
+  return {
+    changeDepartmentVisible,
+    setChangeDepartmentVisible,
+    selectedEmployee,
+    setSelectedEmployee,
+    resignConfirmVisible,
+    setResignConfirmVisible,
+    resignEmployee,
+    setResignEmployee,
+    restoreVisible,
+    setRestoreVisible,
+    restoreEmployee,
+    setRestoreEmployee,
+  };
+};
+
+// Hook for employee data fetching
+const useEmployeeData = (
+  selectedNode: SelectedNodeInfo | undefined,
+  searchKeyword: string | undefined,
+) => {
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 20,
+    total: 0,
+  });
+
   const {
     data: employeeData,
     loading,
@@ -87,36 +142,17 @@ export const useMemberTable = ({
     refresh,
   } = useRequest(
     async (page = 1, pageSize = 20) => {
-      if (!selectedNode) {
-        return { list: [], total: 0 };
-      }
-
-      const params: Record<string, unknown> = {
+      const params = buildEmployeeParams({
+        selectedNode,
+        searchKeyword,
         page,
-        page_size: pageSize,
-      };
-
-      if (searchKeyword && searchKeyword.trim()) {
-        params.keyword = searchKeyword.trim();
-      }
-
-      if (selectedNode.type === 'corp') {
-        params.corp_id = selectedNode.id;
-      } else if (selectedNode.type === 'dept') {
-        params.department_id = selectedNode.id;
-        // 部门选择时也需要传递corp_id
-        if (selectedNode.corpId) {
-          params.corp_id = selectedNode.corpId;
-        }
-      }
-
-      // 确保corp_id存在，如果不存在则抛出错误或返回空结果
-      if (!params.corp_id) {
-        console.warn('Missing corp_id for employee list request', selectedNode);
+        pageSize,
+      });
+      if (!params) {
         return { list: [], total: 0 };
       }
 
-      const result = await employeeApi.listEmployees(params as Parameters<typeof employeeApi.listEmployees>[0]);
+      const result = await employeeApi.listEmployees(params);
       return {
         list: result.data || [],
         total: result.total || 0,
@@ -134,61 +170,21 @@ export const useMemberTable = ({
     },
   );
 
-  // Event handlers
-  const handleResignEmployee = useCallback((employee: EmployeeData) => {
-    setResignEmployee(employee);
-    setResignConfirmVisible(true);
-  }, []);
+  return {
+    employeeData,
+    loading,
+    fetchEmployees,
+    refresh,
+    pagination,
+    setPagination,
+  };
+};
 
-  const handleRestoreEmployee = useCallback((employee: EmployeeData) => {
-    setRestoreEmployee(employee);
-    setRestoreVisible(true);
-  }, []);
-
-  const handleAction = useCallback(
-    (action: string, record: EmployeeData) => {
-      switch (action) {
-        case 'changeDepartment':
-          setSelectedEmployee(record);
-          setChangeDepartmentVisible(true);
-          break;
-        case 'resignation':
-          handleResignEmployee(record);
-          break;
-        case 'restore':
-          handleRestoreEmployee(record);
-          break;
-        default:
-          break;
-      }
-    },
-    [handleResignEmployee, handleRestoreEmployee],
-  );
-
-  const handlePaginationChange = useCallback(
-    (page: number, pageSize: number) => {
-      setPagination(prev => ({
-        ...prev,
-        current: page,
-        pageSize,
-      }));
-      setTimeout(() => {
-        fetchEmployees(page, pageSize);
-      }, 0);
-    },
-    [fetchEmployees],
-  );
-
-  const handleShowDetail = useCallback(
-    (record: EmployeeData) => {
-      if (onShowDetail) {
-        onShowDetail(record);
-      }
-    },
-    [onShowDetail],
-  );
-
-  // Employee resignation
+// Hook for resignation operations
+const useResignation = (
+  fetchEmployees: (page: number, pageSize: number) => void,
+  pagination: { current: number; pageSize: number },
+) => {
   const { loading: resignLoading, run: runResignEmployee } = useRequest(
     async (employeeId: string, reason?: string) => {
       const empId = String(employeeId);
@@ -203,8 +199,6 @@ export const useMemberTable = ({
         Toast.success(
           t(ENTERPRISE_I18N_KEYS.ENTERPRISE_RESIGNATION_SUCCESS_MESSAGE),
         );
-        setResignConfirmVisible(false);
-        setResignEmployee(null);
         fetchEmployees(pagination.current, pagination.pageSize);
       },
       onError: error => {
@@ -216,19 +210,141 @@ export const useMemberTable = ({
     },
   );
 
-  // Confirm handlers
-  const handleConfirmResign = useCallback(() => {
-    if (resignEmployee && resignEmployee.id) {
-      runResignEmployee(resignEmployee.id);
-    }
-  }, [resignEmployee, runResignEmployee]);
+  return {
+    resignLoading,
+    runResignEmployee,
+  };
+};
 
-  // 恢复在职成功处理
+// Hook for event handlers
+const useEventHandlers = (options: {
+  modalStates: ReturnType<typeof useModalStates>;
+  fetchEmployees: (page: number, pageSize: number) => void;
+  pagination: { current: number; pageSize: number };
+  setPagination: React.Dispatch<
+    React.SetStateAction<{ current: number; pageSize: number; total: number }>
+  >;
+  runResignEmployee: (employeeId: string) => void;
+  onShowDetail?: (employee: EmployeeData) => void;
+}) => {
+  const {
+    modalStates,
+    fetchEmployees,
+    pagination,
+    setPagination,
+    runResignEmployee,
+    onShowDetail,
+  } = options;
+  const handleResignEmployee = useCallback(
+    (employee: EmployeeData) => {
+      modalStates.setResignEmployee(employee);
+      modalStates.setResignConfirmVisible(true);
+    },
+    [modalStates],
+  );
+
+  const handleRestoreEmployee = useCallback(
+    (employee: EmployeeData) => {
+      modalStates.setRestoreEmployee(employee);
+      modalStates.setRestoreVisible(true);
+    },
+    [modalStates],
+  );
+
+  const handleAction = useCallback(
+    (action: string, record: EmployeeData) => {
+      switch (action) {
+        case 'changeDepartment':
+          modalStates.setSelectedEmployee(record);
+          modalStates.setChangeDepartmentVisible(true);
+          break;
+        case 'resignation':
+          handleResignEmployee(record);
+          break;
+        case 'restore':
+          handleRestoreEmployee(record);
+          break;
+        default:
+          break;
+      }
+    },
+    [modalStates, handleResignEmployee, handleRestoreEmployee],
+  );
+
+  const handlePaginationChange = useCallback(
+    (page: number, pageSize: number) => {
+      setPagination(prev => ({
+        ...prev,
+        current: page,
+        pageSize,
+      }));
+      setTimeout(() => {
+        fetchEmployees(page, pageSize);
+      }, 0);
+    },
+    [fetchEmployees, setPagination],
+  );
+
+  const handleShowDetail = useCallback(
+    (record: EmployeeData) => {
+      if (onShowDetail) {
+        onShowDetail(record);
+      }
+    },
+    [onShowDetail],
+  );
+
+  const handleConfirmResign = useCallback(() => {
+    if (modalStates.resignEmployee && modalStates.resignEmployee.id) {
+      runResignEmployee(modalStates.resignEmployee.id);
+      modalStates.setResignConfirmVisible(false);
+      modalStates.setResignEmployee(null);
+    }
+  }, [modalStates, runResignEmployee]);
+
   const handleRestoreSuccess = useCallback(() => {
-    setRestoreVisible(false);
-    setRestoreEmployee(null);
+    modalStates.setRestoreVisible(false);
+    modalStates.setRestoreEmployee(null);
     fetchEmployees(pagination.current, pagination.pageSize);
-  }, [fetchEmployees, pagination.current, pagination.pageSize]);
+  }, [modalStates, fetchEmployees, pagination]);
+
+  return {
+    handleAction,
+    handlePaginationChange,
+    handleShowDetail,
+    handleConfirmResign,
+    handleRestoreSuccess,
+  };
+};
+
+export const useMemberTable = ({
+  selectedNode,
+  searchKeyword,
+  onShowDetail,
+}: UseMemberTableProps) => {
+  const modalStates = useModalStates();
+  const {
+    employeeData,
+    loading,
+    fetchEmployees,
+    refresh,
+    pagination,
+    setPagination,
+  } = useEmployeeData(selectedNode, searchKeyword);
+
+  const { resignLoading, runResignEmployee } = useResignation(
+    fetchEmployees,
+    pagination,
+  );
+
+  const eventHandlers = useEventHandlers({
+    modalStates,
+    fetchEmployees,
+    pagination,
+    setPagination,
+    runResignEmployee,
+    onShowDetail,
+  });
 
   // Effects
   useEffect(() => {
@@ -236,7 +352,13 @@ export const useMemberTable = ({
       setPagination(prev => ({ ...prev, current: 1 }));
       fetchEmployees(1, pagination.pageSize);
     }
-  }, [selectedNode, searchKeyword, fetchEmployees, pagination.pageSize]);
+  }, [
+    selectedNode,
+    searchKeyword,
+    fetchEmployees,
+    setPagination,
+    pagination.pageSize,
+  ]);
 
   const dataSource = employeeData?.list || [];
 
@@ -248,23 +370,11 @@ export const useMemberTable = ({
     selectedNode,
 
     // Modal states
-    changeDepartmentVisible,
-    setChangeDepartmentVisible,
-    selectedEmployee,
-    resignConfirmVisible,
-    setResignConfirmVisible,
-    resignEmployee,
-    restoreVisible,
-    setRestoreVisible,
-    restoreEmployee,
+    ...modalStates,
     resignLoading,
 
     // Event handlers
-    handleAction,
-    handlePaginationChange,
-    handleShowDetail,
-    handleConfirmResign,
-    handleRestoreSuccess,
+    ...eventHandlers,
     refresh,
   };
 };

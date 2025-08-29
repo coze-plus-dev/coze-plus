@@ -1,4 +1,20 @@
 /*
+ * Copyright 2025 coze-plus Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * Copyright 2025 coze-dev Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,7 +36,6 @@ import (
 	"context"
 
 	crossuser "github.com/coze-dev/coze-studio/backend/crossdomain/contract/user"
-	"github.com/coze-dev/coze-studio/backend/domain/user/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/user/service"
 )
 
@@ -37,6 +52,54 @@ func InitDomainService(u service.User) crossuser.User {
 	return defaultSVC
 }
 
-func (u *impl) GetUserSpaceList(ctx context.Context, userID int64) (spaces []*entity.Space, err error) {
-	return u.DomainSVC.GetUserSpaceList(ctx, userID)
+func (u *impl) GetUserSpaceList(ctx context.Context, userID int64) (spaces []*crossuser.Space, err error) {
+	domainSpaces, err := u.DomainSVC.GetUserSpaceList(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert domain entities to crossdomain contract models
+	spaces = make([]*crossuser.Space, len(domainSpaces))
+	for i, space := range domainSpaces {
+		spaces[i] = &crossuser.Space{
+			ID:        space.ID,
+			Name:      space.Name,
+			CreatorID: space.CreatorID,
+			CreatedAt: space.CreatedAt,
+			UpdatedAt: space.UpdatedAt,
+		}
+	}
+
+	return spaces, nil
+}
+
+func (u *impl) CreateUser(ctx context.Context, req *crossuser.CreateUserRequest) (user *crossuser.UserInfo, err error) {
+	// Convert crossdomain contract request to domain service request
+	domainReq := &service.CreateUserRequest{
+		Email:       req.Email,
+		Password:    req.Password,
+		Name:        req.Name,
+		UniqueName:  req.UniqueName,
+		Description: req.Description,
+		SpaceID:     req.SpaceID,
+		Locale:      req.Locale,
+	}
+	
+	// Call domain service
+	domainUser, err := u.DomainSVC.Create(ctx, domainReq)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert domain entity to crossdomain contract model
+	return &crossuser.UserInfo{
+		ID:          domainUser.UserID,
+		Email:       domainUser.Email,
+		Name:        domainUser.Name,
+		UniqueName:  domainUser.UniqueName,
+		Description: domainUser.Description,
+		Locale:      domainUser.Locale,
+		CreatedAt:   domainUser.CreatedAt,
+		UpdatedAt:   domainUser.UpdatedAt,
+	}, nil
 }

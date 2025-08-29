@@ -163,9 +163,7 @@ const PanelHeader: FC<{
           icon={<IconCozMore />}
           className={styles.editButton}
         >
-          {t(
-            ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_DETAIL_ACTION_MORE_ACTIONS,
-          )}
+          {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_DETAIL_ACTION_MORE_ACTIONS)}
         </Button>
       </Dropdown>
       <Button
@@ -302,9 +300,7 @@ const PanelFooter: FC<{
           onClick={onCancel}
           loading={updateLoading}
         >
-          {t(
-            ENTERPRISE_I18N_KEYS.ENTERPRISE_EDIT_ORGANIZATION_BUTTONS_CANCEL,
-          )}
+          {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_EDIT_ORGANIZATION_BUTTONS_CANCEL)}
         </Button>
         <Button theme="solid" block onClick={onSave} loading={updateLoading}>
           {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_EDIT_ORGANIZATION_BUTTONS_SAVE)}
@@ -355,7 +351,9 @@ export const MemberPanelContent: FC<MemberPanelContentProps> = props => {
       <div className={styles.content}>
         <div className={styles.section}>
           <div className={styles.sectionTitle}>
-            {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_DETAIL_SECTION_BASIC_INFO)}
+            {t(
+              ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_DETAIL_SECTION_BASIC_INFO,
+            )}
           </div>
           <BasicInfoFields
             employee={employee}
@@ -367,7 +365,9 @@ export const MemberPanelContent: FC<MemberPanelContentProps> = props => {
 
         <div className={styles.section}>
           <div className={styles.sectionTitle}>
-            {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_DETAIL_SECTION_DEPARTMENT)}
+            {t(
+              ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_DETAIL_SECTION_DEPARTMENT,
+            )}
           </div>
           <div className={styles.departmentSection}>{renderDepartments()}</div>
         </div>

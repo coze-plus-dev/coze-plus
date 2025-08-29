@@ -23,7 +23,7 @@ export const CreateEmployee = /*#__PURE__*/createAPI<employee.CreateEmployeeRequ
   "name": "CreateEmployee",
   "reqType": "employee.CreateEmployeeRequest",
   "reqMapping": {
-    "body": ["name", "department_ids", "employee_no", "en_name", "nickname", "avatar", "email", "mobile", "out_employee_id", "employee_source"]
+    "body": ["name", "department_ids", "employee_no", "en_name", "nickname", "avatar", "email", "mobile", "out_employee_id", "employee_source", "create_account", "password"]
   },
   "resType": "employee.CreateEmployeeResponse",
   "schemaRoot": "api://schemas/idl_corporation_employee_service",

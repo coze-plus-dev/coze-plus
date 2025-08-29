@@ -33,3 +33,9 @@ enum EmployeeDepartmentStatus {
     NORMAL = 1,    // 正常
     TRANSFERRED = 2, // 调离
 }
+
+// Create account type enumeration
+enum CreateAccountType {
+    NO_CREATE = 0,      // Do not create account
+    CREATE_BY_EMAIL = 1, // Create account using work email
+}

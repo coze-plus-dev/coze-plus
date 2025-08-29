@@ -96,6 +96,14 @@ func (s *employeeSVC) CreateEmployee(ctx context.Context, req *CreateEmployeeReq
 		}
 	}
 
+	var userID *int64
+	
+	// NOTE: User account creation is handled at Application layer within transaction
+	// to ensure transactional consistency. This Domain service only handles employee creation.
+	if req.UserID != nil {
+		userID = req.UserID
+	}
+
 	// Create employee entity
 	emp := &entity.Employee{
 		Name:       req.Name,
@@ -108,6 +116,7 @@ func (s *employeeSVC) CreateEmployee(ctx context.Context, req *CreateEmployeeReq
 		OutEmpID:   req.OutEmpID,
 		EmpSource:  req.EmpSource,
 		CreatorID:  req.CreatorID,
+		UserID:     userID, // Associate with created user
 	}
 
 	// Save to database

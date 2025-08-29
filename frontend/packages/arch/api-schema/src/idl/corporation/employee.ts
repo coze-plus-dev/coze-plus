@@ -59,6 +59,10 @@ export interface CreateEmployeeRequest {
   mobile: string,
   out_employee_id?: string,
   employee_source?: common.DataSource,
+  /** Whether to create account type */
+  create_account?: common.CreateAccountType,
+  /** Login password (required when create_account is CREATE_BY_EMAIL) */
+  password?: string,
 }
 export interface CreateEmployeeResponse {
   code: number,

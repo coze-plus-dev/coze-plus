@@ -218,6 +218,8 @@ export class EmployeeApiService {
     email?: string;
     out_employee_id?: string;
     employee_source?: employee.employee.common.DataSource;
+    create_account?: employee.employee.common.CreateAccountType;
+    password?: string;
   }) {
     const response = await employee.CreateEmployee({
       name: params.name,
@@ -230,6 +232,8 @@ export class EmployeeApiService {
       email: params.email,
       out_employee_id: params.out_employee_id,
       employee_source: params.employee_source,
+      create_account: params.create_account,
+      password: params.password,
     });
     return response.data;
   }

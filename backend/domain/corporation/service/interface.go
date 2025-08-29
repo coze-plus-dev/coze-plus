@@ -241,19 +241,39 @@ type SortDepartmentsRequest struct {
 	Items []SortItem `json:"items"`
 }
 
+// Create account type constants for domain layer
+const (
+	CreateAccountTypeNoCreate = 0 // Do not create account
+	CreateAccountTypeByEmail  = 1 // Create account using work email
+)
+
+// CreateUserRequest represents user creation request in domain layer
+type CreateUserRequest struct {
+	Email       string `json:"email"`
+	Password    string `json:"password"`
+	Name        string `json:"name"`
+	UniqueName  string `json:"unique_name"`
+	Description string `json:"description"`
+	SpaceID     int64  `json:"space_id"`
+	Locale      string `json:"locale"`
+}
+
 // Request/Response structures for Employee service
 
 type CreateEmployeeRequest struct {
-	Name       string                `json:"name"`
-	Email      *string               `json:"email,omitempty"`
-	Phone      *string               `json:"phone,omitempty"`
-	EmployeeID *string               `json:"employee_id,omitempty"`
-	Position   *string               `json:"position,omitempty"`
-	AvatarURI  *string               `json:"avatar_uri,omitempty"`
-	Status     entity.EmployeeStatus `json:"status"`
-	OutEmpID   *string               `json:"out_emp_id,omitempty"`
-	EmpSource  entity.EmployeeSource `json:"emp_source"`
-	CreatorID  int64                 `json:"creator_id"`
+	Name          string                `json:"name"`
+	Email         *string               `json:"email,omitempty"`
+	Phone         *string               `json:"phone,omitempty"`
+	EmployeeID    *string               `json:"employee_id,omitempty"`
+	Position      *string               `json:"position,omitempty"`
+	AvatarURI     *string               `json:"avatar_uri,omitempty"`
+	Status        entity.EmployeeStatus `json:"status"`
+	OutEmpID      *string               `json:"out_emp_id,omitempty"`
+	EmpSource     entity.EmployeeSource `json:"emp_source"`
+	CreatorID     int64                 `json:"creator_id"`
+	CreateAccount int                   `json:"create_account"` // Create account type: 0-no create, 1-create by email
+	Password      *string               `json:"password,omitempty"`   // Login password
+	UserID        *int64                `json:"user_id,omitempty"`    // Associated User ID (set by Application layer)
 }
 
 type CreateEmployeeResponse struct {

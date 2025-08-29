@@ -55,3 +55,10 @@ export enum EmployeeDepartmentStatus {
   /** 调离 */
   TRANSFERRED = 2,
 }
+/** Create account type enumeration */
+export enum CreateAccountType {
+  /** Do not create account */
+  NO_CREATE = 0,
+  /** Create account using work email */
+  CREATE_BY_EMAIL = 1,
+}

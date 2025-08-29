@@ -18,6 +18,7 @@ package corporation
 
 import (
 	"context"
+	"errors"
 
 	"gorm.io/gorm"
 
@@ -29,6 +30,7 @@ import (
 	"github.com/coze-dev/coze-studio/backend/pkg/errorx"
 	"github.com/coze-dev/coze-studio/backend/pkg/lang/ptr"
 	"github.com/coze-dev/coze-studio/backend/types/errno"
+	crossuser "github.com/coze-dev/coze-studio/backend/crossdomain/contract/user"
 )
 
 // Employee methods
@@ -44,24 +46,58 @@ func (s *CorporationApplicationService) CreateEmployee(ctx context.Context, req 
 		return nil, errorx.New(errno.ErrCorporationInvalidParamCode, errorx.KV("msg", "at least one department must be specified"))
 	}
 
+	// Validate create account parameters
+	if req.IsSetCreateAccount() && req.GetCreateAccount() == common.CreateAccountType_CREATE_BY_EMAIL {
+		// When creating account by email, both email and password are required
+		if !req.IsSetEmail() || req.GetEmail() == "" {
+			return nil, errorx.New(errno.ErrCorporationInvalidParamCode, errorx.KV("msg", "email is required when creating account by email"))
+		}
+		if !req.IsSetPassword() || req.GetPassword() == "" {
+			return nil, errorx.New(errno.ErrCorporationInvalidParamCode, errorx.KV("msg", "password is required when creating account by email"))
+		}
+	}
+
 	// Convert from API model to Domain service request using the correct field names
 	serviceReq := &service.CreateEmployeeRequest{
-		Name:       req.GetName(),
-		Email:      getStringPtr(req.GetEmail()),
-		Phone:      getStringPtr(req.GetMobile()),
-		EmployeeID: getStringPtr(req.GetEmployeeNo()),
-		Position:   getStringPtr(""), // Will be set per department
-		AvatarURI:  getStringPtr(req.GetAvatar()),
-		Status:     entity.EmployeeStatusActive, // Default status
-		OutEmpID:   getStringPtr(req.GetOutEmployeeID()),
-		EmpSource:  convertApiEmployeeSourceToEntity(req.GetEmployeeSource()),
-		CreatorID:  ptr.From(uid),
+		Name:          req.GetName(),
+		Email:         getStringPtr(req.GetEmail()),
+		Phone:         getStringPtr(req.GetMobile()),
+		EmployeeID:    getStringPtr(req.GetEmployeeNo()),
+		Position:      getStringPtr(""), // Will be set per department
+		AvatarURI:     getStringPtr(req.GetAvatar()),
+		Status:        entity.EmployeeStatusActive, // Default status
+		OutEmpID:      getStringPtr(req.GetOutEmployeeID()),
+		EmpSource:     convertApiEmployeeSourceToEntity(req.GetEmployeeSource()),
+		CreatorID:     ptr.From(uid),
+		CreateAccount: int(req.GetCreateAccount()), // Direct conversion from enum to int
+		Password:      getStringPtr(req.GetPassword()),
 	}
 
 	var serviceResp *service.CreateEmployeeResponse
 	var err error
 
 	err = s.db.Transaction(func(tx *gorm.DB) error {
+		// Create user account first if requested, within transaction
+		if serviceReq.CreateAccount == service.CreateAccountTypeByEmail && serviceReq.Email != nil && serviceReq.Password != nil {
+			userReq := &crossuser.CreateUserRequest{
+				Email:    *serviceReq.Email,
+				Password: *serviceReq.Password,
+			}
+			
+			user, err := crossuser.DefaultSVC().CreateUser(ctx, userReq)
+			if err != nil {
+				// Use errors.As to properly handle wrapped status errors
+				var statusErr errorx.StatusError
+				if errors.As(err, &statusErr) {
+					if statusErr.Code() == errno.ErrUserEmailAlreadyExistCode {
+						return errorx.New(errno.ErrEmployeeEmailExists, errorx.KV("email", *serviceReq.Email))
+					}
+				}
+				return errorx.WrapByCode(err, errno.ErrCorporationInternalError)
+			}
+			serviceReq.UserID = &user.ID
+		}
+		
 		serviceResp, err = s.DomainEmployeeSVC.CreateEmployee(ctx, serviceReq)
 		if err != nil {
 			return err
