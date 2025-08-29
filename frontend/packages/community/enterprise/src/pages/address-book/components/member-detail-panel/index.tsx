@@ -14,61 +14,27 @@
  * limitations under the License.
  */
 
-import { type FC, useEffect, useState } from 'react';
+import { type FC, useCallback } from 'react';
 
-import { useRequest } from 'ahooks';
-import { type employee } from '@coze-studio/api-schema';
-import {
-  Spin,
-  Toast,
-  Modal,
-  Tag,
-} from '@coze-arch/coze-design';
+import { Spin, Modal } from '@coze-arch/coze-design';
 
 import { t } from '@/utils/i18n';
 import { ENTERPRISE_I18N_KEYS } from '@/locales/keys';
-import { employeeApi } from '@/api/corporation-api';
 
+import {
+  useMemberDetailPanelState,
+  useEmployeeData,
+  useEmployeeOperations,
+  type EmployeeData,
+} from './hooks/use-member-detail-panel-state';
+import {
+  useMemberDetailPanelHandlers,
+  useMemberDetailPanelEffects,
+} from './hooks/use-member-detail-panel-handlers';
 import { MemberPanelContent } from './components/member-panel-content';
 import { ChangeDepartmentModal } from '../change-department-modal';
 
-// 为ChangeDepartmentModal定义兼容的类型
-interface ChangeDepartmentEmployeeData {
-  id: string;
-  name: string;
-  departments?: Array<{
-    department_id: string;
-    department_name: string;
-    department_path: string;
-    is_primary: boolean;
-    corp_id: string;
-    corp_name: string;
-    job_title?: string;
-  }>;
-}
-
 import styles from './index.module.less';
-
-// 常量定义
-const MAX_NAME_LENGTH = 50;
-
-interface EmployeeData {
-  id: string;
-  name: string;
-  email: string;
-  mobile: string;
-  status: number;
-  departments?: Array<{
-    department_id: string;
-    department_name: string;
-    department_path?: string;
-    is_primary: boolean;
-    corp_id?: string;
-    corp_name?: string;
-    job_title?: string;
-  }>;
-  user_id?: string;
-}
 
 interface MemberDetailPanelProps {
   visible: boolean;
@@ -78,268 +44,15 @@ interface MemberDetailPanelProps {
   onRefresh?: () => void;
 }
 
-interface EditFormValues {
-  name: string;
-  mobile: string;
-  email: string;
-  departments: employee.employee.EmployeeDepartmentInfo[];
-}
-
-// 表单验证函数
-const validateEditForm = (editFormValues: EditFormValues) => {
-  if (!editFormValues.name || !editFormValues.name.trim()) {
-    Toast.error(
-      t(ENTERPRISE_I18N_KEYS.ENTERPRISE_CREATE_EMPLOYEE_FIELDS_NAME_REQUIRED),
-    );
-    return false;
-  }
-  if (editFormValues.name.length > MAX_NAME_LENGTH) {
-    Toast.error(t(ENTERPRISE_I18N_KEYS.ENTERPRISE_VALIDATION_NAME_TOO_LONG));
-    return false;
-  }
-  if (!editFormValues.mobile || !editFormValues.mobile.trim()) {
-    Toast.error(
-      t(
-        ENTERPRISE_I18N_KEYS.ENTERPRISE_CREATE_EMPLOYEE_FIELDS_MOBILE_REQUIRED,
-      ),
-    );
-    return false;
-  }
-  const mobileRegex = /^1[3-9]\d{9}$/;
-  if (!mobileRegex.test(editFormValues.mobile)) {
-    Toast.error(
-      t(
-        ENTERPRISE_I18N_KEYS.ENTERPRISE_CREATE_EMPLOYEE_FIELDS_MOBILE_INVALID,
-      ),
-    );
-    return false;
-  }
-  if (editFormValues.email && editFormValues.email.trim()) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(editFormValues.email)) {
-      Toast.error(
-        t(
-          ENTERPRISE_I18N_KEYS.ENTERPRISE_CREATE_EMPLOYEE_FIELDS_EMAIL_INVALID,
-        ),
-      );
-      return false;
-    }
-  }
-  return true;
-};
-
-export const MemberDetailPanel: FC<MemberDetailPanelProps> = ({
-  visible,
-  employeeId,
-  onClose,
-  onEdit,
-  onRefresh,
-}) => {
-  // 编辑模式状态
-  const [isEditing, setIsEditing] = useState(false);
-  const [editFormValues, setEditFormValues] = useState<EditFormValues>({
-    name: '',
-    mobile: '',
-    email: '',
-    departments: [],
-  });
-
-  // 变更部门弹窗状态
-  const [changeDepartmentVisible, setChangeDepartmentVisible] = useState(false);
-
-  // 离职确认弹窗状态
-  const [resignConfirmVisible, setResignConfirmVisible] = useState(false);
-
-  // 恢复在职弹窗状态
-  const [restoreVisible, setRestoreVisible] = useState(false);
-
-  // Dropdown可见性状态
-  const [dropdownVisible, setDropdownVisible] = useState(false);
-
-  // 获取员工详情
-  const {
-    data: employee,
-    loading,
-    refresh,
-  } = useRequest(
-    async () => {
-      if (!employeeId) {
-        return null;
-      }
-      return employeeApi.getEmployee(employeeId);
-    },
-    {
-      ready: !!(visible && employeeId),
-      refreshDeps: [employeeId],
-    },
-  );
-
-  // 员工离职请求
-  const { loading: resignLoading, run: resignEmployee } = useRequest(
-    async (reason?: string) => {
-      const empId = employee?.id ? String(employee.id) : employeeId;
-      if (!empId) {
-        console.error('employee id is undefined');
-        return;
-      }
-      return employeeApi.resignEmployee({
-        id: empId,
-        reason,
-      });
-    },
-    {
-      manual: true,
-      onSuccess: () => {
-        Toast.success(
-          t(ENTERPRISE_I18N_KEYS.ENTERPRISE_RESIGNATION_SUCCESS_MESSAGE),
-        );
-        setResignConfirmVisible(false);
-        refresh();
-        onRefresh?.();
-      },
-      onError: error => {
-        Toast.error(
-          error.message ||
-            t(ENTERPRISE_I18N_KEYS.ENTERPRISE_RESIGNATION_FAILED_MESSAGE),
-        );
-      },
-    },
-  );
-
-  // 更新员工信息请求
-  const { loading: updateLoading, run: updateEmployee } = useRequest(
-    async (values: EditFormValues) => {
-      if (!employeeId) {
-        return;
-      }
-
-      const result = await employeeApi.updateEmployee({
-        id: employeeId,
-        name: values.name,
-        mobile: values.mobile,
-        email: values.email || undefined,
-        departments: values.departments,
-      });
-      return result;
-    },
-    {
-      manual: true,
-      onSuccess: () => {
-        Toast.success(
-          t(
-            ENTERPRISE_I18N_KEYS.ENTERPRISE_EDIT_ORGANIZATION_MESSAGES_UPDATE_SUCCESS,
-          ),
-        );
-        setIsEditing(false);
-        refresh();
-        onRefresh?.();
-      },
-      onError: error => {
-        Toast.error(
-          error.message ||
-            t(
-              ENTERPRISE_I18N_KEYS.ENTERPRISE_EDIT_ORGANIZATION_MESSAGES_UPDATE_FAILED,
-            ),
-        );
-      },
-    },
-  );
-
-  // 当员工数据加载完成时，初始化编辑表单值
-  useEffect(() => {
-    if (employee) {
-      setEditFormValues({
-        name: employee.name || '',
-        mobile: employee.mobile || '',
-        email: employee.email || '',
-        departments: employee.departments || [],
-      });
-    }
-  }, [employee]);
-
-  // 当面板关闭时，重置编辑状态和其他状态
-  useEffect(() => {
-    if (!visible) {
-      setIsEditing(false);
-      setDropdownVisible(false);
-      setChangeDepartmentVisible(false);
-      setResignConfirmVisible(false);
-      setRestoreVisible(false);
-    }
-  }, [visible]);
-
-  // 当面板打开且有员工ID时，刷新员工数据
-  useEffect(() => {
-    if (visible && employeeId) {
-      refresh();
-    }
-  }, [visible, employeeId, refresh]);
-
-  // 如果面板不可见或没有员工ID，不渲染
-  if (!visible || !employeeId) {
-    return null;
-  }
-
-  const handleEdit = () => {
-    setIsEditing(true);
-  };
-
-  const handleSave = () => {
-    if (!validateEditForm(editFormValues)) {
-      return;
-    }
-    updateEmployee(editFormValues);
-  };
-
-  const handleCancelEdit = () => {
-    if (employee) {
-      setEditFormValues({
-        name: employee.name || '',
-        mobile: employee.mobile || '',
-        email: employee.email || '',
-        departments: employee.departments || [],
-      });
-    }
-    setIsEditing(false);
-  };
-
-  const handleAction = (action: string) => {
-    setDropdownVisible(false);
-    switch (action) {
-      case 'changeDepartment':
-        setChangeDepartmentVisible(true);
-        break;
-      case 'resignation':
-        setResignConfirmVisible(true);
-        break;
-      case 'restore':
-        setRestoreVisible(true);
-        break;
-      default:
-        break;
-    }
-  };
-
-  const handleConfirmResign = () => {
-    resignEmployee();
-  };
-
-  const handleRestoreSuccess = () => {
-    refresh();
-    onRefresh?.();
-    setRestoreVisible(false);
-  };
-
-  const handleChangeDepartmentSuccess = () => {
-    refresh();
-    onRefresh?.();
-  };
-
-  const renderDepartments = () => {
+// 部门渲染逻辑
+const useDepartmentsRenderer = (employee: EmployeeData | null | undefined) =>
+  useCallback(() => {
     if (!employee?.departments?.length) {
       return (
         <span className={styles.emptyValue}>
-          {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_DETAIL_DEPARTMENT_UNASSIGNED)}
+          {t(
+            ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_DETAIL_DEPARTMENT_UNASSIGNED,
+          )}
         </span>
       );
     }
@@ -349,34 +62,105 @@ export const MemberDetailPanel: FC<MemberDetailPanelProps> = ({
 
     return (
       <div className={styles.departmentList}>
-        {primary && (
+        {primary ? (
           <div className={styles.departmentItem}>
-            <Tag color="blue" size="small">
-              {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_MEMBER_DETAIL_DEPARTMENT_PRIMARY)}
-            </Tag>
             <span>{primary.department_name}</span>
-            {primary.department_path && (
+            {primary.department_path ? (
               <span className={styles.departmentPath}>
                 ({primary.department_path})
               </span>
-            )}
+            ) : null}
           </div>
-        )}
+        ) : null}
         {others.map((dept, index) => (
           <div key={index} className={styles.departmentItem}>
-            <Tag size="small">{dept.department_name}</Tag>
-            {dept.department_path && (
+            <span>{dept.department_name}</span>
+            {dept.department_path ? (
               <span className={styles.departmentPath}>
                 ({dept.department_path})
               </span>
-            )}
+            ) : null}
           </div>
         ))}
       </div>
     );
-  };
+  }, [employee]);
 
-  // 加载状态
+const ResignModal: FC<{
+  isVisible: boolean;
+  employee: EmployeeData | null | undefined;
+  resignLoading: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+}> = ({ isVisible, employee, resignLoading, onClose, onConfirm }) => (
+  <Modal
+    visible={isVisible}
+    title={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_RESIGNATION_CONFIRM_TITLE)}
+    onCancel={onClose}
+    onOk={onConfirm}
+    okText={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_RESIGNATION_CONFIRM_OK_TEXT)}
+    cancelText={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_CANCEL)}
+    okButtonProps={{ loading: resignLoading, type: 'danger' }}
+    width={400}
+  >
+    <p>
+      {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_RESIGNATION_CONFIRM_CONTENT, {
+        name: employee?.name,
+      })}
+    </p>
+    <p style={{ color: 'var(--semi-color-text-2)', fontSize: '14px' }}>
+      {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_RESIGNATION_CONFIRM_DESCRIPTION)}
+    </p>
+  </Modal>
+);
+
+export const MemberDetailPanel: FC<MemberDetailPanelProps> = ({
+  visible,
+  employeeId,
+  onClose,
+  onRefresh,
+}) => {
+  // 状态管理
+  const state = useMemberDetailPanelState();
+
+  // 数据获取
+  const {
+    data: employee,
+    loading,
+    refresh,
+  } = useEmployeeData(visible, employeeId);
+
+  // 操作
+  const { resignLoading, resignEmployee, updateLoading, updateEmployee } =
+    useEmployeeOperations({ employee, employeeId, onRefresh, refresh });
+
+  // 部门渲染
+  const renderDepartments = useDepartmentsRenderer(employee);
+
+  // 事件处理
+  const handlers = useMemberDetailPanelHandlers({
+    state,
+    employee,
+    updateEmployee,
+    resignEmployee,
+    refresh,
+    onRefresh,
+  });
+
+  // 效果
+  useMemberDetailPanelEffects({
+    state,
+    visible,
+    employee,
+    employeeId,
+    refresh,
+  });
+
+  // 早期返回
+  if (!visible || !employeeId) {
+    return null;
+  }
+
   if (loading) {
     return (
       <div className={`${styles.panel} ${visible ? styles.visible : ''}`}>
@@ -387,7 +171,6 @@ export const MemberDetailPanel: FC<MemberDetailPanelProps> = ({
     );
   }
 
-  // 如果没有员工数据，不渲染内容
   if (!employee) {
     return null;
   }
@@ -396,56 +179,73 @@ export const MemberDetailPanel: FC<MemberDetailPanelProps> = ({
     <>
       <MemberPanelContent
         visible={visible}
-        employee={employee}
-        isEditing={isEditing}
-        editFormValues={editFormValues}
-        dropdownVisible={dropdownVisible}
+        employee={employee as never}
+        isEditing={state.isEditing}
+        editFormValues={state.editFormValues}
+        dropdownVisible={state.dropdownVisible}
         onClose={onClose}
-        onEdit={handleEdit}
-        onSave={handleSave}
-        onCancel={handleCancelEdit}
-        onChangeDepartment={() => handleAction('changeDepartment')}
-        onResign={() => handleAction('resignation')}
-        onRestore={() => handleAction('restore')}
-        setEditFormValues={setEditFormValues}
-        setDropdownVisible={setDropdownVisible}
+        onEdit={handlers.handleEdit}
+        onSave={handlers.handleSave}
+        onCancel={handlers.handleCancelEdit}
+        onChangeDepartment={() => handlers.handleAction('changeDepartment')}
+        onResign={() => handlers.handleAction('resignation')}
+        onRestore={() => handlers.handleAction('restore')}
+        setEditFormValues={state.setEditFormValues}
+        setDropdownVisible={handlers.handleDropdownVisibleChange}
         updateLoading={updateLoading}
         renderDepartments={renderDepartments}
       />
 
-      {/* 变更部门弹窗 */}
       <ChangeDepartmentModal
-        visible={changeDepartmentVisible}
-        employee={employee as ChangeDepartmentEmployeeData}
-        onClose={() => setChangeDepartmentVisible(false)}
-        onSuccess={handleChangeDepartmentSuccess}
+        visible={state.changeDepartmentModalVisible}
+        employee={
+          employee
+            ? ({
+                id: employee.id,
+                name: employee.name,
+                departments: employee.departments || [],
+              } as const)
+            : {
+                id: '',
+                name: '',
+                departments: [],
+              }
+        }
+        onClose={() => state.setChangeDepartmentModalVisible(false)}
+        onSuccess={() => {
+          handlers.handleModalSuccess();
+          state.setChangeDepartmentModalVisible(false);
+        }}
       />
 
-      {/* 离职确认对话框 */}
-      <Modal
-        visible={resignConfirmVisible}
-        title={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_RESIGNATION_CONFIRM_TITLE)}
-        onCancel={() => setResignConfirmVisible(false)}
-        onOk={handleConfirmResign}
-        okText={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_RESIGNATION_CONFIRM_OK_TEXT)}
-        cancelText={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_CANCEL)}
-        okButtonProps={{ loading: resignLoading, type: 'danger' }}
-        width={400}
-      >
-        <p>
-          {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_RESIGNATION_CONFIRM_CONTENT, { name: employee?.name })}
-        </p>
-        <p style={{ color: 'var(--semi-color-text-2)', fontSize: '14px' }}>
-          {t(ENTERPRISE_I18N_KEYS.ENTERPRISE_RESIGNATION_CONFIRM_DESCRIPTION)}
-        </p>
-      </Modal>
+      <ResignModal
+        isVisible={state.resignConfirmModalVisible}
+        employee={employee}
+        resignLoading={resignLoading}
+        onClose={() => state.setResignConfirmModalVisible(false)}
+        onConfirm={handlers.handleConfirmResign}
+      />
 
-      {/* 恢复在职弹窗 */}
       <ChangeDepartmentModal
-        visible={restoreVisible}
-        employee={employee as ChangeDepartmentEmployeeData}
-        onClose={() => setRestoreVisible(false)}
-        onSuccess={handleRestoreSuccess}
+        visible={state.restoreModalVisible}
+        employee={
+          employee
+            ? ({
+                id: employee.id,
+                name: employee.name,
+                departments: employee.departments || [],
+              } as const)
+            : {
+                id: '',
+                name: '',
+                departments: [],
+              }
+        }
+        onClose={() => state.setRestoreModalVisible(false)}
+        onSuccess={() => {
+          handlers.handleModalSuccess();
+          state.setRestoreModalVisible(false);
+        }}
         isRestore={true}
       />
     </>
