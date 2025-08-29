@@ -19,7 +19,6 @@ package dal
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -458,12 +457,11 @@ func (dao *EmployeeDAO) employeeBatchPO2DO(ctx context.Context, poList []*model.
 
 // AssignEmployeeToDepartment assigns employee to department
 func (dao *EmployeeDAO) AssignEmployeeToDepartment(ctx context.Context, relation *entity.EmployeeDepartmentRelation) error {
-	fmt.Printf("[AssignEmployeeToDepartment] Starting assignment for emp: %d, dept: %d\n", relation.EmpID, relation.DeptID)
 
 	// Check if any relationship exists (active or soft-deleted)
 	var existingRelation struct {
 		ID        int64
-		DeletedAt *int64
+		DeletedAt gorm.DeletedAt
 	}
 
 	err := dao.db.WithContext(ctx).Table("corporation_employee_department").
@@ -473,7 +471,6 @@ func (dao *EmployeeDAO) AssignEmployeeToDepartment(ctx context.Context, relation
 		Scan(&existingRelation).Error
 
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		fmt.Printf("[AssignEmployeeToDepartment] Error checking existing relationship: %v\n", err)
 		return err
 	}
 
@@ -490,22 +487,16 @@ func (dao *EmployeeDAO) AssignEmployeeToDepartment(ctx context.Context, relation
 		}
 
 		// If it's soft-deleted, restore it
-		if existingRelation.DeletedAt != nil && *existingRelation.DeletedAt > 0 {
+		if existingRelation.DeletedAt.Valid {
 			updateData["deleted_at"] = nil
-			fmt.Printf("[AssignEmployeeToDepartment] Restoring soft-deleted relationship ID: %d\n", existingRelation.ID)
-		} else {
-			fmt.Printf("[AssignEmployeeToDepartment] Updating active relationship ID: %d\n", existingRelation.ID)
 		}
 
 		err = dao.db.WithContext(ctx).Table("corporation_employee_department").
 			Where("id = ?", existingRelation.ID).
 			Updates(updateData).Error
 
-		fmt.Printf("[AssignEmployeeToDepartment] Update result for relationship ID %d: %v\n", existingRelation.ID, err)
 		return err
 	}
-
-	fmt.Printf("[AssignEmployeeToDepartment] No existing relationship found, creating new one\n")
 
 	// If it's set as primary, update other departments to non-primary
 	if relation.IsPrimary {
