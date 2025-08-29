@@ -25,11 +25,12 @@ import {
 } from '@coze-arch/coze-design/icons';
 import { Button, Input, Dropdown } from '@coze-arch/coze-design';
 
+import { t } from '@/utils/i18n';
+import { ENTERPRISE_I18N_KEYS } from '@/locales/keys';
+
 import { CreateOrganizationModal } from '../create-organization-modal';
 import { CreateEmployeeModal } from '../create-employee-modal';
 import { CreateDepartmentModal } from '../create-department-modal';
-import { t } from '../../../../utils/i18n';
-import { ENTERPRISE_I18N_KEYS } from '../../../../locales/keys';
 
 import styles from './index.module.less';
 
