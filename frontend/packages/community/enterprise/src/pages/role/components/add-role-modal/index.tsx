@@ -16,7 +16,13 @@
 
 import { type FC, useEffect, useRef } from 'react';
 
-import { Modal, Form, FormInput, FormTextArea } from '@coze-arch/coze-design';
+import {
+  Modal,
+  Form,
+  FormInput,
+  FormTextArea,
+  type FormApi,
+} from '@coze-arch/coze-design';
 
 import { t } from '@/utils/i18n';
 import { ENTERPRISE_I18N_KEYS } from '@/locales/keys';
@@ -24,6 +30,13 @@ import { ENTERPRISE_I18N_KEYS } from '@/locales/keys';
 import { useRoleForm } from './hooks/use-role-form';
 
 import styles from './index.module.less';
+
+// 表单数据类型
+interface RoleFormData {
+  role_name: string;
+  role_code: string;
+  description: string;
+}
 
 interface AddRoleModalProps {
   visible: boolean;
@@ -45,28 +58,32 @@ export const AddRoleModal: FC<AddRoleModalProps> = ({
     MAX_DESCRIPTION_LENGTH,
   } = useRoleForm({ visible, onSuccess });
 
-  const formRef = useRef<{
-    formApi?: { setValue: (field: string, value: string) => void };
-  }>(null);
+  const formRef = useRef<FormApi<RoleFormData> | null>(null);
 
   useEffect(() => {
-    if (!visible && formRef.current?.formApi) {
+    if (!visible && formRef.current) {
       // 弹窗关闭时，重置表单DOM状态
-      formRef.current.formApi.setValue('role_name', '');
-      formRef.current.formApi.setValue('role_code', '');
-      formRef.current.formApi.setValue('description', '');
+      formRef.current.setValue('role_name', '');
+      formRef.current.setValue('role_code', '');
+      formRef.current.setValue('description', '');
     }
   }, [visible]); // 只依赖 visible，避免循环依赖
 
   const handleFormSubmit = () => {
-    formRef.current?.formApi
-      ?.validate()
-      .then(() => {
-        handleSubmit();
-      })
-      .catch(() => {
-        // 验证失败，不执行提交
-      });
+    // 尝试表单验证，如果验证方法存在的话
+    const validation = formRef.current?.validate?.();
+    if (validation && typeof validation.then === 'function') {
+      validation
+        .then(() => {
+          handleSubmit();
+        })
+        .catch(() => {
+          // 验证失败，不执行提交
+        });
+    } else {
+      // 没有验证方法或不是Promise，直接提交
+      handleSubmit();
+    }
   };
 
   return (
@@ -82,7 +99,9 @@ export const AddRoleModal: FC<AddRoleModalProps> = ({
       className={styles.addRoleModal}
     >
       <Form
-        ref={formRef}
+        getFormApi={formApi => {
+          formRef.current = formApi;
+        }}
         layout="vertical"
         onValueChange={values =>
           setFormValues(prev => ({ ...prev, ...values }))

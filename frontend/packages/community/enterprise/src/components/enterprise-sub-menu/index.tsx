@@ -59,11 +59,11 @@ export const EnterpriseSubMenu: FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-      {menuConfig.map(item => (
+      {menuConfig.map(({ key, ...item }) => (
         <SubMenuItem
-          key={item.key}
+          key={key}
           {...item}
-          isActive={item.key === subMenuKey}
+          isActive={key === subMenuKey}
           onClick={() => {
             navigate(item.path);
           }}

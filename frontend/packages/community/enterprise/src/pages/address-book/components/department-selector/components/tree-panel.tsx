@@ -35,7 +35,7 @@ interface TreePanelProps {
   onNodeSelect: (
     selectedKey: string,
     selected: boolean,
-    selectedNode: unknown,
+    selectedNode: TreeNode,
   ) => void;
 }
 
@@ -75,7 +75,13 @@ export const TreePanel: FC<TreePanelProps> = ({
             value={selectedKeys}
             expandedKeys={expandedKeys}
             onExpand={onExpand}
-            onSelect={onNodeSelect}
+            onSelect={(
+              selectedKey: string,
+              selected: boolean,
+              selectedNode: unknown,
+            ) => {
+              onNodeSelect(selectedKey, selected, selectedNode as TreeNode);
+            }}
             renderLabel={(label: React.ReactNode, node?: unknown) => {
               if (!node) {
                 return label;

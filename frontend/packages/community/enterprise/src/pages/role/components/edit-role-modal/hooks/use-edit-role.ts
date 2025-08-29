@@ -75,7 +75,7 @@ export const useEditRole = ({ visible, role, onSuccess }: UseEditRoleProps) => {
   };
 
   const handleSubmit = async () => {
-    if (!role || !validateForm()) {
+    if (!role || !role.id || !validateForm()) {
       return;
     }
 

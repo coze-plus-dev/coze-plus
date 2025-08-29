@@ -17,6 +17,7 @@
 import { useState, useEffect } from 'react';
 
 import { useRequest } from 'ahooks';
+import { type employee } from '@coze-studio/api-schema';
 
 import { employeeApi } from '@/api/corporation-api';
 
@@ -27,20 +28,8 @@ interface SelectedNodeInfo {
   name?: string;
 }
 
-interface EmployeeData {
-  id: string;
-  name: string;
-  email?: string;
-  mobile?: string;
-  status: number;
-  departments: Array<{
-    department_id: string;
-    department_name: string;
-    is_primary: boolean;
-    corp_id: string;
-    corp_name: string;
-  }>;
-}
+// 使用API schema中的EmployeeData类型
+type EmployeeData = employee.employee.EmployeeData;
 
 interface UseMemberTableDataProps {
   selectedNode: SelectedNodeInfo | null;
@@ -76,22 +65,39 @@ export const useMemberTableData = ({
         return { list: [], total: 0 };
       }
 
-      const requestParams: Record<string, unknown> = {
+      // 构建请求参数，确保corp_id始终存在
+      let corpId: string;
+      let departmentId: string | undefined;
+
+      if (nodeInfo.type === 'corp') {
+        corpId = nodeInfo.id;
+      } else if (nodeInfo.type === 'dept') {
+        departmentId = nodeInfo.id;
+        corpId = nodeInfo.corpId || nodeInfo.id; // 如果没有corpId，使用部门id作为备选
+      } else {
+        // 不应该到这里，但为了类型安全
+        corpId = nodeInfo.id;
+      }
+
+      const requestParams: {
+        corp_id: string;
+        department_id?: string;
+        keyword?: string;
+        status?: employee.employee.common.EmployeeStatus;
+        page?: number;
+        page_size?: number;
+      } = {
+        corp_id: corpId,
         page,
         page_size: pageSize,
       };
 
-      if (search && search.trim()) {
-        requestParams.keyword = search.trim();
+      if (departmentId) {
+        requestParams.department_id = departmentId;
       }
 
-      if (nodeInfo.type === 'corp') {
-        requestParams.corp_id = nodeInfo.id;
-      } else if (nodeInfo.type === 'dept') {
-        requestParams.department_id = nodeInfo.id;
-        if (nodeInfo.corpId) {
-          requestParams.corp_id = nodeInfo.corpId;
-        }
+      if (search && search.trim()) {
+        requestParams.keyword = search.trim();
       }
 
       const response = await employeeApi.listEmployees(requestParams);

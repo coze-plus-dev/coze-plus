@@ -113,14 +113,11 @@ func (dao *EmployeeDAO) Update(ctx context.Context, emp *entity.Employee) error 
 
 // Delete soft deletes employee
 func (dao *EmployeeDAO) Delete(ctx context.Context, id int64) error {
-	updateData := map[string]interface{}{
-		dao.query.CorporationEmployee.DeletedAt.ColumnName().String(): time.Now().UnixMilli(),
-		dao.query.CorporationEmployee.UpdatedAt.ColumnName().String(): time.Now().UnixMilli(),
-	}
-
+	// 使用GORM的软删除机制，只需要调用Delete方法
+	// deleted_at字段会自动设置为当前时间
 	_, err := dao.query.CorporationEmployee.WithContext(ctx).
 		Where(dao.query.CorporationEmployee.ID.Eq(id)).
-		UpdateColumns(updateData)
+		Delete()
 	return err
 }
 
@@ -358,14 +355,11 @@ func (dao *EmployeeDAO) UpdateEmployeeDepartment(ctx context.Context, relation *
 
 // DeleteEmployeeDepartment soft deletes employee department relationship
 func (dao *EmployeeDAO) DeleteEmployeeDepartment(ctx context.Context, id int64) error {
-	updateData := map[string]interface{}{
-		dao.query.CorporationEmployeeDepartment.DeletedAt.ColumnName().String(): time.Now().UnixMilli(),
-		dao.query.CorporationEmployeeDepartment.UpdatedAt.ColumnName().String(): time.Now().UnixMilli(),
-	}
-
+	// 使用GORM的软删除机制，只需要调用Delete方法
+	// deleted_at字段会自动设置为当前时间
 	_, err := dao.query.CorporationEmployeeDepartment.WithContext(ctx).
 		Where(dao.query.CorporationEmployeeDepartment.ID.Eq(id)).
-		UpdateColumns(updateData)
+		Delete()
 	return err
 }
 

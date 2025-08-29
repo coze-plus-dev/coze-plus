@@ -16,6 +16,8 @@
 
 import { type FC, useState, useRef, useEffect } from 'react';
 
+import { type employee } from '@coze-studio/api-schema';
+
 import { Toolbar } from './components/toolbar';
 import { OrgTree, type OrgTreeRef } from './components/org-tree';
 import { MemberTable, type MemberTableRef } from './components/member-table';
@@ -30,20 +32,8 @@ interface SelectedNodeInfo {
   name?: string;
 }
 
-interface EmployeeData {
-  id: string;
-  name: string;
-  email: string;
-  mobile: string;
-  status: number;
-  departments?: Array<{
-    department_id: string;
-    department_name: string;
-    department_path: string;
-    is_primary: boolean;
-  }>;
-  user_id?: string;
-}
+// 使用API schema中的EmployeeData类型
+type EmployeeData = employee.employee.EmployeeData;
 
 const AddressBookPage: FC = () => {
   const [selectedNode, setSelectedNode] = useState<SelectedNodeInfo>();
@@ -67,8 +57,8 @@ const AddressBookPage: FC = () => {
     };
 
     if (nodeType === 'dept') {
-      // 对于部门节点，使用从树节点传递来的corpId
-      selectedNodeInfo.corpId = nodeInfo?.corpId;
+      // 对于部门节点，使用从树节点传递来的corp_id
+      selectedNodeInfo.corpId = nodeInfo?.corp_id;
     } else {
       selectedNodeInfo.corpId = id; // 组织节点的corpId就是自己的id
     }
@@ -101,7 +91,7 @@ const AddressBookPage: FC = () => {
     setSelectedEmployeeId(undefined);
   };
 
-  const handleEditEmployee = (employee: EmployeeData) => {
+  const handleEditEmployee = (_employee: EmployeeData) => {
     // TODO: 实现编辑员工的逻辑
   };
 

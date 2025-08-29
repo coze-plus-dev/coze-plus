@@ -74,7 +74,7 @@ export const RoleList: FC<RoleListProps> = ({
 
   return (
     <div className={styles.roleList}>
-      {roles.map(role => {
+      {roles.map((role, index) => {
         const hasNoPermissions =
           !role.permissions ||
           !Array.isArray(role.permissions) ||
@@ -94,7 +94,7 @@ export const RoleList: FC<RoleListProps> = ({
 
         return (
           <div
-            key={role.id}
+            key={role.id || `role-${index}`}
             className={`${styles.roleCard} ${
               selectedRole?.id === role.id ? styles.selected : ''
             }`}
@@ -105,7 +105,7 @@ export const RoleList: FC<RoleListProps> = ({
                 onRoleSelect(role);
               }
             }}
-            onMouseEnter={() => setHoveredRole(role.id)}
+            onMouseEnter={() => setHoveredRole(role.id || null)}
             onMouseLeave={() => setHoveredRole(null)}
           >
             <div className={styles.cardHeader}>
@@ -113,7 +113,7 @@ export const RoleList: FC<RoleListProps> = ({
                 <h3 className={styles.roleName}>{role.role_name}</h3>
                 <Tag
                   className={styles.roleTag}
-                  color={role.is_builtin === 1 ? 'blue' : 'default'}
+                  color={role.is_builtin === 1 ? 'green' : 'grey'}
                 >
                   {role.is_builtin === 1
                     ? t(ENTERPRISE_I18N_KEYS.ROLE_BUILTIN_TAG)
@@ -124,16 +124,18 @@ export const RoleList: FC<RoleListProps> = ({
                 <Dropdown
                   trigger="click"
                   position="bottomRight"
-                  visible={openDropdownId === role.id.toString()}
+                  visible={openDropdownId === role.id?.toString()}
                   onVisibleChange={visible => {
-                    setOpenDropdownId(visible ? role.id.toString() : null);
+                    setOpenDropdownId(
+                      visible ? role.id?.toString() || '' : null,
+                    );
                   }}
                   render={
                     <div className="min-w-[120px] py-[4px]">
                       <Dropdown.Menu>
                         <Dropdown.Item
-                          onClick={(e: React.MouseEvent) => {
-                            e?.stopPropagation?.();
+                          onClick={(_value: string, event) => {
+                            event?.stopPropagation?.();
                             setOpenDropdownId(null); // 关闭下拉菜单
                             onEditRole(role);
                           }}
@@ -141,8 +143,8 @@ export const RoleList: FC<RoleListProps> = ({
                           <span>{t(ENTERPRISE_I18N_KEYS.ENTERPRISE_EDIT)}</span>
                         </Dropdown.Item>
                         <Dropdown.Item
-                          onClick={(e: React.MouseEvent) => {
-                            e?.stopPropagation?.();
+                          onClick={(_value: string, event) => {
+                            event?.stopPropagation?.();
                             setOpenDropdownId(null); // 关闭下拉菜单
                             onDeleteRole(role);
                           }}

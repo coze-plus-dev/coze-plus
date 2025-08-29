@@ -38,16 +38,16 @@ export const usePermissionAssignment = ({
   onSuccess,
 }: UsePermissionAssignmentProps): {
   permissionTemplates: Array<{
-    domain: string;
-    domain_name: string;
+    domain?: string;
+    domain_name?: string;
     resources?: Array<{
-      resource: string;
-      resource_name: string;
+      resource?: string;
+      resource_name?: string;
       actions?: Array<{
-        id: string;
-        action: string;
-        action_name: string;
-        description: string;
+        id?: string;
+        action?: string;
+        action_name?: string;
+        description?: string;
         is_default?: number;
       }>;
     }>;
@@ -130,12 +130,12 @@ export const usePermissionAssignment = ({
     try {
       // 构建完整的权限数据，包含所有权限模板中的action，根据selectedPermissions设置is_default
       const permissions = permissionTemplates.map(group => ({
-        domain: group.domain,
-        domain_name: group.domain_name,
+        domain: group.domain || '',
+        domain_name: group.domain_name || '',
         resources:
           group.resources?.map(resource => ({
-            resource: resource.resource,
-            resource_name: resource.resource_name,
+            resource: resource.resource || '',
+            resource_name: resource.resource_name || '',
             actions:
               resource.actions?.map(action => ({
                 ...action,

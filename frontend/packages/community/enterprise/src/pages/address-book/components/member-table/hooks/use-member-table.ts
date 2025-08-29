@@ -17,6 +17,7 @@
 import { useState, useEffect, useCallback } from 'react';
 
 import { useRequest } from 'ahooks';
+import { type employee } from '@coze-studio/api-schema';
 import { Toast } from '@coze-arch/coze-design';
 
 import { t } from '@/utils/i18n';
@@ -30,28 +31,53 @@ interface SelectedNodeInfo {
   name?: string;
 }
 
-export interface EmployeeData {
-  id: string;
-  name: string;
-  email: string;
-  mobile: string;
-  status: number;
-  departments?: Array<{
-    department_id: string;
-    department_name: string;
-    department_path: string;
-    is_primary: boolean;
-    corp_id: string;
-    corp_name: string;
-    job_title?: string;
-  }>;
-  user_id?: string;
-}
+// 使用API schema中的EmployeeData类型
+export type EmployeeData = employee.employee.EmployeeData;
 
 interface UseMemberTableProps {
   selectedNode?: SelectedNodeInfo;
   searchKeyword?: string;
   onShowDetail?: (employee: EmployeeData) => void;
+}
+
+// useMemberTable hook 的返回类型
+interface UseMemberTableReturn {
+  // Data
+  dataSource: EmployeeData[];
+  pagination: {
+    current: number;
+    pageSize: number;
+    total: number;
+  };
+  loading: boolean;
+  selectedNode: SelectedNodeInfo | undefined;
+
+  // Modal states
+  changeDepartmentVisible: boolean;
+  setChangeDepartmentVisible: (visible: boolean) => void;
+  selectedEmployee: EmployeeData | null;
+  setSelectedEmployee: (employee: EmployeeData | null) => void;
+  resignConfirmVisible: boolean;
+  setResignConfirmVisible: (visible: boolean) => void;
+  resignEmployee: EmployeeData | null;
+  setResignEmployee: (employee: EmployeeData | null) => void;
+  restoreVisible: boolean;
+  setRestoreVisible: (visible: boolean) => void;
+  restoreEmployee: EmployeeData | null;
+  setRestoreEmployee: (employee: EmployeeData | null) => void;
+
+  // Loading states
+  resignLoading: boolean;
+
+  // Event handlers
+  handleAction: (action: string, record: EmployeeData) => void;
+  handlePaginationChange: (page: number, pageSize: number) => void;
+  handleShowDetail: (record: EmployeeData) => void;
+  handleConfirmResign: () => void;
+  handleRestoreSuccess: () => void;
+
+  // Refresh function
+  refresh: () => void;
 }
 
 // Helper function to build API params
@@ -321,7 +347,7 @@ export const useMemberTable = ({
   selectedNode,
   searchKeyword,
   onShowDetail,
-}: UseMemberTableProps) => {
+}: UseMemberTableProps): UseMemberTableReturn => {
   const modalStates = useModalStates();
   const {
     employeeData,

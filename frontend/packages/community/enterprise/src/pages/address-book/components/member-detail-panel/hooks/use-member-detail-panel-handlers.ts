@@ -56,7 +56,10 @@ export const useMemberDetailPanelHandlers = (
 
   const handleDropdownVisibleChange = useCallback(
     (isVisible: boolean) => {
-      setDropdownVisible(isVisible);
+      // 使用 setTimeout 延迟状态更新，避免在渲染期间更新状态
+      setTimeout(() => {
+        setDropdownVisible(isVisible);
+      }, 0);
     },
     [setDropdownVisible],
   );
@@ -87,20 +90,23 @@ export const useMemberDetailPanelHandlers = (
 
   const handleAction = useCallback(
     (action: string) => {
-      setDropdownVisible(false);
-      switch (action) {
-        case 'changeDepartment':
-          setChangeDepartmentModalVisible(true);
-          break;
-        case 'resignation':
-          setResignConfirmModalVisible(true);
-          break;
-        case 'restore':
-          setRestoreModalVisible(true);
-          break;
-        default:
-          break;
-      }
+      // 延迟状态更新，避免在事件处理中触发多次状态更新
+      setTimeout(() => {
+        setDropdownVisible(false);
+        switch (action) {
+          case 'changeDepartment':
+            setChangeDepartmentModalVisible(true);
+            break;
+          case 'resignation':
+            setResignConfirmModalVisible(true);
+            break;
+          case 'restore':
+            setRestoreModalVisible(true);
+            break;
+          default:
+            break;
+        }
+      }, 0);
     },
     [
       setDropdownVisible,

@@ -16,6 +16,7 @@
 
 import { type FC, useCallback } from 'react';
 
+import { type employee } from '@coze-studio/api-schema';
 import { Spin, Modal } from '@coze-arch/coze-design';
 
 import { t } from '@/utils/i18n';
@@ -35,6 +36,35 @@ import { MemberPanelContent } from './components/member-panel-content';
 import { ChangeDepartmentModal } from '../change-department-modal';
 
 import styles from './index.module.less';
+
+// ChangeDepartmentModal所需的Employee数据类型
+type ChangeDepartmentEmployeeData = Pick<
+  employee.employee.EmployeeData,
+  'id' | 'name' | 'mobile' | 'status' | 'departments'
+>;
+
+// 创建ChangeDepartmentModal所需的employee数据的辅助函数
+const createChangeDepartmentEmployeeData = (
+  employee: EmployeeData | null | undefined,
+): ChangeDepartmentEmployeeData => {
+  if (!employee) {
+    return {
+      id: '',
+      name: '',
+      mobile: '',
+      status: 1, // EmployeeStatus.EMPLOYED
+      departments: [],
+    };
+  }
+
+  return {
+    id: employee.id,
+    name: employee.name,
+    mobile: employee.mobile || '',
+    status: employee.status,
+    departments: employee.departments || [],
+  };
+};
 
 interface MemberDetailPanelProps {
   visible: boolean;
@@ -198,19 +228,7 @@ export const MemberDetailPanel: FC<MemberDetailPanelProps> = ({
 
       <ChangeDepartmentModal
         visible={state.changeDepartmentModalVisible}
-        employee={
-          employee
-            ? ({
-                id: employee.id,
-                name: employee.name,
-                departments: employee.departments || [],
-              } as const)
-            : {
-                id: '',
-                name: '',
-                departments: [],
-              }
-        }
+        employee={createChangeDepartmentEmployeeData(employee)}
         onClose={() => state.setChangeDepartmentModalVisible(false)}
         onSuccess={() => {
           handlers.handleModalSuccess();
@@ -228,19 +246,7 @@ export const MemberDetailPanel: FC<MemberDetailPanelProps> = ({
 
       <ChangeDepartmentModal
         visible={state.restoreModalVisible}
-        employee={
-          employee
-            ? ({
-                id: employee.id,
-                name: employee.name,
-                departments: employee.departments || [],
-              } as const)
-            : {
-                id: '',
-                name: '',
-                departments: [],
-              }
-        }
+        employee={createChangeDepartmentEmployeeData(employee)}
         onClose={() => state.setRestoreModalVisible(false)}
         onSuccess={() => {
           handlers.handleModalSuccess();

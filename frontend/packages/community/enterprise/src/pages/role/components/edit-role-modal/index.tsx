@@ -16,7 +16,13 @@
 
 import { type FC, useEffect, useRef } from 'react';
 
-import { Modal, Form, FormInput, FormTextArea } from '@coze-arch/coze-design';
+import {
+  Modal,
+  Form,
+  FormInput,
+  FormTextArea,
+  type FormApi,
+} from '@coze-arch/coze-design';
 
 import { t } from '@/utils/i18n';
 import { ENTERPRISE_I18N_KEYS } from '@/locales/keys';
@@ -25,6 +31,13 @@ import type { RoleData } from '@/api/role-api';
 import { useEditRole } from './hooks/use-edit-role';
 
 import styles from './index.module.less';
+
+// 表单数据类型
+interface RoleFormData {
+  role_name: string;
+  role_code: string;
+  description: string;
+}
 
 interface EditRoleModalProps {
   visible: boolean;
@@ -47,40 +60,41 @@ export const EditRoleModal: FC<EditRoleModalProps> = ({
     MAX_DESCRIPTION_LENGTH,
   } = useEditRole({ visible, role, onSuccess });
 
-  const formRef = useRef<{
-    formApi?: { setValues: (values: Record<string, unknown>) => void };
-  }>(null);
+  const formRef = useRef<FormApi<RoleFormData> | null>(null);
 
   useEffect(() => {
-    if (visible && role && formRef.current?.formApi) {
+    if (visible && role && formRef.current) {
       const initialValues = {
         role_name: role.role_name || '',
         role_code: role.role_code || '',
         description: role.description || '',
       };
-      formRef.current.formApi.setValue('role_name', initialValues.role_name);
-      formRef.current.formApi.setValue('role_code', initialValues.role_code);
-      formRef.current.formApi.setValue(
-        'description',
-        initialValues.description,
-      );
+      formRef.current.setValue('role_name', initialValues.role_name);
+      formRef.current.setValue('role_code', initialValues.role_code);
+      formRef.current.setValue('description', initialValues.description);
       setFormValues(initialValues);
-    } else if (!visible && formRef.current?.formApi) {
-      formRef.current.formApi.setValue('role_name', '');
-      formRef.current.formApi.setValue('role_code', '');
-      formRef.current.formApi.setValue('description', '');
+    } else if (!visible && formRef.current) {
+      formRef.current.setValue('role_name', '');
+      formRef.current.setValue('role_code', '');
+      formRef.current.setValue('description', '');
     }
   }, [visible, role, setFormValues]);
 
   const handleFormSubmit = () => {
-    formRef.current?.formApi
-      ?.validate()
-      .then(() => {
-        handleSubmit();
-      })
-      .catch(() => {
-        // 验证失败，不执行提交
-      });
+    // 尝试表单验证，如果验证方法存在的话
+    const validation = formRef.current?.validate?.();
+    if (validation && typeof validation.then === 'function') {
+      validation
+        .then(() => {
+          handleSubmit();
+        })
+        .catch(() => {
+          // 验证失败，不执行提交
+        });
+    } else {
+      // 没有验证方法或不是Promise，直接提交
+      handleSubmit();
+    }
   };
 
   return (
@@ -96,7 +110,9 @@ export const EditRoleModal: FC<EditRoleModalProps> = ({
       className={styles.editRoleModal}
     >
       <Form
-        ref={formRef}
+        getFormApi={formApi => {
+          formRef.current = formApi;
+        }}
         layout="vertical"
         onValueChange={values =>
           setFormValues(prev => ({ ...prev, ...values }))
