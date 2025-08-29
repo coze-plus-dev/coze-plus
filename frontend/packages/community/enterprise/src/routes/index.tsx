@@ -23,7 +23,7 @@ const subMenu = lazy(() =>
   })),
 );
 
-const AddressBookPage = lazy(() => import('../pages/address-book'));
+const ContactPage = lazy(() => import('../pages/contact'));
 const RolePage = lazy(() => import('../pages/role'));
 const AccountPage = lazy(() => import('../pages/account'));
 
@@ -39,13 +39,13 @@ export const enterpriseRouter: RouteObject = {
   children: [
     {
       index: true,
-      element: <Navigate to="address-book" replace />,
+      element: <Navigate to="contact" replace />,
     },
     {
-      path: 'address-book',
-      element: <AddressBookPage />,
+      path: 'contact',
+      element: <ContactPage />,
       loader: () => ({
-        subMenuKey: 'address_book',
+        subMenuKey: 'contact',
       }),
     },
     {
