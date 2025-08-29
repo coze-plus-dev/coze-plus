@@ -18,7 +18,7 @@ import { useRouteConfig } from '@coze-arch/bot-hooks';
 import { type TRouteConfigGlobal } from '@coze-arch/bot-hooks';
 
 export interface EnterpriseRouteType extends TRouteConfigGlobal {
-  subMenuKey?: 'address_book' | 'role' | 'account';
+  subMenuKey?: 'contact' | 'role' | 'account';
 }
 
 export const useEnterpriseRoute = useRouteConfig<EnterpriseRouteType>;

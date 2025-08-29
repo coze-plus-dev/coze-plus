@@ -18,6 +18,6 @@ export { enterpriseRouter } from './routes';
 export { EnterpriseSubMenu } from './components/enterprise-sub-menu';
 
 // Page exports
-export { default as AddressBookPage } from './pages/address-book';
+export { default as ContactPage } from './pages/contact';
 export { default as RolePage } from './pages/role';
 export { default as AccountPage } from './pages/account';

@@ -30,11 +30,11 @@ import { useEnterpriseRoute } from '../../hooks/use-enterprise-route';
 
 const getMenuConfig = () => [
   {
-    key: 'address_book',
+    key: 'contact',
     icon: <IconCozTeamFill />,
     activeIcon: <IconCozTeamFill />,
     title: I18n.t('navigation_organization_address_book'),
-    path: '/enterprise/address-book',
+    path: '/enterprise/contact',
   },
   {
     key: 'role',

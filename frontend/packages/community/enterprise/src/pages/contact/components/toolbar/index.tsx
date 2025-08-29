@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { type FC, useState } from 'react';
+import { type FC, useState, useCallback } from 'react';
 
 import {
   IconCozPlus,
@@ -54,22 +54,29 @@ export const Toolbar: FC<ToolbarProps> = ({
     useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
 
-  const handleCreateClick = (
-    type: 'organization' | 'department' | 'member',
-  ) => {
-    if (type === 'organization') {
-      setCreateOrgModalVisible(true);
-    } else if (type === 'department') {
-      setCreateDeptModalVisible(true);
-    } else {
-      setCreateEmployeeModalVisible(true);
-    }
-  };
+  const handleCreateClick = useCallback(
+    (type: 'organization' | 'department' | 'member') => {
+      // 使用 setTimeout 确保状态更新不在渲染期间触发
+      setTimeout(() => {
+        if (type === 'organization') {
+          setCreateOrgModalVisible(true);
+        } else if (type === 'department') {
+          setCreateDeptModalVisible(true);
+        } else {
+          setCreateEmployeeModalVisible(true);
+        }
+      }, 0);
+    },
+    [],
+  );
 
-  const handleSearch = (value: string) => {
-    setSearchKeyword(value);
-    onSearch?.(value);
-  };
+  const handleSearch = useCallback(
+    (value: string) => {
+      setSearchKeyword(value);
+      onSearch?.(value);
+    },
+    [onSearch],
+  );
 
   return (
     <div className={styles.toolbar}>

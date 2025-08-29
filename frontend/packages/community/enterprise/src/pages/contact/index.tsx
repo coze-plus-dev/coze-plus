@@ -35,7 +35,7 @@ interface SelectedNodeInfo {
 // 使用API schema中的EmployeeData类型
 type EmployeeData = employee.employee.EmployeeData;
 
-const AddressBookPage: FC = () => {
+const ContactPage: FC = () => {
   const [selectedNode, setSelectedNode] = useState<SelectedNodeInfo>();
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
   const [searchKeyword, setSearchKeyword] = useState<string>('');
@@ -48,7 +48,7 @@ const AddressBookPage: FC = () => {
   const handleSelectNode = (
     id: string,
     nodeType: 'corp' | 'dept',
-    nodeInfo?: { corp_id?: string; name?: string },
+    nodeInfo?: { corpId?: string; name?: string },
   ) => {
     const selectedNodeInfo: SelectedNodeInfo = {
       id,
@@ -57,8 +57,8 @@ const AddressBookPage: FC = () => {
     };
 
     if (nodeType === 'dept') {
-      // 对于部门节点，使用从树节点传递来的corp_id
-      selectedNodeInfo.corpId = nodeInfo?.corp_id;
+      // 对于部门节点，使用从树节点传递来的corpId
+      selectedNodeInfo.corpId = nodeInfo?.corpId;
     } else {
       selectedNodeInfo.corpId = id; // 组织节点的corpId就是自己的id
     }
@@ -91,9 +91,6 @@ const AddressBookPage: FC = () => {
     setSelectedEmployeeId(undefined);
   };
 
-  const handleEditEmployee = (_employee: EmployeeData) => {
-    // TODO: 实现编辑员工的逻辑
-  };
 
   // 管理body class用于遮罩层
   useEffect(() => {
@@ -109,7 +106,7 @@ const AddressBookPage: FC = () => {
   }, [memberDetailVisible]);
 
   return (
-    <div className={styles.addressBookLayout}>
+    <div className={styles.contactLayout}>
       {!sidebarCollapsed && (
         <div className={styles.sider}>
           <OrgTree
@@ -141,11 +138,10 @@ const AddressBookPage: FC = () => {
         visible={memberDetailVisible}
         employeeId={selectedEmployeeId}
         onClose={handleCloseMemberDetail}
-        onEdit={handleEditEmployee}
         onRefresh={() => memberTableRef.current?.refresh()}
       />
     </div>
   );
 };
 
-export default AddressBookPage;
+export default ContactPage;
