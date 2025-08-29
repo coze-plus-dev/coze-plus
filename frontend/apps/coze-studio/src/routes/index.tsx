@@ -313,25 +313,37 @@ export const router: ReturnType<typeof createBrowserRouter> =
           children: [
             {
               index: true,
-              element: <Navigate to="address-book" replace />,
+              element: <Navigate to="contact" replace />,
             },
             {
-              path: 'address-book',
-              Component: lazy(() => import('@coze-community/enterprise').then(exps => ({ default: exps.AddressBookPage }))),
+              path: 'contact',
+              Component: lazy(() =>
+                import('@coze-community/enterprise').then(exps => ({
+                  default: exps.ContactPage,
+                })),
+              ),
               loader: () => ({
-                subMenuKey: 'address_book',
+                subMenuKey: 'contact',
               }),
             },
             {
               path: 'role',
-              Component: lazy(() => import('@coze-community/enterprise').then(exps => ({ default: exps.RolePage }))),
+              Component: lazy(() =>
+                import('@coze-community/enterprise').then(exps => ({
+                  default: exps.RolePage,
+                })),
+              ),
               loader: () => ({
                 subMenuKey: 'role',
               }),
             },
             {
               path: 'account',
-              Component: lazy(() => import('@coze-community/enterprise').then(exps => ({ default: exps.AccountPage }))),
+              Component: lazy(() =>
+                import('@coze-community/enterprise').then(exps => ({
+                  default: exps.AccountPage,
+                })),
+              ),
               loader: () => ({
                 subMenuKey: 'account',
               }),
