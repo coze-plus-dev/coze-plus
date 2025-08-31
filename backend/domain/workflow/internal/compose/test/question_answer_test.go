@@ -98,13 +98,24 @@ func TestQuestionAnswer(t *testing.T) {
 		defer s.Close()
 
 		redisClient := redis.NewWithAddrAndPassword(s.Addr(), "")
-
+		var oneChatModel = chatModel
+		if oneChatModel == nil {
+			oneChatModel = &testutil.UTChatModel{
+				InvokeResultProvider: func(_ int, in []*schema.Message) (*schema.Message, error) {
+					return &schema.Message{
+						Role:    schema.Assistant,
+						Content: "-1",
+					}, nil
+				},
+			}
+		}
 		mockIDGen := mock.NewMockIDGenerator(ctrl)
 		mockIDGen.EXPECT().GenID(gomock.Any()).Return(time.Now().UnixNano(), nil).AnyTimes()
 		mockTos := storageMock.NewMockStorage(ctrl)
 		mockTos.EXPECT().GetObjectUrl(gomock.Any(), gomock.Any(), gomock.Any()).Return("", nil).AnyTimes()
-		repo := repo2.NewRepository(mockIDGen, db, redisClient, mockTos,
-			checkpoint.NewRedisStore(redisClient), nil, nil)
+		repo, _ := repo2.NewRepository(mockIDGen, db, redisClient, mockTos,
+			checkpoint.NewRedisStore(redisClient), oneChatModel, nil)
+
 		mockey.Mock(workflow.GetRepository).Return(repo).Build()
 
 		t.Run("answer directly, no structured output", func(t *testing.T) {

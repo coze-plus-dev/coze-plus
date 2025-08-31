@@ -1507,61 +1507,109 @@ func _upload1Mw() []app.HandlerFunc {
 }
 
 func _corporationMw() []app.HandlerFunc {
+		// your code...
+	return nil
+}
+func _conversation1Mw() []app.HandlerFunc {
 	// your code...
 	return nil
 }
 
 func _createcorporationMw() []app.HandlerFunc {
+		// your code...
+	return nil
+}
+func _openapicreateconversationMw() []app.HandlerFunc {
 	// your code...
 	return nil
 }
 
 func _deletecorporationMw() []app.HandlerFunc {
+		// your code...
+	return nil
+}
+func _coze_web_appMw() []app.HandlerFunc {
 	// your code...
 	return nil
 }
 
 func _getcorporationMw() []app.HandlerFunc {
+		// your code...
+	return nil
+}
+func _impersonatecozeuserMw() []app.HandlerFunc {
 	// your code...
 	return nil
 }
 
 func _updatecorporationMw() []app.HandlerFunc {
+		// your code...
+	return nil
+}
+func _botsMw() []app.HandlerFunc {
 	// your code...
 	return nil
 }
 
 func _listcorporationsMw() []app.HandlerFunc {
+		// your code...
+	return nil
+}
+func _opengetbotinfoMw() []app.HandlerFunc {
 	// your code...
 	return nil
 }
 
 func _departmentMw() []app.HandlerFunc {
+		// your code...
+	return nil
+}
+func _deleteconversationapiMw() []app.HandlerFunc {
 	// your code...
 	return nil
 }
 
 func _createdepartmentMw() []app.HandlerFunc {
+		// your code...
+	return nil
+}
+func _updateconversationapiMw() []app.HandlerFunc {
 	// your code...
 	return nil
 }
 
 func _deletedepartmentMw() []app.HandlerFunc {
+		// your code...
+	return nil
+}
+func _conversations0Mw() []app.HandlerFunc {
 	// your code...
 	return nil
 }
 
 func _getdepartmentMw() []app.HandlerFunc {
+		// your code...
+	return nil
+}
+func _chatMw() []app.HandlerFunc {
 	// your code...
 	return nil
 }
 
 func _updatedepartmentMw() []app.HandlerFunc {
+		// your code...
+	return nil
+}
+func _cancelchatapiMw() []app.HandlerFunc {
 	// your code...
 	return nil
 }
 
 func _listdepartmentsMw() []app.HandlerFunc {
+		// your code...
+	return nil
+}
+func _appsMw() []app.HandlerFunc {
 	// your code...
 	return nil
 }
@@ -1707,6 +1755,10 @@ func _templateMw() []app.HandlerFunc {
 }
 
 func _listpermissiontemplatesMw() []app.HandlerFunc {
+		// your code...
+	return nil
+}
+func _getonlineappdataMw() []app.HandlerFunc {
 	// your code...
 	return nil
 }

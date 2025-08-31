@@ -27,6 +27,7 @@ import (
 	conversationService "github.com/coze-dev/coze-studio/backend/domain/conversation/conversation/service"
 	message "github.com/coze-dev/coze-studio/backend/domain/conversation/message/service"
 	"github.com/coze-dev/coze-studio/backend/domain/shortcutcmd/service"
+	uploadService "github.com/coze-dev/coze-studio/backend/domain/upload/service"
 	"github.com/coze-dev/coze-studio/backend/pkg/errorx"
 	"github.com/coze-dev/coze-studio/backend/pkg/lang/ptr"
 	"github.com/coze-dev/coze-studio/backend/pkg/lang/slices"
@@ -48,6 +49,7 @@ var ConversationSVC = new(ConversationApplicationService)
 
 type OpenapiAgentRunApplication struct {
 	ShortcutDomainSVC service.ShortcutCmd
+	UploaodDomainSVC  uploadService.UploadService
 }
 
 var ConversationOpenAPISVC = new(OpenapiAgentRunApplication)
@@ -177,12 +179,80 @@ func (c *ConversationApplicationService) ListConversation(ctx context.Context, r
 			LastSectionID: &conv.SectionID,
 			ConnectorID:   &conv.ConnectorID,
 			CreatedAt:     conv.CreatedAt / 1000,
+			Name:          ptr.Of(conv.Name),
 		}
 	})
 
 	resp.Data = &conversation.ListConversationData{
 		Conversations: conversationData,
 		HasMore:       hasMore,
+	}
+	return resp, nil
+}
+
+func (c *ConversationApplicationService) DeleteConversation(ctx context.Context, req *conversation.DeleteConversationApiRequest) (*conversation.DeleteConversationApiResponse, error) {
+	resp := new(conversation.DeleteConversationApiResponse)
+	convID := req.GetConversationID()
+
+	apiKeyInfo := ctxutil.GetApiAuthFromCtx(ctx)
+	userID := apiKeyInfo.UserID
+
+	if userID == 0 {
+		return resp, errorx.New(errno.ErrConversationPermissionCode, errorx.KV("msg", "permission check failed"))
+	}
+
+	conversationDO, err := c.ConversationDomainSVC.GetByID(ctx, convID)
+	if err != nil {
+		return resp, err
+	}
+	if conversationDO == nil {
+		return resp, errorx.New(errno.ErrConversationNotFound)
+	}
+	if conversationDO.CreatorID != userID {
+		return resp, errorx.New(errno.ErrConversationNotFound, errorx.KV("msg", "user not match"))
+	}
+	err = c.ConversationDomainSVC.Delete(ctx, convID)
+	if err != nil {
+		return resp, err
+	}
+	return resp, nil
+}
+
+func (c *ConversationApplicationService) UpdateConversation(ctx context.Context, req *conversation.UpdateConversationApiRequest) (*conversation.UpdateConversationApiResponse, error) {
+	resp := new(conversation.UpdateConversationApiResponse)
+	convID := req.GetConversationID()
+
+	apiKeyInfo := ctxutil.GetApiAuthFromCtx(ctx)
+	userID := apiKeyInfo.UserID
+
+	if userID == 0 {
+		return resp, errorx.New(errno.ErrConversationPermissionCode, errorx.KV("msg", "permission check failed"))
+	}
+
+	conversationDO, err := c.ConversationDomainSVC.GetByID(ctx, convID)
+	if err != nil {
+		return resp, err
+	}
+	if conversationDO == nil {
+		return resp, errorx.New(errno.ErrConversationNotFound)
+	}
+	if conversationDO.CreatorID != userID {
+		return resp, errorx.New(errno.ErrConversationPermissionCode, errorx.KV("msg", "user not match"))
+	}
+
+	updateResult, err := c.ConversationDomainSVC.Update(ctx, &entity.UpdateMeta{
+		ID:   convID,
+		Name: req.GetName(),
+	})
+	if err != nil {
+		return resp, err
+	}
+	resp.ConversationData = &conversation.ConversationData{
+		Id:            updateResult.ID,
+		LastSectionID: &updateResult.SectionID,
+		ConnectorID:   &updateResult.ConnectorID,
+		CreatedAt:     updateResult.CreatedAt / 1000,
+		Name:          ptr.Of(updateResult.Name),
 	}
 	return resp, nil
 }

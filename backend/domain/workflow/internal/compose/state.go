@@ -28,6 +28,7 @@ import (
 
 	workflowModel "github.com/coze-dev/coze-studio/backend/api/model/crossdomain/workflow"
 	workflow2 "github.com/coze-dev/coze-studio/backend/api/model/workflow"
+	crossmessage "github.com/coze-dev/coze-studio/backend/crossdomain/contract/message"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/entity/vo"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/internal/execute"
@@ -87,6 +88,11 @@ func init() {
 	_ = compose.RegisterSerializableType[workflowModel.Locator]("wf_locator")
 	_ = compose.RegisterSerializableType[workflowModel.BizType]("biz_type")
 	_ = compose.RegisterSerializableType[*execute.AppVariables]("app_variables")
+	_ = compose.RegisterSerializableType[workflow2.WorkflowMode]("workflow_mode")
+	_ = compose.RegisterSerializableType[*schema.Message]("schema_message")
+	_ = compose.RegisterSerializableType[*crossmessage.WfMessage]("history_messages")
+	_ = compose.RegisterSerializableType[*crossmessage.Content]("content")
+
 }
 
 func (s *State) AddQuestion(nodeKey vo.NodeKey, question *qa.Question) {

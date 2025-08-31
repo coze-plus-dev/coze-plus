@@ -32,6 +32,7 @@ import (
 
 	"github.com/coze-dev/coze-studio/backend/infra/contract/storage"
 	"github.com/coze-dev/coze-studio/backend/infra/impl/storage/proxy"
+	"github.com/coze-dev/coze-studio/backend/pkg/goutil"
 	"github.com/coze-dev/coze-studio/backend/pkg/logs"
 	"github.com/coze-dev/coze-studio/backend/pkg/taskgroup"
 )
@@ -182,8 +183,7 @@ func (t *s3Client) PutObjectWithReader(ctx context.Context, objectKey string, co
 	}
 
 	if option.Tagging != nil {
-		tagging := mapToQueryParams(option.Tagging)
-		input.Tagging = aws.String(tagging)
+		input.Tagging = aws.String(goutil.MapToQuery(option.Tagging))
 	}
 
 	// upload object
@@ -361,16 +361,6 @@ func (t *s3Client) ListObjectsPaginated(ctx context.Context, input *storage.List
 	return output, nil
 }
 
-func mapToQueryParams(tagging map[string]string) string {
-	if len(tagging) == 0 {
-		return ""
-	}
-	params := url.Values{}
-	for k, v := range tagging {
-		params.Set(k, v)
-	}
-	return params.Encode()
-}
 
 func tagsToMap(tags []types.Tag) map[string]string {
 	if len(tags) == 0 {

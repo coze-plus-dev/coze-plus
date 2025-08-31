@@ -24,6 +24,7 @@ import (
 type Conversation = conversation.Conversation
 
 type CreateMeta struct {
+	Name        string       `json:"name"`
 	AgentID     int64        `json:"agent_id"`
 	UserID      int64        `json:"user_id"`
 	ConnectorID int64        `json:"connector_id"`
@@ -49,4 +50,9 @@ type ListMeta struct {
 	AgentID     int64        `json:"agent_id"`
 	Limit       int          `json:"limit"`
 	Page        int          `json:"page"`
+}
+
+type UpdateMeta struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
 }

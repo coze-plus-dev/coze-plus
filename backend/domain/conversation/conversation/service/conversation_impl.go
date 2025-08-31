@@ -101,6 +101,11 @@ func (c *conversationImpl) Delete(ctx context.Context, id int64) error {
 	return nil
 }
 
+func (c *conversationImpl) Update(ctx context.Context, req *entity.UpdateMeta) (*entity.Conversation, error) {
+	// get conversation
+	return c.ConversationRepo.Update(ctx, req)
+}
+
 func (c *conversationImpl) List(ctx context.Context, req *entity.ListMeta) ([]*entity.Conversation, bool, error) {
 	conversationList, hasMore, err := c.ConversationRepo.List(ctx, req.UserID, req.AgentID, req.ConnectorID, int32(req.Scene), req.Limit, req.Page)
 

@@ -20,14 +20,17 @@ import (
 	"context"
 	"path/filepath"
 
-	"gopkg.in/yaml.v3"
+
 	"os"
+	"gopkg.in/yaml.v3"
+
 
 	"github.com/cloudwego/eino/callbacks"
 	"github.com/cloudwego/eino/compose"
 	"gorm.io/gorm"
 
 	"github.com/coze-dev/coze-studio/backend/crossdomain/impl/code"
+
 	knowledge "github.com/coze-dev/coze-studio/backend/domain/knowledge/service"
 	dbservice "github.com/coze-dev/coze-studio/backend/domain/memory/database/service"
 	variables "github.com/coze-dev/coze-studio/backend/domain/memory/variables/service"
@@ -85,8 +88,12 @@ func InitService(_ context.Context, components *ServiceComponents) (*Application
 	if err != nil {
 		return nil, err
 	}
-	workflowRepo := service.NewWorkflowRepository(components.IDGen, components.DB, components.Cache,
+ 
+	workflowRepo, err := service.NewWorkflowRepository(components.IDGen, components.DB, components.Cache,
 		components.Tos, components.CPStore, components.WorkflowBuildInChatModel, cfg)
+	if err != nil {
+		return nil, err
+	}
 
 	workflow.SetRepository(workflowRepo)
 
@@ -94,6 +101,7 @@ func InitService(_ context.Context, components *ServiceComponents) (*Application
 
 	code.SetCodeRunner(components.CodeRunner)
 	callbacks.AppendGlobalHandlers(workflowservice.GetTokenCallbackHandler())
+
 	setEventBus(components.DomainNotifier)
 
 	SVC.DomainSVC = workflowDomainSVC

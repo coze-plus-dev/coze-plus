@@ -370,6 +370,12 @@ func (s *SingleAgentApplicationService) applyAgentUpdates(target *entity.SingleA
 		}
 		target.Database = patch.DatabaseList
 	}
+	if patch.BotMode != nil {
+		target.BotMode = ptr.From(patch.BotMode)
+	}
+	if patch.LayoutInfo != nil {
+		target.LayoutInfo = patch.LayoutInfo
+	}
 
 	return target, nil
 }
@@ -419,11 +425,12 @@ func (s *SingleAgentApplicationService) singleAgentDraftDo2Vo(ctx context.Contex
 		TaskInfo:                &bot_common.TaskInfo{},
 		CreateTime:              do.CreatedAt / 1000,
 		UpdateTime:              do.UpdatedAt / 1000,
-		BotMode:                 bot_common.BotMode_SingleMode,
+		BotMode:                 do.BotMode,
 		BackgroundImageInfoList: do.BackgroundImageInfoList,
 		Status:                  bot_common.BotStatus_Using,
 		DatabaseList:            do.Database,
 		ShortcutSort:            do.ShortcutCommand,
+		LayoutInfo:              do.LayoutInfo,
 	}
 
 	if do.VariablesMetaID != nil {
@@ -647,16 +654,24 @@ func (s *SingleAgentApplicationService) GetAgentOnlineInfo(ctx context.Context, 
 	if connectorID == 0 {
 		connectorID = ctxutil.GetApiAuthFromCtx(ctx).ConnectorID
 	}
-	agentInfo, err := s.DomainSVC.ObtainAgentByIdentity(ctx, &entity.AgentIdentity{
-		AgentID:     req.BotID,
+
+	return s.getAgentInfo(ctx, req.BotID, connectorID, uid, req.Version)
+}
+
+func (s *SingleAgentApplicationService) getAgentInfo(ctx context.Context, botID int64, connectorID int64, uid int64, version *string) (*bot_common.OpenAPIBotInfo, error) {
+	ae := &entity.AgentIdentity{
+		AgentID:     botID,
 		ConnectorID: connectorID,
-		Version:     ptr.From(req.Version),
-	})
+	}
+	if version != nil {
+		ae.Version = ptr.From(version)
+	}
+	agentInfo, err := s.DomainSVC.ObtainAgentByIdentity(ctx, ae)
 	if err != nil {
 		return nil, err
 	}
 	if agentInfo == nil {
-		logs.CtxErrorf(ctx, "agent(%d) is not exist", req.BotID)
+		logs.CtxErrorf(ctx, "agent(%d) is not exist", botID)
 		return nil, errorx.New(errno.ErrAgentPermissionCode, errorx.KV("msg", "agent not exist"))
 	}
 	if agentInfo.CreatorID != uid {
@@ -730,4 +745,22 @@ func (s *SingleAgentApplicationService) GetAgentOnlineInfo(ctx context.Context, 
 
 	}
 	return combineInfo, nil
+}
+
+func (s *SingleAgentApplicationService) OpenGetBotInfo(ctx context.Context, req *bot_open_api.OpenGetBotInfoRequest) (*bot_open_api.OpenGetBotInfoResponse, error) {
+	resp := new(bot_open_api.OpenGetBotInfoResponse)
+
+	uid := ctxutil.MustGetUIDFromApiAuthCtx(ctx)
+
+	connectorID := ptr.From(req.ConnectorID)
+
+	if connectorID == 0 {
+		connectorID = ctxutil.GetApiAuthFromCtx(ctx).ConnectorID
+	}
+	agentInfo, err := s.getAgentInfo(ctx, req.BotID, connectorID, uid, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp.Data = agentInfo
+	return resp, nil
 }

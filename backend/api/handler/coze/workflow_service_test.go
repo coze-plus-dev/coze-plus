@@ -21,6 +21,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"net/http"
 	"os"
 	"reflect"
@@ -47,6 +48,8 @@ import (
 	"go.uber.org/mock/gomock"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+
+	"github.com/coze-dev/coze-studio/backend/domain/workflow/config"
 
 	"github.com/coze-dev/coze-studio/backend/api/model/crossdomain/knowledge"
 	modelknowledge "github.com/coze-dev/coze-studio/backend/api/model/crossdomain/knowledge"
@@ -250,7 +253,9 @@ func newWfTestRunner(t *testing.T) *wfTestRunner {
 
 	mockTos := storageMock.NewMockStorage(ctrl)
 	mockTos.EXPECT().GetObjectUrl(gomock.Any(), gomock.Any(), gomock.Any()).Return("", nil).AnyTimes()
-	workflowRepo := service.NewWorkflowRepository(mockIDGen, db, redisClient, mockTos, cpStore, utChatModel, nil)
+	workflowRepo, _ := service.NewWorkflowRepository(mockIDGen, db, redisClient, mockTos, cpStore, utChatModel, &config.WorkflowConfig{
+		NodeOfCodeConfig: &config.NodeOfCodeConfig{},
+	})
 	mockey.Mock(appworkflow.GetWorkflowDomainSVC).Return(service.NewWorkflowService(workflowRepo)).Build()
 	mockey.Mock(workflow2.GetRepository).Return(workflowRepo).Build()
 	publishPatcher := mockey.Mock(appworkflow.PublishWorkflowResource).Return(nil).Build()
@@ -4100,13 +4105,13 @@ func TestCopyWorkflowAppToLibrary(t *testing.T) {
 						assert.NoError(t, err)
 						validateSubWorkflowIDs(subworkflowCanvas.Nodes)
 					case entity.NodeTypeLLM:
-						if node.Data.Inputs.FCParam != nil && node.Data.Inputs.FCParam.WorkflowFCParam != nil {
+						if node.Data.Inputs.LLM != nil && node.Data.Inputs.FCParam != nil && node.Data.Inputs.FCParam.WorkflowFCParam != nil {
 							for _, w := range node.Data.Inputs.FCParam.WorkflowFCParam.WorkflowList {
 								assert.True(t, copiedIDMap[w.WorkflowID])
 							}
 						}
 
-						if node.Data.Inputs.FCParam != nil && node.Data.Inputs.FCParam.PluginFCParam != nil {
+						if node.Data.Inputs.LLM != nil && node.Data.Inputs.FCParam != nil && node.Data.Inputs.FCParam.PluginFCParam != nil {
 							for _, p := range node.Data.Inputs.FCParam.PluginFCParam.PluginList {
 								if p.PluginVersion == "0" {
 									assert.Equal(t, "100100", p.PluginID)
@@ -4114,7 +4119,7 @@ func TestCopyWorkflowAppToLibrary(t *testing.T) {
 							}
 						}
 
-						if node.Data.Inputs.FCParam != nil && node.Data.Inputs.FCParam.KnowledgeFCParam != nil {
+						if node.Data.Inputs.LLM != nil && node.Data.Inputs.FCParam != nil && node.Data.Inputs.FCParam.KnowledgeFCParam != nil {
 							for _, k := range node.Data.Inputs.FCParam.KnowledgeFCParam.KnowledgeList {
 								assert.Equal(t, "100100", k.ID)
 							}
