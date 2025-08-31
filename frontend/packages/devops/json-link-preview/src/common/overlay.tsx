@@ -1,4 +1,20 @@
 /*
+ * Copyright 2025 coze-plus Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * Copyright 2025 coze-dev Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,12 +30,13 @@
  * limitations under the License.
  */
 
-import ReactDOM from 'react-dom';
 import React from 'react';
 
+import { createRoot, type Root } from 'react-dom/client';
 import { IconCozCrossFill } from '@coze-arch/coze-design/icons';
 
 let overlayContainer: HTMLDivElement | null = null;
+let overlayRoot: Root | null = null;
 
 interface OverlayProps {
   onClose?: VoidFunction;
@@ -71,14 +88,33 @@ const show = (params: {
     createOverlayContainer();
   }
 
+  // 如果已有root，先卸载
+  if (overlayRoot) {
+    overlayRoot.unmount();
+    overlayRoot = null;
+  }
+
+  // 创建新的root
+  if (overlayContainer) {
+    overlayRoot = createRoot(overlayContainer);
+  }
+
   const close = () => {
-    overlayContainer && ReactDOM.unmountComponentAtNode(overlayContainer);
+    if (overlayRoot) {
+      overlayRoot.unmount();
+      overlayRoot = null;
+    }
   };
 
-  ReactDOM.render(
-    <Overlay onClose={close} children={content?.(close)} withMask={withMask} />,
-    overlayContainer,
-  );
+  if (overlayRoot) {
+    overlayRoot.render(
+      <Overlay
+        onClose={close}
+        children={content?.(close)}
+        withMask={withMask}
+      />,
+    );
+  }
 
   return close;
 };

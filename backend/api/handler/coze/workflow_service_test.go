@@ -253,7 +253,6 @@ func newWfTestRunner(t *testing.T) *wfTestRunner {
 
 	mockTos := storageMock.NewMockStorage(ctrl)
 	mockTos.EXPECT().GetObjectUrl(gomock.Any(), gomock.Any(), gomock.Any()).Return("", nil).AnyTimes()
-
 	workflowRepo, _ := service.NewWorkflowRepository(mockIDGen, db, redisClient, mockTos, cpStore, utChatModel, &config.WorkflowConfig{
 		NodeOfCodeConfig: &config.NodeOfCodeConfig{},
 	})

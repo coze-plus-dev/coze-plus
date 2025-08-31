@@ -21,6 +21,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/url"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -359,6 +360,7 @@ func (t *s3Client) ListObjectsPaginated(ctx context.Context, input *storage.List
 
 	return output, nil
 }
+
 
 func tagsToMap(tags []types.Tag) map[string]string {
 	if len(tags) == 0 {

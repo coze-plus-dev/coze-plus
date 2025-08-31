@@ -603,7 +603,6 @@ func getVectorStore(ctx context.Context) (searchstore.Manager, error) {
 			return nil, fmt.Errorf("init oceanbase vector store failed, err=%w", err)
 		}
 		return mgr, nil
-
 	default:
 		return nil, fmt.Errorf("unexpected vector store type, type=%s", vsType)
 	}
