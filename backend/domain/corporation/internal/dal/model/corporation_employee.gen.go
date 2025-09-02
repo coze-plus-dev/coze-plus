@@ -29,7 +29,7 @@ const TableNameCorporationEmployee = "corporation_employee"
 // CorporationEmployee Employee Info Table
 type CorporationEmployee struct {
 	ID             int64          `gorm:"column:id;primaryKey;autoIncrement:true;comment:Employee ID" json:"id"`                                               // Employee ID
-	EmployeeNo     *string        `gorm:"column:employee_no;comment:Employee Number (globally unique)" json:"employee_no"`                                     // Employee Number (globally unique)
+	EmployeeNo     *string        `gorm:"column:employee_no;comment:Employee Number (unique in corporation)" json:"employee_no"`                               // Employee Number (unique in corporation)
 	Name           string         `gorm:"column:name;not null;comment:Employee Name" json:"name"`                                                              // Employee Name
 	EnName         *string        `gorm:"column:en_name;comment:English Name" json:"en_name"`                                                                  // English Name
 	Nickname       *string        `gorm:"column:nickname;comment:Nickname" json:"nickname"`                                                                    // Nickname

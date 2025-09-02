@@ -25,12 +25,12 @@ import (
 	"github.com/coze-dev/coze-studio/backend/api/model/corporation/common"
 	employeeAPI "github.com/coze-dev/coze-studio/backend/api/model/corporation/employee"
 	"github.com/coze-dev/coze-studio/backend/application/base/ctxutil"
+	crossuser "github.com/coze-dev/coze-studio/backend/crossdomain/contract/user"
 	"github.com/coze-dev/coze-studio/backend/domain/corporation/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/corporation/service"
 	"github.com/coze-dev/coze-studio/backend/pkg/errorx"
 	"github.com/coze-dev/coze-studio/backend/pkg/lang/ptr"
 	"github.com/coze-dev/coze-studio/backend/types/errno"
-	crossuser "github.com/coze-dev/coze-studio/backend/crossdomain/contract/user"
 )
 
 // Employee methods
@@ -82,8 +82,9 @@ func (s *CorporationApplicationService) CreateEmployee(ctx context.Context, req 
 			userReq := &crossuser.CreateUserRequest{
 				Email:    *serviceReq.Email,
 				Password: *serviceReq.Password,
+				CreatedBy: *uid,
 			}
-			
+
 			user, err := crossuser.DefaultSVC().CreateUser(ctx, userReq)
 			if err != nil {
 				// Use errors.As to properly handle wrapped status errors
@@ -97,7 +98,7 @@ func (s *CorporationApplicationService) CreateEmployee(ctx context.Context, req 
 			}
 			serviceReq.UserID = &user.ID
 		}
-		
+
 		serviceResp, err = s.DomainEmployeeSVC.CreateEmployee(ctx, serviceReq)
 		if err != nil {
 			return err

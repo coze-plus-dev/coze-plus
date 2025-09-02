@@ -287,6 +287,48 @@ func (p *Status) Value() (driver.Value, error) {
 	return int64(*p), nil
 }
 
+type UserStatus int64
+
+const (
+	UserStatus_ENABLED  UserStatus = 0
+	UserStatus_DISABLED UserStatus = 1
+)
+
+func (p UserStatus) String() string {
+	switch p {
+	case UserStatus_ENABLED:
+		return "ENABLED"
+	case UserStatus_DISABLED:
+		return "DISABLED"
+	}
+	return "<UNSET>"
+}
+
+func UserStatusFromString(s string) (UserStatus, error) {
+	switch s {
+	case "ENABLED":
+		return UserStatus_ENABLED, nil
+	case "DISABLED":
+		return UserStatus_DISABLED, nil
+	}
+	return UserStatus(0), fmt.Errorf("not a valid UserStatus string")
+}
+
+func UserStatusPtr(v UserStatus) *UserStatus { return &v }
+func (p *UserStatus) Scan(value interface{}) (err error) {
+	var result sql.NullInt64
+	err = result.Scan(value)
+	*p = UserStatus(result.Int64)
+	return
+}
+
+func (p *UserStatus) Value() (driver.Value, error) {
+	if p == nil {
+		return nil, nil
+	}
+	return int64(*p), nil
+}
+
 type PermissionTemplateData struct {
 	ID           *int64  `thrift:"id,1,optional" form:"id" json:"id,string,omitempty"`
 	TemplateCode *string `thrift:"template_code,2,optional" form:"template_code" json:"template_code,omitempty"`

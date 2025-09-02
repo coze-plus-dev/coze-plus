@@ -91,3 +91,27 @@ export const ListPermissionTemplates = /*#__PURE__*/createAPI<permission.ListPer
   "schemaRoot": "api://schemas/idl_permission_permission_service",
   "service": "permission"
 });
+export const ListUsers = /*#__PURE__*/createAPI<permission.ListUsersRequest, permission.ListUsersResponse>({
+  "url": "/api/permission_api/user/list",
+  "method": "POST",
+  "name": "ListUsers",
+  "reqType": "permission.ListUsersRequest",
+  "reqMapping": {
+    "body": ["keyword", "is_disabled", "page", "limit"]
+  },
+  "resType": "permission.ListUsersResponse",
+  "schemaRoot": "api://schemas/idl_permission_permission_service",
+  "service": "permission"
+});
+export const UpdateUserStatus = /*#__PURE__*/createAPI<permission.UpdateUserStatusRequest, permission.UpdateUserStatusResponse>({
+  "url": "/api/permission_api/user/status/update",
+  "method": "POST",
+  "name": "UpdateUserStatus",
+  "reqType": "permission.UpdateUserStatusRequest",
+  "reqMapping": {
+    "body": ["user_id", "is_disabled"]
+  },
+  "resType": "permission.UpdateUserStatusResponse",
+  "schemaRoot": "api://schemas/idl_permission_permission_service",
+  "service": "permission"
+});

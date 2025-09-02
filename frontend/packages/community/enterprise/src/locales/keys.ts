@@ -373,6 +373,34 @@ export const ENTERPRISE_I18N_KEYS = {
   ROLE_PERMISSION_CANCEL_BUTTON: 'role_permission_cancel_button',
   ROLE_PERMISSION_SAVE_BUTTON: 'role_permission_save_button',
   ROLE_PERMISSION_BUILTIN_NOTICE: 'role_permission_builtin_notice',
+
+  // 账号管理相关
+  ACCOUNT_MANAGEMENT_TITLE: 'account_management_title',
+  ACCOUNT_MANAGEMENT_DESCRIPTION: 'account_management_description',
+  ACCOUNT_SEARCH_PLACEHOLDER: 'account_search_placeholder',
+  ACCOUNT_STATUS_FILTER_PLACEHOLDER: 'account_status_filter_placeholder',
+  ACCOUNT_STATUS_ENABLED: 'account_status_enabled',
+  ACCOUNT_STATUS_DISABLED: 'account_status_disabled',
+  ACCOUNT_REFRESH: 'account_refresh',
+  ACCOUNT_LOADING: 'account_loading',
+  ACCOUNT_EMPTY_DATA: 'account_empty_data',
+
+  // 用户卡片相关
+  ACCOUNT_EMAIL: 'account_email',
+  ACCOUNT_UNIQUE_NAME: 'account_unique_name',
+  ACCOUNT_DESCRIPTION: 'account_description',
+  ACCOUNT_CREATED_TIME: 'account_created_time',
+  ACCOUNT_ENABLE_ACTION: 'account_enable_action',
+  ACCOUNT_DISABLE_ACTION: 'account_disable_action',
+  ACCOUNT_ASSIGN_ROLE: 'account_assign_role',
+  ACCOUNT_ROLE_LIST: 'account_role_list',
+  ACCOUNT_RESET_PASSWORD: 'account_reset_password',
+
+  // 操作反馈消息
+  ACCOUNT_FEATURE_COMING_SOON: 'account_feature_coming_soon',
+  ACCOUNT_DISABLE_SUCCESS: 'account_disable_success',
+  ACCOUNT_ENABLE_SUCCESS: 'account_enable_success',
+  ACCOUNT_OPERATION_FAILED: 'account_operation_failed',
 } as const;
 
 export type EnterpriseI18nKey =

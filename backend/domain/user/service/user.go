@@ -1,4 +1,20 @@
 /*
+ * Copyright 2025 coze-plus Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * Copyright 2025 coze-dev Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -57,10 +73,29 @@ type CreateUserRequest struct {
 	Description string
 	SpaceID     int64
 	Locale      string
+	CreatedBy   int64
 }
 
 type CreateUserResponse struct {
 	UserID int64
+}
+
+type ListUsersRequest struct {
+	Keyword    *string `json:"keyword,omitempty"`     // Email fuzzy search keyword
+	IsDisabled *int32  `json:"is_disabled,omitempty"` // User status filter: 0-enabled, 1-disabled
+	Page       int     `json:"page"`                  // Page number, starts from 1
+	Limit      int     `json:"limit"`                 // Page size, max 100
+}
+
+type ListUsersResponse struct {
+	Users   []*entity.User `json:"users"`    // User list
+	Total   int64          `json:"total"`    // Total count
+	HasMore bool           `json:"has_more"` // Whether has more data
+}
+
+type UpdateUserStatusRequest struct {
+	UserID     int64 `json:"user_id"`     // User ID to update
+	IsDisabled int32 `json:"is_disabled"` // User status: 0-enabled, 1-disabled
 }
 
 type User interface {
@@ -77,4 +112,6 @@ type User interface {
 	MGetUserProfiles(ctx context.Context, userIDs []int64) (users []*entity.User, err error)
 	ValidateSession(ctx context.Context, sessionKey string) (session *entity.Session, exist bool, err error)
 	GetUserSpaceList(ctx context.Context, userID int64) (spaces []*entity.Space, err error)
+	ListUsers(ctx context.Context, req *ListUsersRequest) (*ListUsersResponse, error)
+	UpdateUserStatus(ctx context.Context, req *UpdateUserStatusRequest) (err error)
 }

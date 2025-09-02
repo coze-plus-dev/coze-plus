@@ -213,8 +213,8 @@ var path2Table2Columns2Model = map[string]map[string]map[string]any{
 }
 
 var fieldNullablePath = map[string]bool{
-	"domain/agent/singleagent/internal/dal/query": true,
-	"domain/corporation/internal/dal/query":       true,
+	// "domain/agent/singleagent/internal/dal/query": true,
+	"domain/corporation/internal/dal/query": true,
 }
 
 func main() {

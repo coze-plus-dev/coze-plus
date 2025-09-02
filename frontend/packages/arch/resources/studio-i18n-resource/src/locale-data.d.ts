@@ -16273,7 +16273,12 @@ export type I18nKeysNoOptionsType =
   | 'corp_type_company'
   | 'corp_type_branch'
   | 'create_success'
-  | 'create_failed';
+  | 'create_failed'
+  | 'login_page_email_label'
+  | 'login_page_password_label'
+  | 'login_page_welcome_coze_plus'
+  | 'login_page_language_chinese'
+  | 'login_page_language_english';
 // #endregion
 
 // #region LocaleData

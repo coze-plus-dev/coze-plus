@@ -123,4 +123,52 @@ struct ListPermissionTemplatesResponse {
     3: required string msg,
 }
 
+// User data structure
+struct UserData {
+    1: optional i64 user_id (api.body = "user_id", api.js_conv = "true"),
+    2: optional string name (api.body = "name"),
+    3: optional string unique_name (api.body = "unique_name"),
+    4: optional string email (api.body = "email"),
+    5: optional string description (api.body = "description"),
+    6: optional string icon_uri (api.body = "icon_uri"),
+    7: optional string icon_url (api.body = "icon_url"),
+    8: optional bool user_verified (api.body = "user_verified"),
+    9: optional i32 is_disabled (api.body = "is_disabled"),
+    10: optional string locale (api.body = "locale"),
+    11: optional string created_at (api.body = "created_at"),
+    12: optional string updated_at (api.body = "updated_at"),
+}
+
+// User management
+struct ListUsersRequest {
+    1: optional string keyword (api.body = "keyword"),
+    2: optional i32 is_disabled (api.body = "is_disabled"),
+    3: optional i32 page (api.body = "page"),
+    4: optional i32 limit (api.body = "limit"),
+    255: optional base.Base base,
+}
+
+struct ListUsersResponseData {
+    1: required list<UserData> users,
+    2: optional i64 total (api.js_conv = "true"),
+    3: optional bool has_more,
+}
+
+struct ListUsersResponse {
+    1: required ListUsersResponseData data,
+    2: required i32 code,
+    3: required string msg,
+}
+
+struct UpdateUserStatusRequest {
+    1: required i64 user_id (api.body = "user_id", api.js_conv = "true"),
+    2: required permission_common.UserStatus is_disabled (api.body = "is_disabled"),
+    255: optional base.Base base,
+}
+
+struct UpdateUserStatusResponse {
+    1: required i32 code,
+    2: required string msg,
+}
+
 

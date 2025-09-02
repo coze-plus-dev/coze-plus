@@ -42,6 +42,10 @@ export enum Status {
   DISABLED = 0,
   ENABLED = 1,
 }
+export enum UserStatus {
+  ENABLED = 0,
+  DISABLED = 1,
+}
 export interface PermissionTemplateData {
   id?: string,
   template_code?: string,

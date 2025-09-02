@@ -1,4 +1,20 @@
 /*
+ * Copyright 2025 coze-plus Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * Copyright 2025 coze-dev Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -159,4 +175,36 @@ func (dao *UserDAO) GetUsersByIDs(ctx context.Context, userIDs []int64) ([]*mode
 	return dao.query.User.WithContext(ctx).Where(
 		dao.query.User.ID.In(userIDs...),
 	).Find()
+}
+
+// ListUsers Query users with pagination and filters
+func (dao *UserDAO) ListUsers(ctx context.Context, keyword *string, isDisabled *int32, offset, limit int) ([]*model.User, int64, error) {
+	query := dao.query.User.WithContext(ctx)
+
+	// Apply email keyword filter
+	if keyword != nil && *keyword != "" {
+		query = query.Where(dao.query.User.Email.Like("%" + *keyword + "%"))
+	}
+
+	// Apply is_disabled filter
+	if isDisabled != nil {
+		query = query.Where(dao.query.User.IsDisabled.Eq(*isDisabled))
+	}
+
+	// Get total count
+	total, err := query.Count()
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Get paginated results
+	users, err := query.Order(dao.query.User.CreatedAt.Desc()).
+		Offset(offset).
+		Limit(limit).
+		Find()
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return users, total, nil
 }
