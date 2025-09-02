@@ -36,6 +36,10 @@ type PermissionService interface {
 	ListRoles(ctx context.Context, req *ListRolesRequest) (r *ListRolesResponse, err error)
 
 	ListPermissionTemplates(ctx context.Context, req *ListPermissionTemplatesRequest) (r *ListPermissionTemplatesResponse, err error)
+
+	ListUsers(ctx context.Context, req *ListUsersRequest) (r *ListUsersResponse, err error)
+
+	UpdateUserStatus(ctx context.Context, req *UpdateUserStatusRequest) (r *UpdateUserStatusResponse, err error)
 }
 
 type PermissionServiceClient struct {
@@ -118,6 +122,24 @@ func (p *PermissionServiceClient) ListPermissionTemplates(ctx context.Context, r
 	}
 	return _result.GetSuccess(), nil
 }
+func (p *PermissionServiceClient) ListUsers(ctx context.Context, req *ListUsersRequest) (r *ListUsersResponse, err error) {
+	var _args PermissionServiceListUsersArgs
+	_args.Req = req
+	var _result PermissionServiceListUsersResult
+	if err = p.Client_().Call(ctx, "ListUsers", &_args, &_result); err != nil {
+		return
+	}
+	return _result.GetSuccess(), nil
+}
+func (p *PermissionServiceClient) UpdateUserStatus(ctx context.Context, req *UpdateUserStatusRequest) (r *UpdateUserStatusResponse, err error) {
+	var _args PermissionServiceUpdateUserStatusArgs
+	_args.Req = req
+	var _result PermissionServiceUpdateUserStatusResult
+	if err = p.Client_().Call(ctx, "UpdateUserStatus", &_args, &_result); err != nil {
+		return
+	}
+	return _result.GetSuccess(), nil
+}
 
 type PermissionServiceProcessor struct {
 	processorMap map[string]thrift.TProcessorFunction
@@ -145,6 +167,8 @@ func NewPermissionServiceProcessor(handler PermissionService) *PermissionService
 	self.AddToProcessorMap("GetRole", &permissionServiceProcessorGetRole{handler: handler})
 	self.AddToProcessorMap("ListRoles", &permissionServiceProcessorListRoles{handler: handler})
 	self.AddToProcessorMap("ListPermissionTemplates", &permissionServiceProcessorListPermissionTemplates{handler: handler})
+	self.AddToProcessorMap("ListUsers", &permissionServiceProcessorListUsers{handler: handler})
+	self.AddToProcessorMap("UpdateUserStatus", &permissionServiceProcessorUpdateUserStatus{handler: handler})
 	return self
 }
 func (p *PermissionServiceProcessor) Process(ctx context.Context, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
@@ -436,6 +460,102 @@ func (p *permissionServiceProcessorListPermissionTemplates) Process(ctx context.
 		result.Success = retval
 	}
 	if err2 = oprot.WriteMessageBegin("ListPermissionTemplates", thrift.REPLY, seqId); err2 != nil {
+		err = err2
+	}
+	if err2 = result.Write(oprot); err == nil && err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.Flush(ctx); err == nil && err2 != nil {
+		err = err2
+	}
+	if err != nil {
+		return
+	}
+	return true, err
+}
+
+type permissionServiceProcessorListUsers struct {
+	handler PermissionService
+}
+
+func (p *permissionServiceProcessorListUsers) Process(ctx context.Context, seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+	args := PermissionServiceListUsersArgs{}
+	if err = args.Read(iprot); err != nil {
+		iprot.ReadMessageEnd()
+		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
+		oprot.WriteMessageBegin("ListUsers", thrift.EXCEPTION, seqId)
+		x.Write(oprot)
+		oprot.WriteMessageEnd()
+		oprot.Flush(ctx)
+		return false, err
+	}
+
+	iprot.ReadMessageEnd()
+	var err2 error
+	result := PermissionServiceListUsersResult{}
+	var retval *ListUsersResponse
+	if retval, err2 = p.handler.ListUsers(ctx, args.Req); err2 != nil {
+		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing ListUsers: "+err2.Error())
+		oprot.WriteMessageBegin("ListUsers", thrift.EXCEPTION, seqId)
+		x.Write(oprot)
+		oprot.WriteMessageEnd()
+		oprot.Flush(ctx)
+		return true, err2
+	} else {
+		result.Success = retval
+	}
+	if err2 = oprot.WriteMessageBegin("ListUsers", thrift.REPLY, seqId); err2 != nil {
+		err = err2
+	}
+	if err2 = result.Write(oprot); err == nil && err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.Flush(ctx); err == nil && err2 != nil {
+		err = err2
+	}
+	if err != nil {
+		return
+	}
+	return true, err
+}
+
+type permissionServiceProcessorUpdateUserStatus struct {
+	handler PermissionService
+}
+
+func (p *permissionServiceProcessorUpdateUserStatus) Process(ctx context.Context, seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+	args := PermissionServiceUpdateUserStatusArgs{}
+	if err = args.Read(iprot); err != nil {
+		iprot.ReadMessageEnd()
+		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
+		oprot.WriteMessageBegin("UpdateUserStatus", thrift.EXCEPTION, seqId)
+		x.Write(oprot)
+		oprot.WriteMessageEnd()
+		oprot.Flush(ctx)
+		return false, err
+	}
+
+	iprot.ReadMessageEnd()
+	var err2 error
+	result := PermissionServiceUpdateUserStatusResult{}
+	var retval *UpdateUserStatusResponse
+	if retval, err2 = p.handler.UpdateUserStatus(ctx, args.Req); err2 != nil {
+		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing UpdateUserStatus: "+err2.Error())
+		oprot.WriteMessageBegin("UpdateUserStatus", thrift.EXCEPTION, seqId)
+		x.Write(oprot)
+		oprot.WriteMessageEnd()
+		oprot.Flush(ctx)
+		return true, err2
+	} else {
+		result.Success = retval
+	}
+	if err2 = oprot.WriteMessageBegin("UpdateUserStatus", thrift.REPLY, seqId); err2 != nil {
 		err = err2
 	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
@@ -2202,5 +2322,589 @@ func (p *PermissionServiceListPermissionTemplatesResult) String() string {
 		return "<nil>"
 	}
 	return fmt.Sprintf("PermissionServiceListPermissionTemplatesResult(%+v)", *p)
+
+}
+
+type PermissionServiceListUsersArgs struct {
+	Req *ListUsersRequest `thrift:"req,1"`
+}
+
+func NewPermissionServiceListUsersArgs() *PermissionServiceListUsersArgs {
+	return &PermissionServiceListUsersArgs{}
+}
+
+func (p *PermissionServiceListUsersArgs) InitDefault() {
+}
+
+var PermissionServiceListUsersArgs_Req_DEFAULT *ListUsersRequest
+
+func (p *PermissionServiceListUsersArgs) GetReq() (v *ListUsersRequest) {
+	if !p.IsSetReq() {
+		return PermissionServiceListUsersArgs_Req_DEFAULT
+	}
+	return p.Req
+}
+
+var fieldIDToName_PermissionServiceListUsersArgs = map[int16]string{
+	1: "req",
+}
+
+func (p *PermissionServiceListUsersArgs) IsSetReq() bool {
+	return p.Req != nil
+}
+
+func (p *PermissionServiceListUsersArgs) Read(iprot thrift.TProtocol) (err error) {
+	var fieldTypeId thrift.TType
+	var fieldId int16
+
+	if _, err = iprot.ReadStructBegin(); err != nil {
+		goto ReadStructBeginError
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err = iprot.ReadFieldBegin()
+		if err != nil {
+			goto ReadFieldBeginError
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+
+		switch fieldId {
+		case 1:
+			if fieldTypeId == thrift.STRUCT {
+				if err = p.ReadField1(iprot); err != nil {
+					goto ReadFieldError
+				}
+			} else if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		default:
+			if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		}
+		if err = iprot.ReadFieldEnd(); err != nil {
+			goto ReadFieldEndError
+		}
+	}
+	if err = iprot.ReadStructEnd(); err != nil {
+		goto ReadStructEndError
+	}
+
+	return nil
+ReadStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct begin error: ", p), err)
+ReadFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
+ReadFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_PermissionServiceListUsersArgs[fieldId]), err)
+SkipFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
+
+ReadFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read field end error", p), err)
+ReadStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+}
+
+func (p *PermissionServiceListUsersArgs) ReadField1(iprot thrift.TProtocol) error {
+	_field := NewListUsersRequest()
+	if err := _field.Read(iprot); err != nil {
+		return err
+	}
+	p.Req = _field
+	return nil
+}
+
+func (p *PermissionServiceListUsersArgs) Write(oprot thrift.TProtocol) (err error) {
+	var fieldId int16
+	if err = oprot.WriteStructBegin("ListUsers_args"); err != nil {
+		goto WriteStructBeginError
+	}
+	if p != nil {
+		if err = p.writeField1(oprot); err != nil {
+			fieldId = 1
+			goto WriteFieldError
+		}
+	}
+	if err = oprot.WriteFieldStop(); err != nil {
+		goto WriteFieldStopError
+	}
+	if err = oprot.WriteStructEnd(); err != nil {
+		goto WriteStructEndError
+	}
+	return nil
+WriteStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+WriteFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T write field %d error: ", p, fieldId), err)
+WriteFieldStopError:
+	return thrift.PrependError(fmt.Sprintf("%T write field stop error: ", p), err)
+WriteStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
+}
+
+func (p *PermissionServiceListUsersArgs) writeField1(oprot thrift.TProtocol) (err error) {
+	if err = oprot.WriteFieldBegin("req", thrift.STRUCT, 1); err != nil {
+		goto WriteFieldBeginError
+	}
+	if err := p.Req.Write(oprot); err != nil {
+		return err
+	}
+	if err = oprot.WriteFieldEnd(); err != nil {
+		goto WriteFieldEndError
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 1 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 1 end error: ", p), err)
+}
+
+func (p *PermissionServiceListUsersArgs) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("PermissionServiceListUsersArgs(%+v)", *p)
+
+}
+
+type PermissionServiceListUsersResult struct {
+	Success *ListUsersResponse `thrift:"success,0,optional"`
+}
+
+func NewPermissionServiceListUsersResult() *PermissionServiceListUsersResult {
+	return &PermissionServiceListUsersResult{}
+}
+
+func (p *PermissionServiceListUsersResult) InitDefault() {
+}
+
+var PermissionServiceListUsersResult_Success_DEFAULT *ListUsersResponse
+
+func (p *PermissionServiceListUsersResult) GetSuccess() (v *ListUsersResponse) {
+	if !p.IsSetSuccess() {
+		return PermissionServiceListUsersResult_Success_DEFAULT
+	}
+	return p.Success
+}
+
+var fieldIDToName_PermissionServiceListUsersResult = map[int16]string{
+	0: "success",
+}
+
+func (p *PermissionServiceListUsersResult) IsSetSuccess() bool {
+	return p.Success != nil
+}
+
+func (p *PermissionServiceListUsersResult) Read(iprot thrift.TProtocol) (err error) {
+	var fieldTypeId thrift.TType
+	var fieldId int16
+
+	if _, err = iprot.ReadStructBegin(); err != nil {
+		goto ReadStructBeginError
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err = iprot.ReadFieldBegin()
+		if err != nil {
+			goto ReadFieldBeginError
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+
+		switch fieldId {
+		case 0:
+			if fieldTypeId == thrift.STRUCT {
+				if err = p.ReadField0(iprot); err != nil {
+					goto ReadFieldError
+				}
+			} else if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		default:
+			if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		}
+		if err = iprot.ReadFieldEnd(); err != nil {
+			goto ReadFieldEndError
+		}
+	}
+	if err = iprot.ReadStructEnd(); err != nil {
+		goto ReadStructEndError
+	}
+
+	return nil
+ReadStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct begin error: ", p), err)
+ReadFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
+ReadFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_PermissionServiceListUsersResult[fieldId]), err)
+SkipFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
+
+ReadFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read field end error", p), err)
+ReadStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+}
+
+func (p *PermissionServiceListUsersResult) ReadField0(iprot thrift.TProtocol) error {
+	_field := NewListUsersResponse()
+	if err := _field.Read(iprot); err != nil {
+		return err
+	}
+	p.Success = _field
+	return nil
+}
+
+func (p *PermissionServiceListUsersResult) Write(oprot thrift.TProtocol) (err error) {
+	var fieldId int16
+	if err = oprot.WriteStructBegin("ListUsers_result"); err != nil {
+		goto WriteStructBeginError
+	}
+	if p != nil {
+		if err = p.writeField0(oprot); err != nil {
+			fieldId = 0
+			goto WriteFieldError
+		}
+	}
+	if err = oprot.WriteFieldStop(); err != nil {
+		goto WriteFieldStopError
+	}
+	if err = oprot.WriteStructEnd(); err != nil {
+		goto WriteStructEndError
+	}
+	return nil
+WriteStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+WriteFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T write field %d error: ", p, fieldId), err)
+WriteFieldStopError:
+	return thrift.PrependError(fmt.Sprintf("%T write field stop error: ", p), err)
+WriteStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
+}
+
+func (p *PermissionServiceListUsersResult) writeField0(oprot thrift.TProtocol) (err error) {
+	if p.IsSetSuccess() {
+		if err = oprot.WriteFieldBegin("success", thrift.STRUCT, 0); err != nil {
+			goto WriteFieldBeginError
+		}
+		if err := p.Success.Write(oprot); err != nil {
+			return err
+		}
+		if err = oprot.WriteFieldEnd(); err != nil {
+			goto WriteFieldEndError
+		}
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 0 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 0 end error: ", p), err)
+}
+
+func (p *PermissionServiceListUsersResult) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("PermissionServiceListUsersResult(%+v)", *p)
+
+}
+
+type PermissionServiceUpdateUserStatusArgs struct {
+	Req *UpdateUserStatusRequest `thrift:"req,1"`
+}
+
+func NewPermissionServiceUpdateUserStatusArgs() *PermissionServiceUpdateUserStatusArgs {
+	return &PermissionServiceUpdateUserStatusArgs{}
+}
+
+func (p *PermissionServiceUpdateUserStatusArgs) InitDefault() {
+}
+
+var PermissionServiceUpdateUserStatusArgs_Req_DEFAULT *UpdateUserStatusRequest
+
+func (p *PermissionServiceUpdateUserStatusArgs) GetReq() (v *UpdateUserStatusRequest) {
+	if !p.IsSetReq() {
+		return PermissionServiceUpdateUserStatusArgs_Req_DEFAULT
+	}
+	return p.Req
+}
+
+var fieldIDToName_PermissionServiceUpdateUserStatusArgs = map[int16]string{
+	1: "req",
+}
+
+func (p *PermissionServiceUpdateUserStatusArgs) IsSetReq() bool {
+	return p.Req != nil
+}
+
+func (p *PermissionServiceUpdateUserStatusArgs) Read(iprot thrift.TProtocol) (err error) {
+	var fieldTypeId thrift.TType
+	var fieldId int16
+
+	if _, err = iprot.ReadStructBegin(); err != nil {
+		goto ReadStructBeginError
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err = iprot.ReadFieldBegin()
+		if err != nil {
+			goto ReadFieldBeginError
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+
+		switch fieldId {
+		case 1:
+			if fieldTypeId == thrift.STRUCT {
+				if err = p.ReadField1(iprot); err != nil {
+					goto ReadFieldError
+				}
+			} else if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		default:
+			if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		}
+		if err = iprot.ReadFieldEnd(); err != nil {
+			goto ReadFieldEndError
+		}
+	}
+	if err = iprot.ReadStructEnd(); err != nil {
+		goto ReadStructEndError
+	}
+
+	return nil
+ReadStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct begin error: ", p), err)
+ReadFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
+ReadFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_PermissionServiceUpdateUserStatusArgs[fieldId]), err)
+SkipFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
+
+ReadFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read field end error", p), err)
+ReadStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+}
+
+func (p *PermissionServiceUpdateUserStatusArgs) ReadField1(iprot thrift.TProtocol) error {
+	_field := NewUpdateUserStatusRequest()
+	if err := _field.Read(iprot); err != nil {
+		return err
+	}
+	p.Req = _field
+	return nil
+}
+
+func (p *PermissionServiceUpdateUserStatusArgs) Write(oprot thrift.TProtocol) (err error) {
+	var fieldId int16
+	if err = oprot.WriteStructBegin("UpdateUserStatus_args"); err != nil {
+		goto WriteStructBeginError
+	}
+	if p != nil {
+		if err = p.writeField1(oprot); err != nil {
+			fieldId = 1
+			goto WriteFieldError
+		}
+	}
+	if err = oprot.WriteFieldStop(); err != nil {
+		goto WriteFieldStopError
+	}
+	if err = oprot.WriteStructEnd(); err != nil {
+		goto WriteStructEndError
+	}
+	return nil
+WriteStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+WriteFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T write field %d error: ", p, fieldId), err)
+WriteFieldStopError:
+	return thrift.PrependError(fmt.Sprintf("%T write field stop error: ", p), err)
+WriteStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
+}
+
+func (p *PermissionServiceUpdateUserStatusArgs) writeField1(oprot thrift.TProtocol) (err error) {
+	if err = oprot.WriteFieldBegin("req", thrift.STRUCT, 1); err != nil {
+		goto WriteFieldBeginError
+	}
+	if err := p.Req.Write(oprot); err != nil {
+		return err
+	}
+	if err = oprot.WriteFieldEnd(); err != nil {
+		goto WriteFieldEndError
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 1 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 1 end error: ", p), err)
+}
+
+func (p *PermissionServiceUpdateUserStatusArgs) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("PermissionServiceUpdateUserStatusArgs(%+v)", *p)
+
+}
+
+type PermissionServiceUpdateUserStatusResult struct {
+	Success *UpdateUserStatusResponse `thrift:"success,0,optional"`
+}
+
+func NewPermissionServiceUpdateUserStatusResult() *PermissionServiceUpdateUserStatusResult {
+	return &PermissionServiceUpdateUserStatusResult{}
+}
+
+func (p *PermissionServiceUpdateUserStatusResult) InitDefault() {
+}
+
+var PermissionServiceUpdateUserStatusResult_Success_DEFAULT *UpdateUserStatusResponse
+
+func (p *PermissionServiceUpdateUserStatusResult) GetSuccess() (v *UpdateUserStatusResponse) {
+	if !p.IsSetSuccess() {
+		return PermissionServiceUpdateUserStatusResult_Success_DEFAULT
+	}
+	return p.Success
+}
+
+var fieldIDToName_PermissionServiceUpdateUserStatusResult = map[int16]string{
+	0: "success",
+}
+
+func (p *PermissionServiceUpdateUserStatusResult) IsSetSuccess() bool {
+	return p.Success != nil
+}
+
+func (p *PermissionServiceUpdateUserStatusResult) Read(iprot thrift.TProtocol) (err error) {
+	var fieldTypeId thrift.TType
+	var fieldId int16
+
+	if _, err = iprot.ReadStructBegin(); err != nil {
+		goto ReadStructBeginError
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err = iprot.ReadFieldBegin()
+		if err != nil {
+			goto ReadFieldBeginError
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+
+		switch fieldId {
+		case 0:
+			if fieldTypeId == thrift.STRUCT {
+				if err = p.ReadField0(iprot); err != nil {
+					goto ReadFieldError
+				}
+			} else if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		default:
+			if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		}
+		if err = iprot.ReadFieldEnd(); err != nil {
+			goto ReadFieldEndError
+		}
+	}
+	if err = iprot.ReadStructEnd(); err != nil {
+		goto ReadStructEndError
+	}
+
+	return nil
+ReadStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct begin error: ", p), err)
+ReadFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
+ReadFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_PermissionServiceUpdateUserStatusResult[fieldId]), err)
+SkipFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
+
+ReadFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read field end error", p), err)
+ReadStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+}
+
+func (p *PermissionServiceUpdateUserStatusResult) ReadField0(iprot thrift.TProtocol) error {
+	_field := NewUpdateUserStatusResponse()
+	if err := _field.Read(iprot); err != nil {
+		return err
+	}
+	p.Success = _field
+	return nil
+}
+
+func (p *PermissionServiceUpdateUserStatusResult) Write(oprot thrift.TProtocol) (err error) {
+	var fieldId int16
+	if err = oprot.WriteStructBegin("UpdateUserStatus_result"); err != nil {
+		goto WriteStructBeginError
+	}
+	if p != nil {
+		if err = p.writeField0(oprot); err != nil {
+			fieldId = 0
+			goto WriteFieldError
+		}
+	}
+	if err = oprot.WriteFieldStop(); err != nil {
+		goto WriteFieldStopError
+	}
+	if err = oprot.WriteStructEnd(); err != nil {
+		goto WriteStructEndError
+	}
+	return nil
+WriteStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+WriteFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T write field %d error: ", p, fieldId), err)
+WriteFieldStopError:
+	return thrift.PrependError(fmt.Sprintf("%T write field stop error: ", p), err)
+WriteStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
+}
+
+func (p *PermissionServiceUpdateUserStatusResult) writeField0(oprot thrift.TProtocol) (err error) {
+	if p.IsSetSuccess() {
+		if err = oprot.WriteFieldBegin("success", thrift.STRUCT, 0); err != nil {
+			goto WriteFieldBeginError
+		}
+		if err := p.Success.Write(oprot); err != nil {
+			return err
+		}
+		if err = oprot.WriteFieldEnd(); err != nil {
+			goto WriteFieldEndError
+		}
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 0 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 0 end error: ", p), err)
+}
+
+func (p *PermissionServiceUpdateUserStatusResult) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("PermissionServiceUpdateUserStatusResult(%+v)", *p)
 
 }

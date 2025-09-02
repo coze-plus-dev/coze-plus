@@ -71,7 +71,7 @@ type corporationEmployee struct {
 
 	ALL            field.Asterisk
 	ID             field.Int64  // Employee ID
-	EmployeeNo     field.String // Employee Number (globally unique)
+	EmployeeNo     field.String // Employee Number (unique in corporation)
 	Name           field.String // Employee Name
 	EnName         field.String // English Name
 	Nickname       field.String // Nickname

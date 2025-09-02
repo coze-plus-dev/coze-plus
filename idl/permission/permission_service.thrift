@@ -10,4 +10,6 @@ service PermissionService {
     permission.GetRoleResponse GetRole (1: permission.GetRoleRequest req) (api.get="/api/permission_api/role/get")
     permission.ListRolesResponse ListRoles (1: permission.ListRolesRequest req) (api.post="/api/permission_api/role/list")
     permission.ListPermissionTemplatesResponse ListPermissionTemplates (1: permission.ListPermissionTemplatesRequest req) (api.post="/api/permission_api/template/list")
+    permission.ListUsersResponse ListUsers (1: permission.ListUsersRequest req) (api.post="/api/permission_api/user/list")
+    permission.UpdateUserStatusResponse UpdateUserStatus (1: permission.UpdateUserStatusRequest req) (api.post="/api/permission_api/user/status/update")
 }

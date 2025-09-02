@@ -1,4 +1,20 @@
 /*
+ * Copyright 2025 coze-plus Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * Copyright 2025 coze-dev Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -72,6 +88,11 @@ func (u *userImpl) Login(ctx context.Context, email, password string) (user *use
 
 	if !exist {
 		return nil, errorx.New(errno.ErrUserInfoInvalidateCode)
+	}
+
+	// Check if user is disabled
+	if userModel.IsDisabled == 1 {
+		return nil, errorx.New(errno.ErrUserDisabledCode)
 	}
 
 	// Verify the password using the Argon2id algorithm
@@ -326,6 +347,10 @@ func (u *userImpl) Create(ctx context.Context, req *CreateUserRequest) (user *us
 		UpdatedAt:    now,
 	}
 
+	if req.CreatedBy > 0 {
+		 newUser.CreatedBy = req.CreatedBy
+	}
+
 	err = u.UserRepo.CreateUser(ctx, newUser)
 	if err != nil {
 		return nil, fmt.Errorf("insert user failed: %w", err)
@@ -462,6 +487,84 @@ func (u *userImpl) GetUserSpaceList(ctx context.Context, userID int64) (spaces [
 	return slices.Transform(spaceModels, func(sm *model.Space) *userEntity.Space {
 		return spacePo2Do(sm, urls[sm.IconURI])
 	}), nil
+}
+
+func (u *userImpl) ListUsers(ctx context.Context, req *ListUsersRequest) (*ListUsersResponse, error) {
+	// Validate parameters
+	if req.Page < 1 {
+		req.Page = 1
+	}
+	if req.Limit < 1 {
+		req.Limit = 20
+	}
+	if req.Limit > 100 {
+		req.Limit = 100
+	}
+
+	// Calculate offset
+	offset := (req.Page - 1) * req.Limit
+
+	// Query users from repository
+	userModels, total, err := u.UserRepo.ListUsers(ctx, req.Keyword, req.IsDisabled, offset, req.Limit)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert models to entities
+	users := make([]*userEntity.User, 0, len(userModels))
+	for _, um := range userModels {
+		// Get image URL
+		resURL, err := u.IconOSS.GetObjectUrl(ctx, um.IconURI)
+		if err != nil {
+			// If getting the image URL fails, use empty string instead of skipping
+			resURL = ""
+		}
+
+		users = append(users, userPo2Do(um, resURL))
+	}
+
+	// Calculate hasMore
+	hasMore := int64(req.Page*req.Limit) < total
+
+	return &ListUsersResponse{
+		Users:   users,
+		Total:   total,
+		HasMore: hasMore,
+	}, nil
+}
+
+func (u *userImpl) UpdateUserStatus(ctx context.Context, req *UpdateUserStatusRequest) error {
+	// Validate parameters
+	if req.UserID <= 0 {
+		return errorx.New(errno.ErrUserInvalidParamCode,
+			errorx.KVf("msg", "invalid user id: %d", req.UserID))
+	}
+
+	// Validate status value (should be 0 or 1)
+	if req.IsDisabled != 0 && req.IsDisabled != 1 {
+		return errorx.New(errno.ErrUserInvalidParamCode,
+			errorx.KVf("msg", "invalid status value: %d, should be 0 (enabled) or 1 (disabled)", req.IsDisabled))
+	}
+
+	// Check if user exists
+	_, err := u.UserRepo.GetUserByID(ctx, req.UserID)
+	if err != nil {
+		return err
+	}
+
+	// Prepare update data
+	updates := map[string]interface{}{
+		"is_disabled": req.IsDisabled,
+		"updated_at":  time.Now().UnixMilli(),
+	}
+
+	// Update user status
+	err = u.UserRepo.UpdateProfile(ctx, req.UserID, updates)
+	if err != nil {
+		return fmt.Errorf("failed to update user status: %w", err)
+	}
+
+	return nil
 }
 
 func spacePo2Do(space *model.Space, iconUrl string) *userEntity.Space {
@@ -657,6 +760,7 @@ func userPo2Do(model *model.User, iconURL string) *userEntity.User {
 		UserVerified: model.UserVerified,
 		Locale:       model.Locale,
 		SessionKey:   model.SessionKey,
+		IsDisabled:   model.IsDisabled,
 		CreatedAt:    model.CreatedAt,
 		UpdatedAt:    model.UpdatedAt,
 	}

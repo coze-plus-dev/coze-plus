@@ -66,7 +66,7 @@ type spaceUser struct {
 	SpaceID   field.Int64 // Space ID
 	UserID    field.Int64 // User ID
 	RoleType  field.Int32 // Role Type: 1.owner 2.admin 3.member
-	RoleID    field.Int64 // Custom role ID (NULL means use role_type)
+	RoleID    field.Int64 // Custom role ID (NULL uses role_type)
 	CreatedAt field.Int64 // Creation Time (Milliseconds)
 	UpdatedAt field.Int64 // Update Time (Milliseconds)
 	ExpiredAt field.Int64 // Permission expiration time (NULL means permanent)

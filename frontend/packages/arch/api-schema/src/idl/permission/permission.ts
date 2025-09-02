@@ -115,3 +115,43 @@ export interface ListPermissionTemplatesResponse {
   code: number,
   msg: string,
 }
+/** User data structure */
+export interface UserData {
+  user_id?: string,
+  name?: string,
+  unique_name?: string,
+  email?: string,
+  description?: string,
+  icon_uri?: string,
+  icon_url?: string,
+  user_verified?: boolean,
+  is_disabled?: number,
+  locale?: string,
+  created_at?: string,
+  updated_at?: string,
+}
+/** User management */
+export interface ListUsersRequest {
+  keyword?: string,
+  is_disabled?: number,
+  page?: number,
+  limit?: number,
+}
+export interface ListUsersResponseData {
+  users: UserData[],
+  total?: string,
+  has_more?: boolean,
+}
+export interface ListUsersResponse {
+  data: ListUsersResponseData,
+  code: number,
+  msg: string,
+}
+export interface UpdateUserStatusRequest {
+  user_id: string,
+  is_disabled: permission_common.UserStatus,
+}
+export interface UpdateUserStatusResponse {
+  code: number,
+  msg: string,
+}

@@ -1,6 +1,4 @@
--- Enterprise Permission System V2 Complete Migration
--- Based on enterprise-permission-database-design.md
--- Create comprehensive permission system with role-based access control
+-- Step 1: Create Permission System Tables
 
 -- Create role table
 CREATE TABLE `role` (
@@ -91,13 +89,23 @@ CREATE TABLE `permission_template` (
   INDEX `idx_sort_order` (`sort_order`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT="Permission template table";
 
--- Extend existing space_user table for compatibility
+-- Step 2: Extend existing space_user table for compatibility
 ALTER TABLE `space_user`
-ADD COLUMN `role_id` bigint unsigned NULL COMMENT 'Custom role ID (NULL uses role_type)',
-ADD COLUMN `expired_at` bigint unsigned NULL COMMENT 'Permission expiration time (NULL means permanent)',
+ADD COLUMN `role_id` bigint unsigned NULL COMMENT 'Custom role ID (NULL uses role_type)' AFTER `role_type`,
+ADD COLUMN `expired_at` bigint unsigned NULL COMMENT 'Permission expiration time (NULL means permanent)' AFTER `updated_at`,
 ADD INDEX `idx_role_id` (`role_id`);
 
--- Initialize global permission domain template (fine-grained permissions)
+-- Step 3: Add user_id field to corporation_employee table
+ALTER TABLE `opencoze`.`corporation_employee` 
+ADD COLUMN `user_id` bigint unsigned NULL COMMENT "Associated User ID (NULL if no user account)" AFTER `mobile`;
+
+ALTER TABLE `opencoze`.`corporation_employee`
+ADD INDEX `idx_user_id` (`user_id`);
+
+ALTER TABLE `opencoze`.`corporation_employee`
+ADD UNIQUE INDEX `uk_user_id` (`user_id`);
+
+-- Step 4: Initialize global permission domain template
 INSERT INTO `permission_template` (`template_code`, `template_name`, `domain`, `resource`, `resource_name`, `action`, `action_name`, `description`, `is_default`, `sort_order`, `is_active`, `created_at`, `updated_at`) VALUES
 
 -- 1. 组织管理权限 (Organization Management)
@@ -134,7 +142,7 @@ INSERT INTO `permission_template` (`template_code`, `template_name`, `domain`, `
 -- 6. 工作空间管理权限 (Workspace Management)
 ('WS_CREATE', '新建工作空间', 'global', 'workspace', '工作空间管理', 'create', '新建工作空间', '创建新的工作空间，设置空间访问权限和协作范围', 0, 400, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000);
 
--- Initialize space permission domain template (fine-grained permissions)
+-- Initialize space permission domain template
 INSERT INTO `permission_template` (`template_code`, `template_name`, `domain`, `resource`, `resource_name`, `action`, `action_name`, `description`, `is_default`, `sort_order`, `is_active`, `created_at`, `updated_at`) VALUES
 
 -- 1. 管理空间权限 (Space Management)
@@ -151,7 +159,7 @@ INSERT INTO `permission_template` (`template_code`, `template_name`, `domain`, `
 ('SPACE_EXPORT', '导出', 'space', 'workflow', '工作流', 'export', '导出', '目前仅工作流支持导出功能。工作流的所有者、空间所有者或管理员可以导出工作流。空间成员不可导出其他成员拥有的工作流', 0, 211, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
 ('SPACE_DELETE_RESOURCE', '删除资源', 'space', 'resource', '管理资源', 'delete', '删除资源', '空间成员不可删除其他成员拥有的资源', 0, 220, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000);
 
--- Initialize builtin roles with list<PermissionTemplateGroup> structure
+-- Step 5: Initialize builtin roles with list<PermissionTemplateGroup> structure
 -- 1. Super Admin Role (has all global permissions)
 INSERT INTO `role` (`id`, `role_code`, `role_name`, `role_domain`, `super_admin`, `space_role_type`, `is_builtin`, `permissions`, `description`, `created_by`, `created_at`, `updated_at`)
 SELECT 
@@ -397,7 +405,7 @@ SELECT
   UNIX_TIMESTAMP(NOW()) * 1000 as created_at,
   UNIX_TIMESTAMP(NOW()) * 1000 as updated_at;
 
--- Initialize Casbin policy rules for all builtin roles based on permission templates
+-- Step 6: Initialize Casbin policy rules for all builtin roles based on permission templates
 -- 1. Generate Super Admin policies (all global permissions)
 INSERT INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`, `v3`, `v4`, `created_at`, `updated_at`)
 SELECT 

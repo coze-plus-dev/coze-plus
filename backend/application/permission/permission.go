@@ -14,31 +14,17 @@
  * limitations under the License.
  */
 
-/*
- * Copyright 2025 coze-dev Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package permission
 
 import (
 	"context"
 	"encoding/json"
+	"time"
 
-	permission1 "github.com/coze-dev/coze-studio/backend/api/model/permission/permission"
 	"github.com/coze-dev/coze-studio/backend/api/model/permission/common"
+	permission1 "github.com/coze-dev/coze-studio/backend/api/model/permission/permission"
 	"github.com/coze-dev/coze-studio/backend/application/base/ctxutil"
+	crossuser "github.com/coze-dev/coze-studio/backend/crossdomain/contract/user"
 	"github.com/coze-dev/coze-studio/backend/domain/permission/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/permission/service"
 	"github.com/coze-dev/coze-studio/backend/pkg/errorx"
@@ -297,7 +283,7 @@ func convertTemplateGroupEntity2Model(group *entity.PermissionTemplateGroup) *co
 			id := int64(action.ID)
 			sortOrder := int32(action.SortOrder)
 			isActive := int32(action.IsActive)
-			
+
 			actionData := &common.PermissionTemplateData{
 				ID:           &id,
 				TemplateCode: &action.TemplateCode,
@@ -327,5 +313,96 @@ func convertTemplateGroupEntity2Model(group *entity.PermissionTemplateGroup) *co
 		Domain:     &group.Domain,
 		DomainName: &group.DomainName,
 		Resources:  resources,
+	}
+}
+
+// ListUsers lists users with pagination and filters
+func (p *PermissionApplicationService) ListUsers(ctx context.Context, req *permission1.ListUsersRequest) (*permission1.ListUsersResponse, error) {
+	// Build request for crossdomain user service
+	crossReq := &crossuser.ListUsersRequest{
+		Keyword:    req.Keyword,
+		IsDisabled: req.IsDisabled,
+		Page:       int(req.GetPage()),
+		Limit:      int(req.GetLimit()),
+	}
+
+	// Call crossdomain user service
+	crossResp, err := crossuser.DefaultSVC().ListUsers(ctx, crossReq)
+	if err != nil {
+		logs.CtxErrorf(ctx, "list users failed, err: %v", err)
+		return &permission1.ListUsersResponse{}, err
+	}
+
+	// Convert crossdomain users to API model users
+	users := make([]*permission1.UserData, 0, len(crossResp.Users))
+	for _, crossUser := range crossResp.Users {
+		users = append(users, convertCrossUserToAPIModel(crossUser))
+	}
+
+	return &permission1.ListUsersResponse{
+		Code: 0,
+		Msg:  "success",
+		Data: &permission1.ListUsersResponseData{
+			Users:   users,
+			Total:   &crossResp.Total,
+			HasMore: &crossResp.HasMore,
+		},
+	}, nil
+}
+
+// UpdateUserStatus updates user status (enabled/disabled)
+func (p *PermissionApplicationService) UpdateUserStatus(ctx context.Context, req *permission1.UpdateUserStatusRequest) (*permission1.UpdateUserStatusResponse, error) {
+	// Get user ID from context to ensure user is authenticated
+	uid := ctxutil.GetUIDFromCtx(ctx)
+	if uid == nil {
+		return nil, errorx.New(errno.ErrPermissionInvalidParamCode, errorx.KV("msg", "session required"))
+	}
+
+	// Convert enum to int32 - note the enum values mapping
+	// common.UserStatus_ENABLED = 0 maps to IsDisabled = 0
+	// common.UserStatus_DISABLED = 1 maps to IsDisabled = 1
+	isDisabled := int32(req.IsDisabled)
+
+	// Build request for crossdomain user service
+	crossReq := &crossuser.UpdateUserStatusRequest{
+		UserID:     req.UserID,
+		IsDisabled: isDisabled,
+	}
+
+	// Call crossdomain user service
+	err := crossuser.DefaultSVC().UpdateUserStatus(ctx, crossReq)
+	if err != nil {
+		logs.CtxErrorf(ctx, "update user status failed, err: %v", err)
+		return &permission1.UpdateUserStatusResponse{}, err
+	}
+
+	return &permission1.UpdateUserStatusResponse{
+		Code: 0,
+		Msg:  "success",
+	}, nil
+}
+
+// convertCrossUserToAPIModel converts crossdomain user to API model
+func convertCrossUserToAPIModel(crossUser *crossuser.UserInfo) *permission1.UserData {
+	if crossUser == nil {
+		return nil
+	}
+
+	createdAt := time.Unix(crossUser.CreatedAt/1000, 0).Format("2006-01-02 15:04:05")
+	updatedAt := time.Unix(crossUser.UpdatedAt/1000, 0).Format("2006-01-02 15:04:05")
+
+	return &permission1.UserData{
+		UserID:       &crossUser.ID,
+		Name:         &crossUser.Name,
+		UniqueName:   &crossUser.UniqueName,
+		Email:        &crossUser.Email,
+		Description:  &crossUser.Description,
+		IconURI:      &crossUser.IconURI,
+		IconURL:      &crossUser.IconURL,
+		UserVerified: &crossUser.UserVerified,
+		IsDisabled:   &crossUser.IsDisabled,
+		Locale:       &crossUser.Locale,
+		CreatedAt:    &createdAt,
+		UpdatedAt:    &updatedAt,
 	}
 }

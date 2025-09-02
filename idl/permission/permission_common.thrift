@@ -34,6 +34,11 @@ enum Status {
     ENABLED = 1,
 }
 
+enum UserStatus {
+    ENABLED = 0,
+    DISABLED = 1,
+}
+
 struct PermissionTemplateData {
     1: optional i64 id (api.body = "id", api.js_conv = "true"),
     2: optional string template_code (api.body = "template_code"),

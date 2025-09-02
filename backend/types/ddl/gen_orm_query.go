@@ -209,13 +209,14 @@ var path2Table2Columns2Model = map[string]map[string]map[string]any{
 		"corporation_department":          {},
 		"corporation_employee":            {},
 		"corporation_employee_department": {},
+	},
 	"domain/upload/internal/dal/query": {
 		"files": {},
 	},
 }
 
 var fieldNullablePath = map[string]bool{
-	"domain/agent/singleagent/internal/dal/query": true,
+	// "domain/agent/singleagent/internal/dal/query": true,
 	"domain/corporation/internal/dal/query":       true,
 }
 

@@ -1,0 +1,168 @@
+/*
+ * Copyright 2025 coze-plus Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+.accountPage {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  background: #fff;
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f0f0f0;
+
+    .title {
+      h2 {
+        margin: 0 0 8px 0;
+        font-size: 20px;
+        font-weight: 600;
+        color: #1a1a1a;
+      }
+
+      p {
+        margin: 0;
+        font-size: 14px;
+        color: #666;
+        line-height: 1.4;
+      }
+    }
+  }
+
+  .toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding: 12px 0;
+  }
+
+  .listContainer {
+    flex: 1;
+    overflow: hidden;
+
+    .loadingContainer {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 300px;
+    }
+
+    .empty {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 200px;
+      color: #999;
+      font-size: 14px;
+    }
+
+    .userList {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+  }
+
+  .userCard {
+    background: #fff;
+    border: 1px solid #f0f0f0;
+    border-radius: 6px;
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    transition: border-color 0.2s;
+
+    &:hover {
+      border-color: #d9d9d9;
+    }
+
+    .userInfo {
+      flex: 1;
+
+      .userHeader {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+
+        .userTitle {
+          flex: 1;
+
+          .userName {
+            font-weight: 500;
+            font-size: 16px;
+            color: #1a1a1a;
+          }
+        }
+      }
+
+      .userDetails {
+        color: #666;
+        font-size: 12px;
+        line-height: 1.5;
+
+        > div {
+          margin-bottom: 4px;
+
+          &:last-child {
+            margin-bottom: 0;
+          }
+        }
+      }
+    }
+
+    .userActions {
+      display: flex;
+      gap: 8px;
+      margin-left: 16px;
+    }
+  }
+
+  .paginationWrapper {
+    margin-top: 16px;
+    text-align: right;
+    padding: 16px 0;
+    border-top: 1px solid #f0f0f0;
+  }
+
+  .statusTag {
+    .enabled {
+      background: #f6ffed;
+      border: 1px solid #b7eb8f;
+      color: #389e0d;
+    }
+
+    .disabled {
+      background: #fff2f0;
+      border: 1px solid #ffb3ba;
+      color: #cf1322;
+    }
+  }
+
+  .avatar {
+    .avatarWrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  }
+}

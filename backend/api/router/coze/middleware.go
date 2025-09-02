@@ -1507,7 +1507,7 @@ func _upload1Mw() []app.HandlerFunc {
 }
 
 func _corporationMw() []app.HandlerFunc {
-		// your code...
+	// your code...
 	return nil
 }
 func _conversation1Mw() []app.HandlerFunc {
@@ -1516,7 +1516,7 @@ func _conversation1Mw() []app.HandlerFunc {
 }
 
 func _createcorporationMw() []app.HandlerFunc {
-		// your code...
+	// your code...
 	return nil
 }
 func _openapicreateconversationMw() []app.HandlerFunc {
@@ -1525,7 +1525,7 @@ func _openapicreateconversationMw() []app.HandlerFunc {
 }
 
 func _deletecorporationMw() []app.HandlerFunc {
-		// your code...
+	// your code...
 	return nil
 }
 func _coze_web_appMw() []app.HandlerFunc {
@@ -1534,7 +1534,7 @@ func _coze_web_appMw() []app.HandlerFunc {
 }
 
 func _getcorporationMw() []app.HandlerFunc {
-		// your code...
+	// your code...
 	return nil
 }
 func _impersonatecozeuserMw() []app.HandlerFunc {
@@ -1543,7 +1543,7 @@ func _impersonatecozeuserMw() []app.HandlerFunc {
 }
 
 func _updatecorporationMw() []app.HandlerFunc {
-		// your code...
+	// your code...
 	return nil
 }
 func _botsMw() []app.HandlerFunc {
@@ -1552,7 +1552,7 @@ func _botsMw() []app.HandlerFunc {
 }
 
 func _listcorporationsMw() []app.HandlerFunc {
-		// your code...
+	// your code...
 	return nil
 }
 func _opengetbotinfoMw() []app.HandlerFunc {
@@ -1561,7 +1561,7 @@ func _opengetbotinfoMw() []app.HandlerFunc {
 }
 
 func _departmentMw() []app.HandlerFunc {
-		// your code...
+	// your code...
 	return nil
 }
 func _deleteconversationapiMw() []app.HandlerFunc {
@@ -1570,7 +1570,7 @@ func _deleteconversationapiMw() []app.HandlerFunc {
 }
 
 func _createdepartmentMw() []app.HandlerFunc {
-		// your code...
+	// your code...
 	return nil
 }
 func _updateconversationapiMw() []app.HandlerFunc {
@@ -1579,7 +1579,7 @@ func _updateconversationapiMw() []app.HandlerFunc {
 }
 
 func _deletedepartmentMw() []app.HandlerFunc {
-		// your code...
+	// your code...
 	return nil
 }
 func _conversations0Mw() []app.HandlerFunc {
@@ -1588,7 +1588,7 @@ func _conversations0Mw() []app.HandlerFunc {
 }
 
 func _getdepartmentMw() []app.HandlerFunc {
-		// your code...
+	// your code...
 	return nil
 }
 func _chatMw() []app.HandlerFunc {
@@ -1597,7 +1597,7 @@ func _chatMw() []app.HandlerFunc {
 }
 
 func _updatedepartmentMw() []app.HandlerFunc {
-		// your code...
+	// your code...
 	return nil
 }
 func _cancelchatapiMw() []app.HandlerFunc {
@@ -1606,7 +1606,7 @@ func _cancelchatapiMw() []app.HandlerFunc {
 }
 
 func _listdepartmentsMw() []app.HandlerFunc {
-		// your code...
+	// your code...
 	return nil
 }
 func _appsMw() []app.HandlerFunc {
@@ -1755,10 +1755,30 @@ func _templateMw() []app.HandlerFunc {
 }
 
 func _listpermissiontemplatesMw() []app.HandlerFunc {
-		// your code...
+	// your code...
 	return nil
 }
 func _getonlineappdataMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _listusersMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _user1Mw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _statusMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _updateuserstatusMw() []app.HandlerFunc {
 	// your code...
 	return nil
 }

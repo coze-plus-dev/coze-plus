@@ -141,3 +141,41 @@ func ListPermissionTemplates(ctx context.Context, c *app.RequestContext) {
 	}
 	c.JSON(consts.StatusOK, resp)
 }
+
+// ListUsers .
+// @router /api/permission_api/user/list [POST]
+func ListUsers(ctx context.Context, c *app.RequestContext) {
+	var err error
+	var req permission1.ListUsersRequest
+	err = c.BindAndValidate(&req)
+	if err != nil {
+		c.String(consts.StatusBadRequest, err.Error())
+		return
+	}
+
+	resp, err := application.PermissionSVC.ListUsers(ctx, &req)
+	if err != nil {
+		internalServerErrorResponse(ctx, c, err)
+		return
+	}
+	c.JSON(consts.StatusOK, resp)
+}
+
+// UpdateUserStatus .
+// @router /api/permission_api/user/status/update [POST]
+func UpdateUserStatus(ctx context.Context, c *app.RequestContext) {
+	var err error
+	var req permission1.UpdateUserStatusRequest
+	err = c.BindAndValidate(&req)
+	if err != nil {
+		c.String(consts.StatusBadRequest, err.Error())
+		return
+	}
+
+	resp, err := application.PermissionSVC.UpdateUserStatus(ctx, &req)
+	if err != nil {
+		internalServerErrorResponse(ctx, c, err)
+		return
+	}
+	c.JSON(consts.StatusOK, resp)
+}
