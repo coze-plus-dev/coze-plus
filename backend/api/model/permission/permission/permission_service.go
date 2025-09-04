@@ -40,6 +40,14 @@ type PermissionService interface {
 	ListUsers(ctx context.Context, req *ListUsersRequest) (r *ListUsersResponse, err error)
 
 	UpdateUserStatus(ctx context.Context, req *UpdateUserStatusRequest) (r *UpdateUserStatusResponse, err error)
+
+	AssignUserMultipleRoles(ctx context.Context, req *AssignUserMultipleRolesRequest) (r *AssignUserMultipleRolesResponse, err error)
+
+	UnassignUserRoles(ctx context.Context, req *UnassignUserRolesRequest) (r *UnassignUserRolesResponse, err error)
+
+	GetUserRoles(ctx context.Context, req *GetUserRolesRequest) (r *GetUserRolesResponse, err error)
+
+	ResetUserPassword(ctx context.Context, req *ResetUserPasswordRequest) (r *ResetUserPasswordResponse, err error)
 }
 
 type PermissionServiceClient struct {
@@ -140,6 +148,42 @@ func (p *PermissionServiceClient) UpdateUserStatus(ctx context.Context, req *Upd
 	}
 	return _result.GetSuccess(), nil
 }
+func (p *PermissionServiceClient) AssignUserMultipleRoles(ctx context.Context, req *AssignUserMultipleRolesRequest) (r *AssignUserMultipleRolesResponse, err error) {
+	var _args PermissionServiceAssignUserMultipleRolesArgs
+	_args.Req = req
+	var _result PermissionServiceAssignUserMultipleRolesResult
+	if err = p.Client_().Call(ctx, "AssignUserMultipleRoles", &_args, &_result); err != nil {
+		return
+	}
+	return _result.GetSuccess(), nil
+}
+func (p *PermissionServiceClient) UnassignUserRoles(ctx context.Context, req *UnassignUserRolesRequest) (r *UnassignUserRolesResponse, err error) {
+	var _args PermissionServiceUnassignUserRolesArgs
+	_args.Req = req
+	var _result PermissionServiceUnassignUserRolesResult
+	if err = p.Client_().Call(ctx, "UnassignUserRoles", &_args, &_result); err != nil {
+		return
+	}
+	return _result.GetSuccess(), nil
+}
+func (p *PermissionServiceClient) GetUserRoles(ctx context.Context, req *GetUserRolesRequest) (r *GetUserRolesResponse, err error) {
+	var _args PermissionServiceGetUserRolesArgs
+	_args.Req = req
+	var _result PermissionServiceGetUserRolesResult
+	if err = p.Client_().Call(ctx, "GetUserRoles", &_args, &_result); err != nil {
+		return
+	}
+	return _result.GetSuccess(), nil
+}
+func (p *PermissionServiceClient) ResetUserPassword(ctx context.Context, req *ResetUserPasswordRequest) (r *ResetUserPasswordResponse, err error) {
+	var _args PermissionServiceResetUserPasswordArgs
+	_args.Req = req
+	var _result PermissionServiceResetUserPasswordResult
+	if err = p.Client_().Call(ctx, "ResetUserPassword", &_args, &_result); err != nil {
+		return
+	}
+	return _result.GetSuccess(), nil
+}
 
 type PermissionServiceProcessor struct {
 	processorMap map[string]thrift.TProcessorFunction
@@ -169,6 +213,10 @@ func NewPermissionServiceProcessor(handler PermissionService) *PermissionService
 	self.AddToProcessorMap("ListPermissionTemplates", &permissionServiceProcessorListPermissionTemplates{handler: handler})
 	self.AddToProcessorMap("ListUsers", &permissionServiceProcessorListUsers{handler: handler})
 	self.AddToProcessorMap("UpdateUserStatus", &permissionServiceProcessorUpdateUserStatus{handler: handler})
+	self.AddToProcessorMap("AssignUserMultipleRoles", &permissionServiceProcessorAssignUserMultipleRoles{handler: handler})
+	self.AddToProcessorMap("UnassignUserRoles", &permissionServiceProcessorUnassignUserRoles{handler: handler})
+	self.AddToProcessorMap("GetUserRoles", &permissionServiceProcessorGetUserRoles{handler: handler})
+	self.AddToProcessorMap("ResetUserPassword", &permissionServiceProcessorResetUserPassword{handler: handler})
 	return self
 }
 func (p *PermissionServiceProcessor) Process(ctx context.Context, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
@@ -556,6 +604,198 @@ func (p *permissionServiceProcessorUpdateUserStatus) Process(ctx context.Context
 		result.Success = retval
 	}
 	if err2 = oprot.WriteMessageBegin("UpdateUserStatus", thrift.REPLY, seqId); err2 != nil {
+		err = err2
+	}
+	if err2 = result.Write(oprot); err == nil && err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.Flush(ctx); err == nil && err2 != nil {
+		err = err2
+	}
+	if err != nil {
+		return
+	}
+	return true, err
+}
+
+type permissionServiceProcessorAssignUserMultipleRoles struct {
+	handler PermissionService
+}
+
+func (p *permissionServiceProcessorAssignUserMultipleRoles) Process(ctx context.Context, seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+	args := PermissionServiceAssignUserMultipleRolesArgs{}
+	if err = args.Read(iprot); err != nil {
+		iprot.ReadMessageEnd()
+		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
+		oprot.WriteMessageBegin("AssignUserMultipleRoles", thrift.EXCEPTION, seqId)
+		x.Write(oprot)
+		oprot.WriteMessageEnd()
+		oprot.Flush(ctx)
+		return false, err
+	}
+
+	iprot.ReadMessageEnd()
+	var err2 error
+	result := PermissionServiceAssignUserMultipleRolesResult{}
+	var retval *AssignUserMultipleRolesResponse
+	if retval, err2 = p.handler.AssignUserMultipleRoles(ctx, args.Req); err2 != nil {
+		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing AssignUserMultipleRoles: "+err2.Error())
+		oprot.WriteMessageBegin("AssignUserMultipleRoles", thrift.EXCEPTION, seqId)
+		x.Write(oprot)
+		oprot.WriteMessageEnd()
+		oprot.Flush(ctx)
+		return true, err2
+	} else {
+		result.Success = retval
+	}
+	if err2 = oprot.WriteMessageBegin("AssignUserMultipleRoles", thrift.REPLY, seqId); err2 != nil {
+		err = err2
+	}
+	if err2 = result.Write(oprot); err == nil && err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.Flush(ctx); err == nil && err2 != nil {
+		err = err2
+	}
+	if err != nil {
+		return
+	}
+	return true, err
+}
+
+type permissionServiceProcessorUnassignUserRoles struct {
+	handler PermissionService
+}
+
+func (p *permissionServiceProcessorUnassignUserRoles) Process(ctx context.Context, seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+	args := PermissionServiceUnassignUserRolesArgs{}
+	if err = args.Read(iprot); err != nil {
+		iprot.ReadMessageEnd()
+		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
+		oprot.WriteMessageBegin("UnassignUserRoles", thrift.EXCEPTION, seqId)
+		x.Write(oprot)
+		oprot.WriteMessageEnd()
+		oprot.Flush(ctx)
+		return false, err
+	}
+
+	iprot.ReadMessageEnd()
+	var err2 error
+	result := PermissionServiceUnassignUserRolesResult{}
+	var retval *UnassignUserRolesResponse
+	if retval, err2 = p.handler.UnassignUserRoles(ctx, args.Req); err2 != nil {
+		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing UnassignUserRoles: "+err2.Error())
+		oprot.WriteMessageBegin("UnassignUserRoles", thrift.EXCEPTION, seqId)
+		x.Write(oprot)
+		oprot.WriteMessageEnd()
+		oprot.Flush(ctx)
+		return true, err2
+	} else {
+		result.Success = retval
+	}
+	if err2 = oprot.WriteMessageBegin("UnassignUserRoles", thrift.REPLY, seqId); err2 != nil {
+		err = err2
+	}
+	if err2 = result.Write(oprot); err == nil && err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.Flush(ctx); err == nil && err2 != nil {
+		err = err2
+	}
+	if err != nil {
+		return
+	}
+	return true, err
+}
+
+type permissionServiceProcessorGetUserRoles struct {
+	handler PermissionService
+}
+
+func (p *permissionServiceProcessorGetUserRoles) Process(ctx context.Context, seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+	args := PermissionServiceGetUserRolesArgs{}
+	if err = args.Read(iprot); err != nil {
+		iprot.ReadMessageEnd()
+		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
+		oprot.WriteMessageBegin("GetUserRoles", thrift.EXCEPTION, seqId)
+		x.Write(oprot)
+		oprot.WriteMessageEnd()
+		oprot.Flush(ctx)
+		return false, err
+	}
+
+	iprot.ReadMessageEnd()
+	var err2 error
+	result := PermissionServiceGetUserRolesResult{}
+	var retval *GetUserRolesResponse
+	if retval, err2 = p.handler.GetUserRoles(ctx, args.Req); err2 != nil {
+		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing GetUserRoles: "+err2.Error())
+		oprot.WriteMessageBegin("GetUserRoles", thrift.EXCEPTION, seqId)
+		x.Write(oprot)
+		oprot.WriteMessageEnd()
+		oprot.Flush(ctx)
+		return true, err2
+	} else {
+		result.Success = retval
+	}
+	if err2 = oprot.WriteMessageBegin("GetUserRoles", thrift.REPLY, seqId); err2 != nil {
+		err = err2
+	}
+	if err2 = result.Write(oprot); err == nil && err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.Flush(ctx); err == nil && err2 != nil {
+		err = err2
+	}
+	if err != nil {
+		return
+	}
+	return true, err
+}
+
+type permissionServiceProcessorResetUserPassword struct {
+	handler PermissionService
+}
+
+func (p *permissionServiceProcessorResetUserPassword) Process(ctx context.Context, seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+	args := PermissionServiceResetUserPasswordArgs{}
+	if err = args.Read(iprot); err != nil {
+		iprot.ReadMessageEnd()
+		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
+		oprot.WriteMessageBegin("ResetUserPassword", thrift.EXCEPTION, seqId)
+		x.Write(oprot)
+		oprot.WriteMessageEnd()
+		oprot.Flush(ctx)
+		return false, err
+	}
+
+	iprot.ReadMessageEnd()
+	var err2 error
+	result := PermissionServiceResetUserPasswordResult{}
+	var retval *ResetUserPasswordResponse
+	if retval, err2 = p.handler.ResetUserPassword(ctx, args.Req); err2 != nil {
+		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing ResetUserPassword: "+err2.Error())
+		oprot.WriteMessageBegin("ResetUserPassword", thrift.EXCEPTION, seqId)
+		x.Write(oprot)
+		oprot.WriteMessageEnd()
+		oprot.Flush(ctx)
+		return true, err2
+	} else {
+		result.Success = retval
+	}
+	if err2 = oprot.WriteMessageBegin("ResetUserPassword", thrift.REPLY, seqId); err2 != nil {
 		err = err2
 	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
@@ -2906,5 +3146,1173 @@ func (p *PermissionServiceUpdateUserStatusResult) String() string {
 		return "<nil>"
 	}
 	return fmt.Sprintf("PermissionServiceUpdateUserStatusResult(%+v)", *p)
+
+}
+
+type PermissionServiceAssignUserMultipleRolesArgs struct {
+	Req *AssignUserMultipleRolesRequest `thrift:"req,1"`
+}
+
+func NewPermissionServiceAssignUserMultipleRolesArgs() *PermissionServiceAssignUserMultipleRolesArgs {
+	return &PermissionServiceAssignUserMultipleRolesArgs{}
+}
+
+func (p *PermissionServiceAssignUserMultipleRolesArgs) InitDefault() {
+}
+
+var PermissionServiceAssignUserMultipleRolesArgs_Req_DEFAULT *AssignUserMultipleRolesRequest
+
+func (p *PermissionServiceAssignUserMultipleRolesArgs) GetReq() (v *AssignUserMultipleRolesRequest) {
+	if !p.IsSetReq() {
+		return PermissionServiceAssignUserMultipleRolesArgs_Req_DEFAULT
+	}
+	return p.Req
+}
+
+var fieldIDToName_PermissionServiceAssignUserMultipleRolesArgs = map[int16]string{
+	1: "req",
+}
+
+func (p *PermissionServiceAssignUserMultipleRolesArgs) IsSetReq() bool {
+	return p.Req != nil
+}
+
+func (p *PermissionServiceAssignUserMultipleRolesArgs) Read(iprot thrift.TProtocol) (err error) {
+	var fieldTypeId thrift.TType
+	var fieldId int16
+
+	if _, err = iprot.ReadStructBegin(); err != nil {
+		goto ReadStructBeginError
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err = iprot.ReadFieldBegin()
+		if err != nil {
+			goto ReadFieldBeginError
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+
+		switch fieldId {
+		case 1:
+			if fieldTypeId == thrift.STRUCT {
+				if err = p.ReadField1(iprot); err != nil {
+					goto ReadFieldError
+				}
+			} else if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		default:
+			if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		}
+		if err = iprot.ReadFieldEnd(); err != nil {
+			goto ReadFieldEndError
+		}
+	}
+	if err = iprot.ReadStructEnd(); err != nil {
+		goto ReadStructEndError
+	}
+
+	return nil
+ReadStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct begin error: ", p), err)
+ReadFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
+ReadFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_PermissionServiceAssignUserMultipleRolesArgs[fieldId]), err)
+SkipFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
+
+ReadFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read field end error", p), err)
+ReadStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+}
+
+func (p *PermissionServiceAssignUserMultipleRolesArgs) ReadField1(iprot thrift.TProtocol) error {
+	_field := NewAssignUserMultipleRolesRequest()
+	if err := _field.Read(iprot); err != nil {
+		return err
+	}
+	p.Req = _field
+	return nil
+}
+
+func (p *PermissionServiceAssignUserMultipleRolesArgs) Write(oprot thrift.TProtocol) (err error) {
+	var fieldId int16
+	if err = oprot.WriteStructBegin("AssignUserMultipleRoles_args"); err != nil {
+		goto WriteStructBeginError
+	}
+	if p != nil {
+		if err = p.writeField1(oprot); err != nil {
+			fieldId = 1
+			goto WriteFieldError
+		}
+	}
+	if err = oprot.WriteFieldStop(); err != nil {
+		goto WriteFieldStopError
+	}
+	if err = oprot.WriteStructEnd(); err != nil {
+		goto WriteStructEndError
+	}
+	return nil
+WriteStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+WriteFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T write field %d error: ", p, fieldId), err)
+WriteFieldStopError:
+	return thrift.PrependError(fmt.Sprintf("%T write field stop error: ", p), err)
+WriteStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
+}
+
+func (p *PermissionServiceAssignUserMultipleRolesArgs) writeField1(oprot thrift.TProtocol) (err error) {
+	if err = oprot.WriteFieldBegin("req", thrift.STRUCT, 1); err != nil {
+		goto WriteFieldBeginError
+	}
+	if err := p.Req.Write(oprot); err != nil {
+		return err
+	}
+	if err = oprot.WriteFieldEnd(); err != nil {
+		goto WriteFieldEndError
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 1 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 1 end error: ", p), err)
+}
+
+func (p *PermissionServiceAssignUserMultipleRolesArgs) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("PermissionServiceAssignUserMultipleRolesArgs(%+v)", *p)
+
+}
+
+type PermissionServiceAssignUserMultipleRolesResult struct {
+	Success *AssignUserMultipleRolesResponse `thrift:"success,0,optional"`
+}
+
+func NewPermissionServiceAssignUserMultipleRolesResult() *PermissionServiceAssignUserMultipleRolesResult {
+	return &PermissionServiceAssignUserMultipleRolesResult{}
+}
+
+func (p *PermissionServiceAssignUserMultipleRolesResult) InitDefault() {
+}
+
+var PermissionServiceAssignUserMultipleRolesResult_Success_DEFAULT *AssignUserMultipleRolesResponse
+
+func (p *PermissionServiceAssignUserMultipleRolesResult) GetSuccess() (v *AssignUserMultipleRolesResponse) {
+	if !p.IsSetSuccess() {
+		return PermissionServiceAssignUserMultipleRolesResult_Success_DEFAULT
+	}
+	return p.Success
+}
+
+var fieldIDToName_PermissionServiceAssignUserMultipleRolesResult = map[int16]string{
+	0: "success",
+}
+
+func (p *PermissionServiceAssignUserMultipleRolesResult) IsSetSuccess() bool {
+	return p.Success != nil
+}
+
+func (p *PermissionServiceAssignUserMultipleRolesResult) Read(iprot thrift.TProtocol) (err error) {
+	var fieldTypeId thrift.TType
+	var fieldId int16
+
+	if _, err = iprot.ReadStructBegin(); err != nil {
+		goto ReadStructBeginError
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err = iprot.ReadFieldBegin()
+		if err != nil {
+			goto ReadFieldBeginError
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+
+		switch fieldId {
+		case 0:
+			if fieldTypeId == thrift.STRUCT {
+				if err = p.ReadField0(iprot); err != nil {
+					goto ReadFieldError
+				}
+			} else if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		default:
+			if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		}
+		if err = iprot.ReadFieldEnd(); err != nil {
+			goto ReadFieldEndError
+		}
+	}
+	if err = iprot.ReadStructEnd(); err != nil {
+		goto ReadStructEndError
+	}
+
+	return nil
+ReadStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct begin error: ", p), err)
+ReadFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
+ReadFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_PermissionServiceAssignUserMultipleRolesResult[fieldId]), err)
+SkipFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
+
+ReadFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read field end error", p), err)
+ReadStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+}
+
+func (p *PermissionServiceAssignUserMultipleRolesResult) ReadField0(iprot thrift.TProtocol) error {
+	_field := NewAssignUserMultipleRolesResponse()
+	if err := _field.Read(iprot); err != nil {
+		return err
+	}
+	p.Success = _field
+	return nil
+}
+
+func (p *PermissionServiceAssignUserMultipleRolesResult) Write(oprot thrift.TProtocol) (err error) {
+	var fieldId int16
+	if err = oprot.WriteStructBegin("AssignUserMultipleRoles_result"); err != nil {
+		goto WriteStructBeginError
+	}
+	if p != nil {
+		if err = p.writeField0(oprot); err != nil {
+			fieldId = 0
+			goto WriteFieldError
+		}
+	}
+	if err = oprot.WriteFieldStop(); err != nil {
+		goto WriteFieldStopError
+	}
+	if err = oprot.WriteStructEnd(); err != nil {
+		goto WriteStructEndError
+	}
+	return nil
+WriteStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+WriteFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T write field %d error: ", p, fieldId), err)
+WriteFieldStopError:
+	return thrift.PrependError(fmt.Sprintf("%T write field stop error: ", p), err)
+WriteStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
+}
+
+func (p *PermissionServiceAssignUserMultipleRolesResult) writeField0(oprot thrift.TProtocol) (err error) {
+	if p.IsSetSuccess() {
+		if err = oprot.WriteFieldBegin("success", thrift.STRUCT, 0); err != nil {
+			goto WriteFieldBeginError
+		}
+		if err := p.Success.Write(oprot); err != nil {
+			return err
+		}
+		if err = oprot.WriteFieldEnd(); err != nil {
+			goto WriteFieldEndError
+		}
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 0 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 0 end error: ", p), err)
+}
+
+func (p *PermissionServiceAssignUserMultipleRolesResult) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("PermissionServiceAssignUserMultipleRolesResult(%+v)", *p)
+
+}
+
+type PermissionServiceUnassignUserRolesArgs struct {
+	Req *UnassignUserRolesRequest `thrift:"req,1"`
+}
+
+func NewPermissionServiceUnassignUserRolesArgs() *PermissionServiceUnassignUserRolesArgs {
+	return &PermissionServiceUnassignUserRolesArgs{}
+}
+
+func (p *PermissionServiceUnassignUserRolesArgs) InitDefault() {
+}
+
+var PermissionServiceUnassignUserRolesArgs_Req_DEFAULT *UnassignUserRolesRequest
+
+func (p *PermissionServiceUnassignUserRolesArgs) GetReq() (v *UnassignUserRolesRequest) {
+	if !p.IsSetReq() {
+		return PermissionServiceUnassignUserRolesArgs_Req_DEFAULT
+	}
+	return p.Req
+}
+
+var fieldIDToName_PermissionServiceUnassignUserRolesArgs = map[int16]string{
+	1: "req",
+}
+
+func (p *PermissionServiceUnassignUserRolesArgs) IsSetReq() bool {
+	return p.Req != nil
+}
+
+func (p *PermissionServiceUnassignUserRolesArgs) Read(iprot thrift.TProtocol) (err error) {
+	var fieldTypeId thrift.TType
+	var fieldId int16
+
+	if _, err = iprot.ReadStructBegin(); err != nil {
+		goto ReadStructBeginError
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err = iprot.ReadFieldBegin()
+		if err != nil {
+			goto ReadFieldBeginError
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+
+		switch fieldId {
+		case 1:
+			if fieldTypeId == thrift.STRUCT {
+				if err = p.ReadField1(iprot); err != nil {
+					goto ReadFieldError
+				}
+			} else if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		default:
+			if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		}
+		if err = iprot.ReadFieldEnd(); err != nil {
+			goto ReadFieldEndError
+		}
+	}
+	if err = iprot.ReadStructEnd(); err != nil {
+		goto ReadStructEndError
+	}
+
+	return nil
+ReadStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct begin error: ", p), err)
+ReadFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
+ReadFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_PermissionServiceUnassignUserRolesArgs[fieldId]), err)
+SkipFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
+
+ReadFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read field end error", p), err)
+ReadStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+}
+
+func (p *PermissionServiceUnassignUserRolesArgs) ReadField1(iprot thrift.TProtocol) error {
+	_field := NewUnassignUserRolesRequest()
+	if err := _field.Read(iprot); err != nil {
+		return err
+	}
+	p.Req = _field
+	return nil
+}
+
+func (p *PermissionServiceUnassignUserRolesArgs) Write(oprot thrift.TProtocol) (err error) {
+	var fieldId int16
+	if err = oprot.WriteStructBegin("UnassignUserRoles_args"); err != nil {
+		goto WriteStructBeginError
+	}
+	if p != nil {
+		if err = p.writeField1(oprot); err != nil {
+			fieldId = 1
+			goto WriteFieldError
+		}
+	}
+	if err = oprot.WriteFieldStop(); err != nil {
+		goto WriteFieldStopError
+	}
+	if err = oprot.WriteStructEnd(); err != nil {
+		goto WriteStructEndError
+	}
+	return nil
+WriteStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+WriteFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T write field %d error: ", p, fieldId), err)
+WriteFieldStopError:
+	return thrift.PrependError(fmt.Sprintf("%T write field stop error: ", p), err)
+WriteStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
+}
+
+func (p *PermissionServiceUnassignUserRolesArgs) writeField1(oprot thrift.TProtocol) (err error) {
+	if err = oprot.WriteFieldBegin("req", thrift.STRUCT, 1); err != nil {
+		goto WriteFieldBeginError
+	}
+	if err := p.Req.Write(oprot); err != nil {
+		return err
+	}
+	if err = oprot.WriteFieldEnd(); err != nil {
+		goto WriteFieldEndError
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 1 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 1 end error: ", p), err)
+}
+
+func (p *PermissionServiceUnassignUserRolesArgs) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("PermissionServiceUnassignUserRolesArgs(%+v)", *p)
+
+}
+
+type PermissionServiceUnassignUserRolesResult struct {
+	Success *UnassignUserRolesResponse `thrift:"success,0,optional"`
+}
+
+func NewPermissionServiceUnassignUserRolesResult() *PermissionServiceUnassignUserRolesResult {
+	return &PermissionServiceUnassignUserRolesResult{}
+}
+
+func (p *PermissionServiceUnassignUserRolesResult) InitDefault() {
+}
+
+var PermissionServiceUnassignUserRolesResult_Success_DEFAULT *UnassignUserRolesResponse
+
+func (p *PermissionServiceUnassignUserRolesResult) GetSuccess() (v *UnassignUserRolesResponse) {
+	if !p.IsSetSuccess() {
+		return PermissionServiceUnassignUserRolesResult_Success_DEFAULT
+	}
+	return p.Success
+}
+
+var fieldIDToName_PermissionServiceUnassignUserRolesResult = map[int16]string{
+	0: "success",
+}
+
+func (p *PermissionServiceUnassignUserRolesResult) IsSetSuccess() bool {
+	return p.Success != nil
+}
+
+func (p *PermissionServiceUnassignUserRolesResult) Read(iprot thrift.TProtocol) (err error) {
+	var fieldTypeId thrift.TType
+	var fieldId int16
+
+	if _, err = iprot.ReadStructBegin(); err != nil {
+		goto ReadStructBeginError
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err = iprot.ReadFieldBegin()
+		if err != nil {
+			goto ReadFieldBeginError
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+
+		switch fieldId {
+		case 0:
+			if fieldTypeId == thrift.STRUCT {
+				if err = p.ReadField0(iprot); err != nil {
+					goto ReadFieldError
+				}
+			} else if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		default:
+			if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		}
+		if err = iprot.ReadFieldEnd(); err != nil {
+			goto ReadFieldEndError
+		}
+	}
+	if err = iprot.ReadStructEnd(); err != nil {
+		goto ReadStructEndError
+	}
+
+	return nil
+ReadStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct begin error: ", p), err)
+ReadFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
+ReadFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_PermissionServiceUnassignUserRolesResult[fieldId]), err)
+SkipFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
+
+ReadFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read field end error", p), err)
+ReadStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+}
+
+func (p *PermissionServiceUnassignUserRolesResult) ReadField0(iprot thrift.TProtocol) error {
+	_field := NewUnassignUserRolesResponse()
+	if err := _field.Read(iprot); err != nil {
+		return err
+	}
+	p.Success = _field
+	return nil
+}
+
+func (p *PermissionServiceUnassignUserRolesResult) Write(oprot thrift.TProtocol) (err error) {
+	var fieldId int16
+	if err = oprot.WriteStructBegin("UnassignUserRoles_result"); err != nil {
+		goto WriteStructBeginError
+	}
+	if p != nil {
+		if err = p.writeField0(oprot); err != nil {
+			fieldId = 0
+			goto WriteFieldError
+		}
+	}
+	if err = oprot.WriteFieldStop(); err != nil {
+		goto WriteFieldStopError
+	}
+	if err = oprot.WriteStructEnd(); err != nil {
+		goto WriteStructEndError
+	}
+	return nil
+WriteStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+WriteFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T write field %d error: ", p, fieldId), err)
+WriteFieldStopError:
+	return thrift.PrependError(fmt.Sprintf("%T write field stop error: ", p), err)
+WriteStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
+}
+
+func (p *PermissionServiceUnassignUserRolesResult) writeField0(oprot thrift.TProtocol) (err error) {
+	if p.IsSetSuccess() {
+		if err = oprot.WriteFieldBegin("success", thrift.STRUCT, 0); err != nil {
+			goto WriteFieldBeginError
+		}
+		if err := p.Success.Write(oprot); err != nil {
+			return err
+		}
+		if err = oprot.WriteFieldEnd(); err != nil {
+			goto WriteFieldEndError
+		}
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 0 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 0 end error: ", p), err)
+}
+
+func (p *PermissionServiceUnassignUserRolesResult) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("PermissionServiceUnassignUserRolesResult(%+v)", *p)
+
+}
+
+type PermissionServiceGetUserRolesArgs struct {
+	Req *GetUserRolesRequest `thrift:"req,1"`
+}
+
+func NewPermissionServiceGetUserRolesArgs() *PermissionServiceGetUserRolesArgs {
+	return &PermissionServiceGetUserRolesArgs{}
+}
+
+func (p *PermissionServiceGetUserRolesArgs) InitDefault() {
+}
+
+var PermissionServiceGetUserRolesArgs_Req_DEFAULT *GetUserRolesRequest
+
+func (p *PermissionServiceGetUserRolesArgs) GetReq() (v *GetUserRolesRequest) {
+	if !p.IsSetReq() {
+		return PermissionServiceGetUserRolesArgs_Req_DEFAULT
+	}
+	return p.Req
+}
+
+var fieldIDToName_PermissionServiceGetUserRolesArgs = map[int16]string{
+	1: "req",
+}
+
+func (p *PermissionServiceGetUserRolesArgs) IsSetReq() bool {
+	return p.Req != nil
+}
+
+func (p *PermissionServiceGetUserRolesArgs) Read(iprot thrift.TProtocol) (err error) {
+	var fieldTypeId thrift.TType
+	var fieldId int16
+
+	if _, err = iprot.ReadStructBegin(); err != nil {
+		goto ReadStructBeginError
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err = iprot.ReadFieldBegin()
+		if err != nil {
+			goto ReadFieldBeginError
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+
+		switch fieldId {
+		case 1:
+			if fieldTypeId == thrift.STRUCT {
+				if err = p.ReadField1(iprot); err != nil {
+					goto ReadFieldError
+				}
+			} else if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		default:
+			if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		}
+		if err = iprot.ReadFieldEnd(); err != nil {
+			goto ReadFieldEndError
+		}
+	}
+	if err = iprot.ReadStructEnd(); err != nil {
+		goto ReadStructEndError
+	}
+
+	return nil
+ReadStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct begin error: ", p), err)
+ReadFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
+ReadFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_PermissionServiceGetUserRolesArgs[fieldId]), err)
+SkipFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
+
+ReadFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read field end error", p), err)
+ReadStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+}
+
+func (p *PermissionServiceGetUserRolesArgs) ReadField1(iprot thrift.TProtocol) error {
+	_field := NewGetUserRolesRequest()
+	if err := _field.Read(iprot); err != nil {
+		return err
+	}
+	p.Req = _field
+	return nil
+}
+
+func (p *PermissionServiceGetUserRolesArgs) Write(oprot thrift.TProtocol) (err error) {
+	var fieldId int16
+	if err = oprot.WriteStructBegin("GetUserRoles_args"); err != nil {
+		goto WriteStructBeginError
+	}
+	if p != nil {
+		if err = p.writeField1(oprot); err != nil {
+			fieldId = 1
+			goto WriteFieldError
+		}
+	}
+	if err = oprot.WriteFieldStop(); err != nil {
+		goto WriteFieldStopError
+	}
+	if err = oprot.WriteStructEnd(); err != nil {
+		goto WriteStructEndError
+	}
+	return nil
+WriteStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+WriteFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T write field %d error: ", p, fieldId), err)
+WriteFieldStopError:
+	return thrift.PrependError(fmt.Sprintf("%T write field stop error: ", p), err)
+WriteStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
+}
+
+func (p *PermissionServiceGetUserRolesArgs) writeField1(oprot thrift.TProtocol) (err error) {
+	if err = oprot.WriteFieldBegin("req", thrift.STRUCT, 1); err != nil {
+		goto WriteFieldBeginError
+	}
+	if err := p.Req.Write(oprot); err != nil {
+		return err
+	}
+	if err = oprot.WriteFieldEnd(); err != nil {
+		goto WriteFieldEndError
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 1 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 1 end error: ", p), err)
+}
+
+func (p *PermissionServiceGetUserRolesArgs) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("PermissionServiceGetUserRolesArgs(%+v)", *p)
+
+}
+
+type PermissionServiceGetUserRolesResult struct {
+	Success *GetUserRolesResponse `thrift:"success,0,optional"`
+}
+
+func NewPermissionServiceGetUserRolesResult() *PermissionServiceGetUserRolesResult {
+	return &PermissionServiceGetUserRolesResult{}
+}
+
+func (p *PermissionServiceGetUserRolesResult) InitDefault() {
+}
+
+var PermissionServiceGetUserRolesResult_Success_DEFAULT *GetUserRolesResponse
+
+func (p *PermissionServiceGetUserRolesResult) GetSuccess() (v *GetUserRolesResponse) {
+	if !p.IsSetSuccess() {
+		return PermissionServiceGetUserRolesResult_Success_DEFAULT
+	}
+	return p.Success
+}
+
+var fieldIDToName_PermissionServiceGetUserRolesResult = map[int16]string{
+	0: "success",
+}
+
+func (p *PermissionServiceGetUserRolesResult) IsSetSuccess() bool {
+	return p.Success != nil
+}
+
+func (p *PermissionServiceGetUserRolesResult) Read(iprot thrift.TProtocol) (err error) {
+	var fieldTypeId thrift.TType
+	var fieldId int16
+
+	if _, err = iprot.ReadStructBegin(); err != nil {
+		goto ReadStructBeginError
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err = iprot.ReadFieldBegin()
+		if err != nil {
+			goto ReadFieldBeginError
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+
+		switch fieldId {
+		case 0:
+			if fieldTypeId == thrift.STRUCT {
+				if err = p.ReadField0(iprot); err != nil {
+					goto ReadFieldError
+				}
+			} else if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		default:
+			if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		}
+		if err = iprot.ReadFieldEnd(); err != nil {
+			goto ReadFieldEndError
+		}
+	}
+	if err = iprot.ReadStructEnd(); err != nil {
+		goto ReadStructEndError
+	}
+
+	return nil
+ReadStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct begin error: ", p), err)
+ReadFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
+ReadFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_PermissionServiceGetUserRolesResult[fieldId]), err)
+SkipFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
+
+ReadFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read field end error", p), err)
+ReadStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+}
+
+func (p *PermissionServiceGetUserRolesResult) ReadField0(iprot thrift.TProtocol) error {
+	_field := NewGetUserRolesResponse()
+	if err := _field.Read(iprot); err != nil {
+		return err
+	}
+	p.Success = _field
+	return nil
+}
+
+func (p *PermissionServiceGetUserRolesResult) Write(oprot thrift.TProtocol) (err error) {
+	var fieldId int16
+	if err = oprot.WriteStructBegin("GetUserRoles_result"); err != nil {
+		goto WriteStructBeginError
+	}
+	if p != nil {
+		if err = p.writeField0(oprot); err != nil {
+			fieldId = 0
+			goto WriteFieldError
+		}
+	}
+	if err = oprot.WriteFieldStop(); err != nil {
+		goto WriteFieldStopError
+	}
+	if err = oprot.WriteStructEnd(); err != nil {
+		goto WriteStructEndError
+	}
+	return nil
+WriteStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+WriteFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T write field %d error: ", p, fieldId), err)
+WriteFieldStopError:
+	return thrift.PrependError(fmt.Sprintf("%T write field stop error: ", p), err)
+WriteStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
+}
+
+func (p *PermissionServiceGetUserRolesResult) writeField0(oprot thrift.TProtocol) (err error) {
+	if p.IsSetSuccess() {
+		if err = oprot.WriteFieldBegin("success", thrift.STRUCT, 0); err != nil {
+			goto WriteFieldBeginError
+		}
+		if err := p.Success.Write(oprot); err != nil {
+			return err
+		}
+		if err = oprot.WriteFieldEnd(); err != nil {
+			goto WriteFieldEndError
+		}
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 0 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 0 end error: ", p), err)
+}
+
+func (p *PermissionServiceGetUserRolesResult) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("PermissionServiceGetUserRolesResult(%+v)", *p)
+
+}
+
+type PermissionServiceResetUserPasswordArgs struct {
+	Req *ResetUserPasswordRequest `thrift:"req,1"`
+}
+
+func NewPermissionServiceResetUserPasswordArgs() *PermissionServiceResetUserPasswordArgs {
+	return &PermissionServiceResetUserPasswordArgs{}
+}
+
+func (p *PermissionServiceResetUserPasswordArgs) InitDefault() {
+}
+
+var PermissionServiceResetUserPasswordArgs_Req_DEFAULT *ResetUserPasswordRequest
+
+func (p *PermissionServiceResetUserPasswordArgs) GetReq() (v *ResetUserPasswordRequest) {
+	if !p.IsSetReq() {
+		return PermissionServiceResetUserPasswordArgs_Req_DEFAULT
+	}
+	return p.Req
+}
+
+var fieldIDToName_PermissionServiceResetUserPasswordArgs = map[int16]string{
+	1: "req",
+}
+
+func (p *PermissionServiceResetUserPasswordArgs) IsSetReq() bool {
+	return p.Req != nil
+}
+
+func (p *PermissionServiceResetUserPasswordArgs) Read(iprot thrift.TProtocol) (err error) {
+	var fieldTypeId thrift.TType
+	var fieldId int16
+
+	if _, err = iprot.ReadStructBegin(); err != nil {
+		goto ReadStructBeginError
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err = iprot.ReadFieldBegin()
+		if err != nil {
+			goto ReadFieldBeginError
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+
+		switch fieldId {
+		case 1:
+			if fieldTypeId == thrift.STRUCT {
+				if err = p.ReadField1(iprot); err != nil {
+					goto ReadFieldError
+				}
+			} else if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		default:
+			if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		}
+		if err = iprot.ReadFieldEnd(); err != nil {
+			goto ReadFieldEndError
+		}
+	}
+	if err = iprot.ReadStructEnd(); err != nil {
+		goto ReadStructEndError
+	}
+
+	return nil
+ReadStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct begin error: ", p), err)
+ReadFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
+ReadFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_PermissionServiceResetUserPasswordArgs[fieldId]), err)
+SkipFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
+
+ReadFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read field end error", p), err)
+ReadStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+}
+
+func (p *PermissionServiceResetUserPasswordArgs) ReadField1(iprot thrift.TProtocol) error {
+	_field := NewResetUserPasswordRequest()
+	if err := _field.Read(iprot); err != nil {
+		return err
+	}
+	p.Req = _field
+	return nil
+}
+
+func (p *PermissionServiceResetUserPasswordArgs) Write(oprot thrift.TProtocol) (err error) {
+	var fieldId int16
+	if err = oprot.WriteStructBegin("ResetUserPassword_args"); err != nil {
+		goto WriteStructBeginError
+	}
+	if p != nil {
+		if err = p.writeField1(oprot); err != nil {
+			fieldId = 1
+			goto WriteFieldError
+		}
+	}
+	if err = oprot.WriteFieldStop(); err != nil {
+		goto WriteFieldStopError
+	}
+	if err = oprot.WriteStructEnd(); err != nil {
+		goto WriteStructEndError
+	}
+	return nil
+WriteStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+WriteFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T write field %d error: ", p, fieldId), err)
+WriteFieldStopError:
+	return thrift.PrependError(fmt.Sprintf("%T write field stop error: ", p), err)
+WriteStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
+}
+
+func (p *PermissionServiceResetUserPasswordArgs) writeField1(oprot thrift.TProtocol) (err error) {
+	if err = oprot.WriteFieldBegin("req", thrift.STRUCT, 1); err != nil {
+		goto WriteFieldBeginError
+	}
+	if err := p.Req.Write(oprot); err != nil {
+		return err
+	}
+	if err = oprot.WriteFieldEnd(); err != nil {
+		goto WriteFieldEndError
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 1 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 1 end error: ", p), err)
+}
+
+func (p *PermissionServiceResetUserPasswordArgs) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("PermissionServiceResetUserPasswordArgs(%+v)", *p)
+
+}
+
+type PermissionServiceResetUserPasswordResult struct {
+	Success *ResetUserPasswordResponse `thrift:"success,0,optional"`
+}
+
+func NewPermissionServiceResetUserPasswordResult() *PermissionServiceResetUserPasswordResult {
+	return &PermissionServiceResetUserPasswordResult{}
+}
+
+func (p *PermissionServiceResetUserPasswordResult) InitDefault() {
+}
+
+var PermissionServiceResetUserPasswordResult_Success_DEFAULT *ResetUserPasswordResponse
+
+func (p *PermissionServiceResetUserPasswordResult) GetSuccess() (v *ResetUserPasswordResponse) {
+	if !p.IsSetSuccess() {
+		return PermissionServiceResetUserPasswordResult_Success_DEFAULT
+	}
+	return p.Success
+}
+
+var fieldIDToName_PermissionServiceResetUserPasswordResult = map[int16]string{
+	0: "success",
+}
+
+func (p *PermissionServiceResetUserPasswordResult) IsSetSuccess() bool {
+	return p.Success != nil
+}
+
+func (p *PermissionServiceResetUserPasswordResult) Read(iprot thrift.TProtocol) (err error) {
+	var fieldTypeId thrift.TType
+	var fieldId int16
+
+	if _, err = iprot.ReadStructBegin(); err != nil {
+		goto ReadStructBeginError
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err = iprot.ReadFieldBegin()
+		if err != nil {
+			goto ReadFieldBeginError
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+
+		switch fieldId {
+		case 0:
+			if fieldTypeId == thrift.STRUCT {
+				if err = p.ReadField0(iprot); err != nil {
+					goto ReadFieldError
+				}
+			} else if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		default:
+			if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		}
+		if err = iprot.ReadFieldEnd(); err != nil {
+			goto ReadFieldEndError
+		}
+	}
+	if err = iprot.ReadStructEnd(); err != nil {
+		goto ReadStructEndError
+	}
+
+	return nil
+ReadStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct begin error: ", p), err)
+ReadFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
+ReadFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_PermissionServiceResetUserPasswordResult[fieldId]), err)
+SkipFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
+
+ReadFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read field end error", p), err)
+ReadStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+}
+
+func (p *PermissionServiceResetUserPasswordResult) ReadField0(iprot thrift.TProtocol) error {
+	_field := NewResetUserPasswordResponse()
+	if err := _field.Read(iprot); err != nil {
+		return err
+	}
+	p.Success = _field
+	return nil
+}
+
+func (p *PermissionServiceResetUserPasswordResult) Write(oprot thrift.TProtocol) (err error) {
+	var fieldId int16
+	if err = oprot.WriteStructBegin("ResetUserPassword_result"); err != nil {
+		goto WriteStructBeginError
+	}
+	if p != nil {
+		if err = p.writeField0(oprot); err != nil {
+			fieldId = 0
+			goto WriteFieldError
+		}
+	}
+	if err = oprot.WriteFieldStop(); err != nil {
+		goto WriteFieldStopError
+	}
+	if err = oprot.WriteStructEnd(); err != nil {
+		goto WriteStructEndError
+	}
+	return nil
+WriteStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+WriteFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T write field %d error: ", p, fieldId), err)
+WriteFieldStopError:
+	return thrift.PrependError(fmt.Sprintf("%T write field stop error: ", p), err)
+WriteStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
+}
+
+func (p *PermissionServiceResetUserPasswordResult) writeField0(oprot thrift.TProtocol) (err error) {
+	if p.IsSetSuccess() {
+		if err = oprot.WriteFieldBegin("success", thrift.STRUCT, 0); err != nil {
+			goto WriteFieldBeginError
+		}
+		if err := p.Success.Write(oprot); err != nil {
+			return err
+		}
+		if err = oprot.WriteFieldEnd(); err != nil {
+			goto WriteFieldEndError
+		}
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 0 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 0 end error: ", p), err)
+}
+
+func (p *PermissionServiceResetUserPasswordResult) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("PermissionServiceResetUserPasswordResult(%+v)", *p)
 
 }

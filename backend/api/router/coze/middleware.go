@@ -1803,3 +1803,23 @@ func _updateuserstatusMw() []app.HandlerFunc {
 	// your code...
 	return nil
 }
+
+func _assignusermultiplerolesMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _getuserrolesMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _unassignuserrolesMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _resetuserpasswordMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}

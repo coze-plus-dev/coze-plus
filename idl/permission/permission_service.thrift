@@ -12,4 +12,8 @@ service PermissionService {
     permission.ListPermissionTemplatesResponse ListPermissionTemplates (1: permission.ListPermissionTemplatesRequest req) (api.post="/api/permission_api/template/list")
     permission.ListUsersResponse ListUsers (1: permission.ListUsersRequest req) (api.post="/api/permission_api/user/list")
     permission.UpdateUserStatusResponse UpdateUserStatus (1: permission.UpdateUserStatusRequest req) (api.post="/api/permission_api/user/status/update")
+    permission.AssignUserMultipleRolesResponse AssignUserMultipleRoles (1: permission.AssignUserMultipleRolesRequest req) (api.post="/api/permission_api/user/assign_roles")
+    permission.UnassignUserRolesResponse UnassignUserRoles (1: permission.UnassignUserRolesRequest req) (api.post="/api/permission_api/user/unassign_roles")
+    permission.GetUserRolesResponse GetUserRoles (1: permission.GetUserRolesRequest req) (api.get="/api/permission_api/user/roles")
+    permission.ResetUserPasswordResponse ResetUserPassword (1: permission.ResetUserPasswordRequest req) (api.post="/api/permission_api/user/reset_password")
 }

@@ -28,9 +28,11 @@ import styles from '../index.module.less';
 interface UserCardProps {
   item: UserData;
   onActionClick: (action: string, record: UserData) => void;
+  openDropdownId: string | null;
+  setOpenDropdownId: (id: string | null) => void;
 }
 
-const UserCard: FC<UserCardProps> = ({ item, onActionClick }) => {
+const UserCard: FC<UserCardProps> = ({ item, onActionClick, openDropdownId, setOpenDropdownId }) => {
   const renderStatus = (isDisabled?: number) => {
     if (isDisabled === 1) {
       return (
@@ -56,6 +58,8 @@ const UserCard: FC<UserCardProps> = ({ item, onActionClick }) => {
     if (item.is_disabled === 1) {
       return;
     }
+    // 关闭下拉菜单
+    setOpenDropdownId(null);
     onActionClick(action, item);
   };
 
@@ -110,6 +114,10 @@ const UserCard: FC<UserCardProps> = ({ item, onActionClick }) => {
           trigger="click"
           position="bottomRight"
           spacing={4}
+          visible={openDropdownId === item.user_id?.toString()}
+          onVisibleChange={visible => {
+            setOpenDropdownId(visible ? item.user_id?.toString() || '' : null);
+          }}
           render={
             <div className="min-w-[120px] py-[4px]">
               <Dropdown.Menu>

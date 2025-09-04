@@ -149,3 +149,13 @@ func (u *impl) UpdateUserStatus(ctx context.Context, req *crossuser.UpdateUserSt
 
 	return nil
 }
+
+func (u *impl) ResetUserPassword(ctx context.Context, req *crossuser.ResetUserPasswordRequest) (err error) {
+	// Call domain service directly with email and new password
+	err = u.DomainSVC.ResetPassword(ctx, req.Email, req.NewPassword)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

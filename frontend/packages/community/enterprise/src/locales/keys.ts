@@ -401,6 +401,54 @@ export const ENTERPRISE_I18N_KEYS = {
   ACCOUNT_DISABLE_SUCCESS: 'account_disable_success',
   ACCOUNT_ENABLE_SUCCESS: 'account_enable_success',
   ACCOUNT_OPERATION_FAILED: 'account_operation_failed',
+
+  // 用户角色分配弹出框
+  ASSIGN_ROLE_MODAL_TITLE: 'assign_role_modal_title',
+  ASSIGN_ROLE_MODAL_DESCRIPTION: 'assign_role_modal_description',
+  ASSIGN_ROLE_MODAL_USER_INFO: 'assign_role_modal_user_info',
+  ASSIGN_ROLE_MODAL_ROLE_LIST_TITLE: 'assign_role_modal_role_list_title',
+  ASSIGN_ROLE_MODAL_PERMISSION_MATRIX_TITLE: 'assign_role_modal_permission_matrix_title',
+  ASSIGN_ROLE_MODAL_NO_ROLE_SELECTED: 'assign_role_modal_no_role_selected',
+  ASSIGN_ROLE_MODAL_NO_ROLE_SELECTED_DESC: 'assign_role_modal_no_role_selected_desc',
+  ASSIGN_ROLE_MODAL_SAVE_BUTTON: 'assign_role_modal_save_button',
+  ASSIGN_ROLE_MODAL_CANCEL_BUTTON: 'assign_role_modal_cancel_button',
+  ASSIGN_ROLE_MODAL_SUCCESS_MESSAGE: 'assign_role_modal_success_message',
+  ASSIGN_ROLE_MODAL_FAILED_MESSAGE: 'assign_role_modal_failed_message',
+  ASSIGN_ROLE_MODAL_EMPTY_ROLES: 'assign_role_modal_empty_roles',
+  ASSIGN_ROLE_MODAL_EMPTY_ROLES_DESC: 'assign_role_modal_empty_roles_desc',
+  ASSIGN_ROLE_MODAL_NO_PERMISSIONS_WARNING: 'assign_role_modal_no_permissions_warning',
+  ASSIGN_ROLE_MODAL_ALL_ROLES_LOADED: 'assign_role_modal_all_roles_loaded',
+
+  // 用户角色详情面板
+  USER_ROLE_DETAIL_TITLE: 'user_role_detail_title',
+  USER_ROLE_DETAIL_BASIC_INFO: 'user_role_detail_basic_info',
+  USER_ROLE_DETAIL_ROLE_LIST: 'user_role_detail_role_list',
+  USER_ROLE_DETAIL_ROLE_EMPTY: 'user_role_detail_role_empty',
+  USER_ROLE_DETAIL_LOAD_FAILED: 'user_role_detail_load_failed',
+  USER_ROLE_DETAIL_USER_ID: 'user_role_detail_user_id',
+  USER_ROLE_DETAIL_ROLE_CODE: 'user_role_detail_role_code',
+  USER_ROLE_DETAIL_ROLE_NAME: 'user_role_detail_role_name',
+  USER_ROLE_DETAIL_ROLE_DESCRIPTION: 'user_role_detail_role_description',
+
+  // 用户角色解绑相关
+  USER_ROLE_UNASSIGN_BUTTON: 'user_role_unassign_button',
+  USER_ROLE_UNASSIGN_CONFIRM_TITLE: 'user_role_unassign_confirm_title',
+  USER_ROLE_UNASSIGN_CONFIRM_MESSAGE: 'user_role_unassign_confirm_message',
+  USER_ROLE_UNASSIGN_CONFIRM_OK: 'user_role_unassign_confirm_ok',
+  USER_ROLE_UNASSIGN_CONFIRM_CANCEL: 'user_role_unassign_confirm_cancel',
+  USER_ROLE_UNASSIGN_SUCCESS: 'user_role_unassign_success',
+  USER_ROLE_UNASSIGN_FAILED: 'user_role_unassign_failed',
+  USER_ROLE_UNASSIGN_INVALID_ROLE: 'user_role_unassign_invalid_role',
+  // 重置密码相关
+  RESET_PASSWORD_MODAL_TITLE: 'reset_password_modal_title',
+  RESET_PASSWORD_MODAL_EMAIL_LABEL: 'reset_password_modal_email_label',
+  RESET_PASSWORD_MODAL_PASSWORD_LABEL: 'reset_password_modal_password_label',
+  RESET_PASSWORD_MODAL_PASSWORD_PLACEHOLDER: 'reset_password_modal_password_placeholder',
+  RESET_PASSWORD_MODAL_CANCEL: 'reset_password_modal_cancel',
+  RESET_PASSWORD_MODAL_CONFIRM: 'reset_password_modal_confirm',
+  RESET_PASSWORD_MODAL_SUCCESS: 'reset_password_modal_success',
+  RESET_PASSWORD_MODAL_FAILED: 'reset_password_modal_failed',
+  RESET_PASSWORD_MODAL_INVALID_PASSWORD: 'reset_password_modal_invalid_password',
 } as const;
 
 export type EnterpriseI18nKey =

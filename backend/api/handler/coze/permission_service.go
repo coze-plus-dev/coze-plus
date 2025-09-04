@@ -179,3 +179,79 @@ func UpdateUserStatus(ctx context.Context, c *app.RequestContext) {
 	}
 	c.JSON(consts.StatusOK, resp)
 }
+
+// AssignUserMultipleRoles .
+// @router /api/permission_api/user/assign_roles [POST]
+func AssignUserMultipleRoles(ctx context.Context, c *app.RequestContext) {
+	var err error
+	var req permission1.AssignUserMultipleRolesRequest
+	err = c.BindAndValidate(&req)
+	if err != nil {
+		c.String(consts.StatusBadRequest, err.Error())
+		return
+	}
+
+	resp, err := application.PermissionSVC.AssignUserMultipleRoles(ctx, &req)
+	if err != nil {
+		internalServerErrorResponse(ctx, c, err)
+		return
+	}
+	c.JSON(consts.StatusOK, resp)
+}
+
+// GetUserRoles .
+// @router /api/permission_api/user/roles [GET]
+func GetUserRoles(ctx context.Context, c *app.RequestContext) {
+	var err error
+	var req permission1.GetUserRolesRequest
+	err = c.BindAndValidate(&req)
+	if err != nil {
+		c.String(consts.StatusBadRequest, err.Error())
+		return
+	}
+
+	resp, err := application.PermissionSVC.GetUserRoles(ctx, &req)
+	if err != nil {
+		internalServerErrorResponse(ctx, c, err)
+		return
+	}
+	c.JSON(consts.StatusOK, resp)
+}
+
+// UnassignUserRoles .
+// @router /api/permission_api/user/unassign_roles [POST]
+func UnassignUserRoles(ctx context.Context, c *app.RequestContext) {
+	var err error
+	var req permission1.UnassignUserRolesRequest
+	err = c.BindAndValidate(&req)
+	if err != nil {
+		c.String(consts.StatusBadRequest, err.Error())
+		return
+	}
+
+	resp, err := application.PermissionSVC.UnassignUserRoles(ctx, &req)
+	if err != nil {
+		internalServerErrorResponse(ctx, c, err)
+		return
+	}
+	c.JSON(consts.StatusOK, resp)
+}
+
+// ResetUserPassword .
+// @router /api/permission_api/user/reset_password [POST]
+func ResetUserPassword(ctx context.Context, c *app.RequestContext) {
+	var err error
+	var req permission1.ResetUserPasswordRequest
+	err = c.BindAndValidate(&req)
+	if err != nil {
+		c.String(consts.StatusBadRequest, err.Error())
+		return
+	}
+
+	resp, err := application.PermissionSVC.ResetUserPassword(ctx, &req)
+	if err != nil {
+		internalServerErrorResponse(ctx, c, err)
+		return
+	}
+	c.JSON(consts.StatusOK, resp)
+}

@@ -14,22 +14,6 @@
  * limitations under the License.
  */
 
-/*
- * Copyright 2025 coze-dev Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package dao
 
 import (
@@ -60,15 +44,15 @@ func (r *RoleDAO) Create(ctx context.Context, role *entity.Role) (*entity.Role, 
 		}
 		role.ID = id
 	}
-	
+
 	now := time.Now()
-	
+
 	// Handle permissions field - use empty array if permissions is empty
 	permissions := role.Permissions
 	if permissions == "" {
 		permissions = "[]"
 	}
-	
+
 	dbRole := &model.Role{
 		ID:            role.ID,
 		RoleCode:      role.RoleCode,
@@ -84,11 +68,11 @@ func (r *RoleDAO) Create(ctx context.Context, role *entity.Role) (*entity.Role, 
 		CreatedAt:     now.UnixMilli(),
 		UpdatedAt:     now.UnixMilli(),
 	}
-	
+
 	if err := r.Query.Role.WithContext(ctx).Create(dbRole); err != nil {
 		return nil, err
 	}
-	
+
 	return r.convertToEntity(dbRole), nil
 }
 
@@ -101,7 +85,7 @@ func (r *RoleDAO) GetByID(ctx context.Context, id int64) (*entity.Role, error) {
 		}
 		return nil, err
 	}
-	
+
 	return r.convertToEntity(dbRole), nil
 }
 
@@ -112,7 +96,7 @@ func (r *RoleDAO) Update(ctx context.Context, role *entity.Role) error {
 	if permissions == "" {
 		permissions = "[]"
 	}
-	
+
 	updates := map[string]interface{}{
 		"role_name":       role.RoleName,
 		"role_domain":     string(role.RoleDomain),
@@ -123,7 +107,7 @@ func (r *RoleDAO) Update(ctx context.Context, role *entity.Role) error {
 		"description":     role.Description,
 		"updated_at":      time.Now().UnixMilli(),
 	}
-	
+
 	_, err := r.Query.Role.WithContext(ctx).Where(r.Query.Role.ID.Eq(role.ID)).Updates(updates)
 	return err
 }
@@ -137,7 +121,7 @@ func (r *RoleDAO) Delete(ctx context.Context, id int64) error {
 // List lists roles with pagination and filters
 func (r *RoleDAO) List(ctx context.Context, filter *entity.RoleListFilter) ([]*entity.Role, int64, error) {
 	q := r.Query.Role.WithContext(ctx)
-	
+
 	// Apply filters
 	if filter.RoleDomain != nil {
 		q = q.Where(r.Query.Role.RoleDomain.Eq(string(*filter.RoleDomain)))
@@ -158,13 +142,13 @@ func (r *RoleDAO) List(ctx context.Context, filter *entity.RoleListFilter) ([]*e
 		keyword := "%" + *filter.Keyword + "%"
 		q = q.Where(r.Query.Role.RoleName.Like(keyword)).Or(r.Query.Role.RoleCode.Like(keyword))
 	}
-	
+
 	// Get total count
 	total, err := q.Count()
 	if err != nil {
 		return nil, 0, err
 	}
-	
+
 	// Apply pagination and ordering
 	offset := (filter.Page - 1) * filter.Limit
 	dbRoles, err := q.Offset(offset).Limit(filter.Limit).
@@ -173,12 +157,12 @@ func (r *RoleDAO) List(ctx context.Context, filter *entity.RoleListFilter) ([]*e
 	if err != nil {
 		return nil, 0, err
 	}
-	
+
 	roles := make([]*entity.Role, len(dbRoles))
 	for i, dbRole := range dbRoles {
 		roles[i] = r.convertToEntity(dbRole)
 	}
-	
+
 	return roles, total, nil
 }
 
@@ -191,7 +175,7 @@ func (r *RoleDAO) GetByRoleCode(ctx context.Context, roleCode string) (*entity.R
 		}
 		return nil, err
 	}
-	
+
 	return r.convertToEntity(dbRole), nil
 }
 
@@ -201,12 +185,12 @@ func (r *RoleDAO) GetByDomain(ctx context.Context, domain entity.RoleDomain) ([]
 	if err != nil {
 		return nil, err
 	}
-	
+
 	roles := make([]*entity.Role, len(dbRoles))
 	for i, dbRole := range dbRoles {
 		roles[i] = r.convertToEntity(dbRole)
 	}
-	
+
 	return roles, nil
 }
 
@@ -216,12 +200,12 @@ func (r *RoleDAO) GetBuiltinRoles(ctx context.Context) ([]*entity.Role, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	roles := make([]*entity.Role, len(dbRoles))
 	for i, dbRole := range dbRoles {
 		roles[i] = r.convertToEntity(dbRole)
 	}
-	
+
 	return roles, nil
 }
 
@@ -231,12 +215,12 @@ func (r *RoleDAO) GetRolesByCreator(ctx context.Context, creatorID int64) ([]*en
 	if err != nil {
 		return nil, err
 	}
-	
+
 	roles := make([]*entity.Role, len(dbRoles))
 	for i, dbRole := range dbRoles {
 		roles[i] = r.convertToEntity(dbRole)
 	}
-	
+
 	return roles, nil
 }
 
@@ -252,12 +236,12 @@ func (r *RoleDAO) CheckRoleCodeExists(ctx context.Context, roleCode string, excl
 	if excludeID != nil {
 		q = q.Where(r.Query.Role.ID.Neq(*excludeID))
 	}
-	
+
 	count, err := q.Count()
 	if err != nil {
 		return false, err
 	}
-	
+
 	return count > 0, nil
 }
 

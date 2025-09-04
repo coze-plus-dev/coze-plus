@@ -14,22 +14,6 @@
  * limitations under the License.
  */
 
-/*
- * Copyright 2025 coze-dev Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package entity
 
 import "time"
@@ -90,20 +74,28 @@ type RoleListFilter struct {
 }
 
 // UserRole represents the relationship between user and role
+// Note: Only manages global roles now, space roles are managed by space_user table
 type UserRole struct {
-	ID       int64 `json:"id"`
-	UserID   int64 `json:"user_id"`
-	RoleID   int64 `json:"role_id"`
-	SpaceID  *int64 `json:"space_id,omitempty"` // 空间ID，全局角色时为null
-	AssignedBy int64 `json:"assigned_by"`
+	ID         int64     `json:"id"`
+	UserID     int64     `json:"user_id"`
+	RoleID     int64     `json:"role_id"`
+	AssignedBy int64     `json:"assigned_by"`
 	AssignedAt time.Time `json:"assigned_at"`
+	ExpiredAt  *time.Time `json:"expired_at,omitempty"`
 }
 
 // UserRoleListFilter represents filter conditions for listing user roles
 type UserRoleListFilter struct {
-	UserID  *int64 `json:"user_id,omitempty"`
-	RoleID  *int64 `json:"role_id,omitempty"`
-	SpaceID *int64 `json:"space_id,omitempty"`
-	Page    int    `json:"page"`
-	Limit   int    `json:"limit"`
+	UserID *int64 `json:"user_id,omitempty"`
+	RoleID *int64 `json:"role_id,omitempty"`
+	Page   int    `json:"page"`
+	Limit  int    `json:"limit"`
+}
+
+// UserRoleWithRole represents user role joined with role basic info
+type UserRoleWithRole struct {
+	RoleID      int64  `json:"role_id"`
+	RoleCode    string `json:"role_code"`
+	RoleName    string `json:"role_name"`
+	Description string `json:"description"`
 }

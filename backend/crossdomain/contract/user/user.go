@@ -69,6 +69,12 @@ type UpdateUserStatusRequest struct {
 	IsDisabled int32 `json:"is_disabled"`
 }
 
+// ResetUserPasswordRequest represents user password reset request in crossdomain contract
+type ResetUserPasswordRequest struct {
+	Email       string `json:"email"`
+	NewPassword string `json:"new_password"`
+}
+
 // Space represents space information in crossdomain contract
 type Space struct {
 	ID        int64  `json:"id"`
@@ -84,6 +90,7 @@ type User interface {
 	CreateUser(ctx context.Context, req *CreateUserRequest) (user *UserInfo, err error)
 	ListUsers(ctx context.Context, req *ListUsersRequest) (*ListUsersResponse, error)
 	UpdateUserStatus(ctx context.Context, req *UpdateUserStatusRequest) (err error)
+	ResetUserPassword(ctx context.Context, req *ResetUserPasswordRequest) (err error)
 }
 
 var defaultSVC User

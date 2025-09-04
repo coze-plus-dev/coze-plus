@@ -21,6 +21,8 @@ import {
   GetRole,
   ListRoles,
   ListPermissionTemplates,
+  AssignUserMultipleRoles,
+  GetUserRoles,
   type permission,
 } from '@coze-studio/api-schema/permission';
 
@@ -40,6 +42,10 @@ export type PermissionTemplateData =
   permission.permission_common.PermissionTemplateData;
 // 为了兼容现有代码，添加别名
 export type PermissionTemplate = PermissionTemplateGroup;
+export type AssignUserMultipleRolesRequest = permission.AssignUserMultipleRolesRequest;
+export type AssignUserMultipleRolesResponse = permission.AssignUserMultipleRolesResponse;
+export type GetUserRolesRequest = permission.GetUserRolesRequest;
+export type GetUserRolesResponse = permission.GetUserRolesResponse;
 
 export const roleApi = {
   // 获取角色列表
@@ -79,5 +85,17 @@ export const roleApi = {
   ): Promise<PermissionTemplateGroup[]> {
     const response = await ListPermissionTemplates({ domain });
     return response.data || [];
+  },
+
+  // 分配用户多个角色
+  async assignUserMultipleRoles(request: AssignUserMultipleRolesRequest): Promise<AssignUserMultipleRolesResponse> {
+    const response = await AssignUserMultipleRoles(request);
+    return response;
+  },
+
+  // 获取用户角色列表
+  async getUserRoles(userId: string | number): Promise<GetUserRolesResponse> {
+    const response = await GetUserRoles({ user_id: userId.toString() });
+    return response;
   },
 };
