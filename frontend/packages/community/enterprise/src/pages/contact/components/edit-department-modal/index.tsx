@@ -19,11 +19,9 @@ import { type FC, useState, useEffect, useRef } from 'react';
 import { useRequest } from 'ahooks';
 import { Modal, Form, Toast } from '@coze-arch/coze-design';
 
-import { t } from '../../../../utils/i18n';
-import { ENTERPRISE_I18N_KEYS } from '../../../../locales/keys';
-import { useOrganizationTree } from '../../../../hooks/use-organization-tree';
-import type { TreeNode } from '../../../../hooks/use-organization-tree';
-import { departmentApi } from '../../../../api/corporation-api';
+import { t } from '@/utils/i18n';
+import { ENTERPRISE_I18N_KEYS } from '@/locales/keys';
+import { departmentApi } from '@/api/corporation-api';
 
 import styles from './index.module.less';
 
@@ -32,6 +30,7 @@ interface EditDepartmentModalProps {
   departmentId: string;
   onClose: () => void;
   onSuccess?: () => void;
+  onModalOpen?: () => void;
 }
 
 export const EditDepartmentModal: FC<EditDepartmentModalProps> = ({
@@ -39,51 +38,17 @@ export const EditDepartmentModal: FC<EditDepartmentModalProps> = ({
   departmentId,
   onClose,
   onSuccess,
+  onModalOpen,
 }) => {
-  const formApiRef = useRef<any>(null);
+  const formApiRef = useRef<{
+    validate: () => Promise<unknown>;
+    getValues: () => { name: string };
+    setValues: (values: { name: string }) => void;
+    reset: () => void;
+  } | null>(null);
   const [formValues, setFormValues] = useState({
     name: '',
-    parentId: '',
   });
-
-  const { treeData } = useOrganizationTree({
-    includeDepartments: true,
-    includeEmployeeCount: false,
-  });
-
-  // Convert tree data for TreeSelect component, excluding current department and its children
-  const convertTreeDataForSelect = (
-    nodes: TreeNode[],
-    excludeId?: string,
-  ): any[] =>
-    nodes
-      .filter(node => node.key !== excludeId)
-      .map(node => ({
-        label: node.title,
-        value: node.key,
-        key: node.key,
-        children: node.children
-          ? convertTreeDataForSelect(node.children, excludeId)
-          : undefined,
-      }));
-
-  const treeSelectData = convertTreeDataForSelect(treeData, departmentId);
-
-  // Find node helper
-  const findNode = (nodes: TreeNode[], targetKey: string): TreeNode | null => {
-    for (const node of nodes) {
-      if (node.key === targetKey) {
-        return node;
-      }
-      if (node.children) {
-        const found = findNode(node.children, targetKey);
-        if (found) {
-          return found;
-        }
-      }
-    }
-    return null;
-  };
 
   // Get department details
   const { run: fetchDepartmentDetail } = useRequest(
@@ -98,12 +63,12 @@ export const EditDepartmentModal: FC<EditDepartmentModalProps> = ({
       manual: true,
       onSuccess: data => {
         if (data) {
-          // Set parent as either parent department or corporation
-          const parentId = data.parent_id || data.corp_id;
-          setFormValues({
-            name: data.name || '',
-            parentId: parentId || '',
-          });
+          const name = data.name || '';
+          setFormValues({ name });
+          // 设置表单字段值
+          if (formApiRef.current) {
+            formApiRef.current.setValues({ name });
+          }
         }
       },
     },
@@ -116,39 +81,16 @@ export const EditDepartmentModal: FC<EditDepartmentModalProps> = ({
       try {
         await formApiRef.current?.validate();
       } catch (errors) {
+        // Validation failed, stop execution
+        console.warn('Form validation failed:', errors);
         return;
       }
 
-      const { name, parentId } = formApiRef.current?.getValues() || formValues;
-
-      if (!parentId) {
-        Toast.error(
-          t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_PARENT_DEPARTMENT),
-        );
-        return;
-      }
-
-      // Parse parent ID to determine if it's a corp or dept
-      const parentNode = findNode(treeData, parentId);
-      if (!parentNode) {
-        Toast.error(t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PARENT_NOT_FOUND));
-        return;
-      }
-
-      let parentDeptId: string | undefined;
-
-      if (parentNode.nodeType === 'corp') {
-        // If parent is corporation, parent_id should be undefined
-        parentDeptId = undefined;
-      } else {
-        // If parent is department, use deptId field if available, otherwise fall back to key
-        parentDeptId = parentNode.deptId || parentId;
-      }
+      const { name } = formApiRef.current?.getValues() || formValues;
 
       await departmentApi.updateDepartment({
         id: departmentId,
         name,
-        parent_id: parentDeptId,
       });
     },
     {
@@ -158,7 +100,7 @@ export const EditDepartmentModal: FC<EditDepartmentModalProps> = ({
         handleClose();
         onSuccess?.();
       },
-      onError: (error: any) => {
+      onError: (error: Error | { message?: string }) => {
         Toast.error(
           error.message || t(ENTERPRISE_I18N_KEYS.ENTERPRISE_UPDATE_FAILED),
         );
@@ -167,7 +109,11 @@ export const EditDepartmentModal: FC<EditDepartmentModalProps> = ({
   );
 
   const handleClose = () => {
-    setFormValues({ name: '', parentId: '' });
+    setFormValues({ name: '' });
+    // 重置表单
+    if (formApiRef.current) {
+      formApiRef.current.reset();
+    }
     onClose();
   };
 
@@ -178,8 +124,10 @@ export const EditDepartmentModal: FC<EditDepartmentModalProps> = ({
   useEffect(() => {
     if (visible && departmentId) {
       fetchDepartmentDetail();
+      // 通知父组件关闭下拉菜单
+      onModalOpen?.();
     }
-  }, [visible, departmentId, fetchDepartmentDetail]);
+  }, [visible, departmentId, fetchDepartmentDetail, onModalOpen]);
 
   return (
     <Modal
@@ -196,7 +144,7 @@ export const EditDepartmentModal: FC<EditDepartmentModalProps> = ({
         getFormApi={api => (formApiRef.current = api)}
         labelPosition="top"
         className={styles.form}
-        key={`${departmentId}-${JSON.stringify(formValues)}`}
+        key={departmentId}
       >
         <Form.Input
           field="name"
@@ -219,35 +167,12 @@ export const EditDepartmentModal: FC<EditDepartmentModalProps> = ({
             ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_DEPARTMENT_NAME,
           )}
           maxLength={50}
-          initValue={formValues.name}
           onChange={value => setFormValues(prev => ({ ...prev, name: value }))}
           suffix={
             <span style={{ color: '#666', fontSize: 12 }}>
               {(formValues.name || '').length}/50
             </span>
           }
-        />
-
-        <Form.TreeSelect
-          field="parentId"
-          label={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PARENT_DEPARTMENT)}
-          treeData={treeSelectData}
-          placeholder={t(
-            ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_PARENT_DEPARTMENT,
-          )}
-          dropdownStyle={{ maxHeight: 300 }}
-          style={{ width: '100%' }}
-          filterTreeNode
-          showClear
-          initValue={formValues.parentId}
-          rules={[
-            {
-              required: true,
-              message: t(
-                ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_PARENT_DEPARTMENT,
-              ),
-            },
-          ]}
         />
       </Form>
     </Modal>

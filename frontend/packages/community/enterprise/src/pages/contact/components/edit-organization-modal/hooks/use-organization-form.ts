@@ -36,13 +36,17 @@ interface UseOrganizationFormParams {
   onClose: () => void;
 }
 
-export const useOrganizationForm = ({ 
-  visible, 
-  organizationId, 
-  onSuccess, 
+export const useOrganizationForm = ({
+  visible,
+  organizationId,
+  onSuccess,
   onClose,
 }: UseOrganizationFormParams) => {
-  const formApiRef = useRef<{ validate: () => Promise<unknown>; getValues: () => FormValues; setValues: (values: FormValues) => void } | null>(null);
+  const formApiRef = useRef<{
+    validate: () => Promise<unknown>;
+    getValues: () => FormValues;
+    setValues: (values: FormValues) => void;
+  } | null>(null);
   const [formValues, setFormValues] = useState<FormValues>({
     name: '',
     corp_type: 0,
@@ -57,7 +61,7 @@ export const useOrganizationForm = ({
     },
     {
       manual: true,
-      onSuccess: (data) => {
+      onSuccess: data => {
         if (data) {
           const newValues = {
             name: data.name || '',
@@ -65,7 +69,7 @@ export const useOrganizationForm = ({
             parent_id: data.parent_id,
           };
           setFormValues(newValues);
-          
+
           if (formApiRef.current) {
             formApiRef.current.setValues(newValues);
           }
@@ -94,7 +98,12 @@ export const useOrganizationForm = ({
 
   // 更新组织
   const { run: updateOrganization, loading: updatingOrganization } = useRequest(
-    async (data: { id: string; name?: string; corp_type?: number; parent_id?: string }) => {
+    async (data: {
+      id: string;
+      name?: string;
+      corp_type?: number;
+      parent_id?: string;
+    }) => {
       await corporationApi.updateCorporation(data);
     },
     {
@@ -119,7 +128,7 @@ export const useOrganizationForm = ({
     try {
       await formApiRef.current.validate();
       const values = formApiRef.current.getValues();
-      
+
       if (organizationId) {
         // 更新
         updateOrganization({

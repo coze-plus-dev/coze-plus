@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import React from 'react';
+import React, { useCallback } from 'react';
 
 import {
   IconCozFolder,
@@ -52,6 +52,21 @@ export const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
   onMenuClick,
   setDropdownVisible,
 }) => {
+  // 使用 useCallback 来避免在渲染过程中的状态更新警告
+  // 必须在组件顶部调用，不能在条件语句后面
+  const handleVisibleChange = useCallback(
+    (visible: boolean) => {
+      if (!node) {
+        return;
+      }
+      // 使用 setTimeout 来延迟状态更新，避免在渲染过程中更新状态
+      setTimeout(() => {
+        setDropdownVisible(visible ? node.key : null);
+      }, 0);
+    },
+    [node, setDropdownVisible],
+  );
+
   if (!node) {
     return <>{label}</>;
   }
@@ -122,9 +137,7 @@ export const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
         position="bottomRight"
         stopPropagation
         visible={dropdownVisible === node.key}
-        onVisibleChange={visible =>
-          setDropdownVisible(visible ? node.key : null)
-        }
+        onVisibleChange={handleVisibleChange}
         render={
           <Dropdown.Menu>
             {menuItems.map(item => (

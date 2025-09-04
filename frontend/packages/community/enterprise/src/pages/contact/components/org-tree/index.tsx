@@ -144,6 +144,9 @@ const OrgTree = forwardRef<OrgTreeRef, OrgTreeProps>(
             setEditingNodeId('');
           }}
           onSuccess={handleEditOrgSuccess}
+          onModalOpen={() => {
+            setDropdownVisible(null);
+          }}
         />
 
         <EditDepartmentModal
@@ -154,6 +157,9 @@ const OrgTree = forwardRef<OrgTreeRef, OrgTreeProps>(
             setEditingNodeId('');
           }}
           onSuccess={handleEditDeptSuccess}
+          onModalOpen={() => {
+            setDropdownVisible(null);
+          }}
         />
       </>
     );
