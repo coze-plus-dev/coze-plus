@@ -14,22 +14,6 @@
  * limitations under the License.
  */
 
-/*
- * Copyright 2025 coze-dev Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package service
 
 import (
@@ -63,7 +47,7 @@ func (p *PermissionTemplateServiceImpl) CreatePermissionTemplate(ctx context.Con
 	if existing != nil {
 		return nil, fmt.Errorf("permission template with code '%s' already exists", request.TemplateCode)
 	}
-	
+
 	template := &entity.PermissionTemplate{
 		TemplateCode: request.TemplateCode,
 		TemplateName: request.TemplateName,
@@ -77,12 +61,12 @@ func (p *PermissionTemplateServiceImpl) CreatePermissionTemplate(ctx context.Con
 		SortOrder:    request.SortOrder,
 		IsActive:     entity.PermissionTemplateStatusActive,
 	}
-	
+
 	createdTemplate, err := p.templateRepo.Create(ctx, template)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create permission template: %w", err)
 	}
-	
+
 	return &CreatePermissionTemplateResponse{
 		Template: createdTemplate,
 	}, nil
@@ -97,7 +81,7 @@ func (p *PermissionTemplateServiceImpl) UpdatePermissionTemplate(ctx context.Con
 	if template == nil {
 		return fmt.Errorf("permission template with ID %d not found", request.ID)
 	}
-	
+
 	// Update template fields
 	if request.TemplateName != nil {
 		template.TemplateName = *request.TemplateName
@@ -120,11 +104,11 @@ func (p *PermissionTemplateServiceImpl) UpdatePermissionTemplate(ctx context.Con
 	if request.IsActive != nil {
 		template.IsActive = *request.IsActive
 	}
-	
+
 	if err := p.templateRepo.Update(ctx, template); err != nil {
 		return fmt.Errorf("failed to update permission template: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -137,11 +121,11 @@ func (p *PermissionTemplateServiceImpl) DeletePermissionTemplate(ctx context.Con
 	if template == nil {
 		return fmt.Errorf("permission template with ID %d not found", request.ID)
 	}
-	
+
 	if err := p.templateRepo.Delete(ctx, request.ID); err != nil {
 		return fmt.Errorf("failed to delete permission template: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -154,7 +138,7 @@ func (p *PermissionTemplateServiceImpl) GetPermissionTemplateByID(ctx context.Co
 	if template == nil {
 		return nil, fmt.Errorf("permission template with ID %d not found", request.ID)
 	}
-	
+
 	return &GetPermissionTemplateByIDResponse{
 		Template: template,
 	}, nil
@@ -171,14 +155,14 @@ func (p *PermissionTemplateServiceImpl) ListPermissionTemplates(ctx context.Cont
 		Page:      request.Page,
 		Limit:     request.Limit,
 	}
-	
+
 	templates, total, err := p.templateRepo.List(ctx, filter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list permission templates: %w", err)
 	}
-	
+
 	hasMore := int64(request.Page*request.Limit) < total
-	
+
 	return &ListPermissionTemplatesResponse{
 		Templates: templates,
 		Total:     total,
@@ -192,7 +176,7 @@ func (p *PermissionTemplateServiceImpl) GetPermissionTemplatesByDomain(ctx conte
 	if err != nil {
 		return nil, fmt.Errorf("failed to get permission templates by domain: %w", err)
 	}
-	
+
 	return &GetPermissionTemplatesByDomainResponse{
 		Templates: templates,
 	}, nil
@@ -204,7 +188,7 @@ func (p *PermissionTemplateServiceImpl) GetActivePermissionTemplates(ctx context
 	if err != nil {
 		return nil, fmt.Errorf("failed to get active permission templates: %w", err)
 	}
-	
+
 	return &GetActivePermissionTemplatesResponse{
 		Templates: templates,
 	}, nil
@@ -216,7 +200,7 @@ func (p *PermissionTemplateServiceImpl) GetDefaultPermissionTemplates(ctx contex
 	if err != nil {
 		return nil, fmt.Errorf("failed to get default permission templates: %w", err)
 	}
-	
+
 	return &GetDefaultPermissionTemplatesResponse{
 		Templates: templates,
 	}, nil
@@ -230,15 +214,15 @@ func (p *PermissionTemplateServiceImpl) GroupPermissionTemplatesByResource(ctx c
 		Page:     1,
 		Limit:    1000, // Get all templates
 	}
-	
+
 	templates, _, err := p.templateRepo.List(ctx, filter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get permission templates: %w", err)
 	}
-	
+
 	// Group templates by domain and resource
 	domainMap := make(map[string]map[string][]*entity.PermissionTemplate)
-	
+
 	for _, template := range templates {
 		if domainMap[template.Domain] == nil {
 			domainMap[template.Domain] = make(map[string][]*entity.PermissionTemplate)
@@ -248,13 +232,13 @@ func (p *PermissionTemplateServiceImpl) GroupPermissionTemplatesByResource(ctx c
 		}
 		domainMap[template.Domain][template.Resource] = append(domainMap[template.Domain][template.Resource], template)
 	}
-	
+
 	// Convert to response format
 	groups := make([]*entity.PermissionTemplateGroup, 0)
-	
+
 	for domain, resourceMap := range domainMap {
 		resources := make([]*entity.PermissionResourceGroup, 0)
-		
+
 		for resource, actions := range resourceMap {
 			if len(actions) > 0 {
 				// Sort actions by sort_order and then by id to ensure consistent ordering
@@ -264,7 +248,7 @@ func (p *PermissionTemplateServiceImpl) GroupPermissionTemplatesByResource(ctx c
 					}
 					return actions[i].ID < actions[j].ID
 				})
-				
+
 				resourceGroup := &entity.PermissionResourceGroup{
 					Resource:     resource,
 					ResourceName: actions[0].ResourceName, // Use first action's resource name
@@ -273,7 +257,7 @@ func (p *PermissionTemplateServiceImpl) GroupPermissionTemplatesByResource(ctx c
 				resources = append(resources, resourceGroup)
 			}
 		}
-		
+
 		if len(resources) > 0 {
 			// Sort resources by the first action's sort_order and id to ensure consistent ordering
 			sort.Slice(resources, func(i, j int) bool {
@@ -287,7 +271,7 @@ func (p *PermissionTemplateServiceImpl) GroupPermissionTemplatesByResource(ctx c
 				}
 				return resources[i].Resource < resources[j].Resource
 			})
-			
+
 			domainName := p.getDomainDisplayName(domain)
 			group := &entity.PermissionTemplateGroup{
 				Domain:     domain,
@@ -297,12 +281,12 @@ func (p *PermissionTemplateServiceImpl) GroupPermissionTemplatesByResource(ctx c
 			groups = append(groups, group)
 		}
 	}
-	
+
 	// Sort groups by domain name to ensure consistent ordering
 	sort.Slice(groups, func(i, j int) bool {
 		return groups[i].Domain < groups[j].Domain
 	})
-	
+
 	return &GroupPermissionTemplatesByResourceResponse{
 		Groups: groups,
 	}, nil
@@ -317,11 +301,11 @@ func (p *PermissionTemplateServiceImpl) UpdatePermissionTemplateStatus(ctx conte
 	if template == nil {
 		return fmt.Errorf("permission template with ID %d not found", request.ID)
 	}
-	
+
 	if err := p.templateRepo.UpdateStatus(ctx, request.ID, request.Status); err != nil {
 		return fmt.Errorf("failed to update permission template status: %w", err)
 	}
-	
+
 	return nil
 }
 

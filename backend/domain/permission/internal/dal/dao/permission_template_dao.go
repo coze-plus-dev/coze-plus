@@ -14,22 +14,6 @@
  * limitations under the License.
  */
 
-/*
- * Copyright 2025 coze-dev Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package dao
 
 import (
@@ -69,7 +53,7 @@ func (p *PermissionTemplateDAO) Create(ctx context.Context, template *entity.Per
 		}
 		template.ID = id
 	}
-	
+
 	now := time.Now()
 	dbTemplate := &model.PermissionTemplate{
 		ID:           template.ID,
@@ -87,11 +71,11 @@ func (p *PermissionTemplateDAO) Create(ctx context.Context, template *entity.Per
 		CreatedAt:    now.UnixMilli(),
 		UpdatedAt:    now.UnixMilli(),
 	}
-	
+
 	if err := p.Query.PermissionTemplate.WithContext(ctx).Create(dbTemplate); err != nil {
 		return nil, err
 	}
-	
+
 	return p.convertToEntity(dbTemplate), nil
 }
 
@@ -104,7 +88,7 @@ func (p *PermissionTemplateDAO) GetByID(ctx context.Context, id int64) (*entity.
 		}
 		return nil, err
 	}
-	
+
 	return p.convertToEntity(dbTemplate), nil
 }
 
@@ -123,7 +107,7 @@ func (p *PermissionTemplateDAO) Update(ctx context.Context, template *entity.Per
 		"is_active":     int32(template.IsActive),
 		"updated_at":    time.Now().UnixMilli(),
 	}
-	
+
 	_, err := p.Query.PermissionTemplate.WithContext(ctx).Where(p.Query.PermissionTemplate.ID.Eq(template.ID)).Updates(updates)
 	return err
 }
@@ -137,7 +121,7 @@ func (p *PermissionTemplateDAO) Delete(ctx context.Context, id int64) error {
 // List lists permission templates with pagination and filters
 func (p *PermissionTemplateDAO) List(ctx context.Context, filter *entity.PermissionTemplateListFilter) ([]*entity.PermissionTemplate, int64, error) {
 	q := p.Query.PermissionTemplate.WithContext(ctx)
-	
+
 	// Apply filters
 	if filter.Domain != nil {
 		q = q.Where(p.Query.PermissionTemplate.Domain.Eq(*filter.Domain))
@@ -157,13 +141,13 @@ func (p *PermissionTemplateDAO) List(ctx context.Context, filter *entity.Permiss
 			Or(p.Query.PermissionTemplate.ResourceName.Like(keyword)).
 			Or(p.Query.PermissionTemplate.ActionName.Like(keyword))
 	}
-	
+
 	// Get total count
 	total, err := q.Count()
 	if err != nil {
 		return nil, 0, err
 	}
-	
+
 	// Apply pagination
 	offset := (filter.Page - 1) * filter.Limit
 	dbTemplates, err := q.Offset(offset).Limit(filter.Limit).
@@ -172,12 +156,12 @@ func (p *PermissionTemplateDAO) List(ctx context.Context, filter *entity.Permiss
 	if err != nil {
 		return nil, 0, err
 	}
-	
+
 	templates := make([]*entity.PermissionTemplate, len(dbTemplates))
 	for i, dbTemplate := range dbTemplates {
 		templates[i] = p.convertToEntity(dbTemplate)
 	}
-	
+
 	return templates, total, nil
 }
 
@@ -189,12 +173,12 @@ func (p *PermissionTemplateDAO) GetByDomain(ctx context.Context, domain string) 
 	if err != nil {
 		return nil, err
 	}
-	
+
 	templates := make([]*entity.PermissionTemplate, len(dbTemplates))
 	for i, dbTemplate := range dbTemplates {
 		templates[i] = p.convertToEntity(dbTemplate)
 	}
-	
+
 	return templates, nil
 }
 
@@ -207,12 +191,12 @@ func (p *PermissionTemplateDAO) GetByResource(ctx context.Context, domain, resou
 	if err != nil {
 		return nil, err
 	}
-	
+
 	templates := make([]*entity.PermissionTemplate, len(dbTemplates))
 	for i, dbTemplate := range dbTemplates {
 		templates[i] = p.convertToEntity(dbTemplate)
 	}
-	
+
 	return templates, nil
 }
 
@@ -224,12 +208,12 @@ func (p *PermissionTemplateDAO) GetActiveTemplates(ctx context.Context) ([]*enti
 	if err != nil {
 		return nil, err
 	}
-	
+
 	templates := make([]*entity.PermissionTemplate, len(dbTemplates))
 	for i, dbTemplate := range dbTemplates {
 		templates[i] = p.convertToEntity(dbTemplate)
 	}
-	
+
 	return templates, nil
 }
 
@@ -243,12 +227,12 @@ func (p *PermissionTemplateDAO) GetDefaultTemplates(ctx context.Context, domain 
 	if err != nil {
 		return nil, err
 	}
-	
+
 	templates := make([]*entity.PermissionTemplate, len(dbTemplates))
 	for i, dbTemplate := range dbTemplates {
 		templates[i] = p.convertToEntity(dbTemplate)
 	}
-	
+
 	return templates, nil
 }
 
@@ -262,7 +246,7 @@ func (p *PermissionTemplateDAO) GetByTemplateCode(ctx context.Context, templateC
 		}
 		return nil, err
 	}
-	
+
 	return p.convertToEntity(dbTemplate), nil
 }
 

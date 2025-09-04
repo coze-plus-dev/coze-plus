@@ -85,7 +85,7 @@ struct GetRoleResponse {
 }
 
 struct ListRolesRequest {
-    1: optional i32 role_type (api.body = "role_type"),
+    1: optional string role_domain (api.body = "role_domain"),
     2: optional i32 is_builtin (api.body = "is_builtin"),
     3: optional i32 is_disabled (api.body = "is_disabled"),
     4: optional string keyword (api.body = "keyword"),
@@ -161,12 +161,60 @@ struct ListUsersResponse {
 }
 
 struct UpdateUserStatusRequest {
-    1: required i64 user_id (api.body = "user_id", api.js_conv = "true"),
+    1: required string user_id (api.body = "user_id"),
     2: required permission_common.UserStatus is_disabled (api.body = "is_disabled"),
     255: optional base.Base base,
 }
 
 struct UpdateUserStatusResponse {
+    1: required i32 code,
+    2: required string msg,
+}
+
+// User role assignment
+struct AssignUserMultipleRolesRequest {
+    1: required string user_id (api.body = "user_id"),
+    2: required list<string> role_ids (api.body = "role_ids"),
+    255: optional base.Base base,
+}
+
+struct AssignUserMultipleRolesResponse {
+    1: required i32 code,
+    2: required string msg,
+}
+
+// Get user roles
+struct GetUserRolesRequest {
+    1: required string user_id (api.body = "user_id"),
+    255: optional base.Base base,
+}
+
+struct GetUserRolesResponse {
+    1: required list<RoleData> data,
+    2: required i32 code,
+    3: required string msg,
+}
+
+// Unassign user roles
+struct UnassignUserRolesRequest {
+    1: required string user_id (api.body = "user_id"),
+    2: required list<string> role_ids (api.body = "role_ids"),
+    255: optional base.Base base,
+}
+
+struct UnassignUserRolesResponse {
+    1: required i32 code,
+    2: required string msg,
+}
+
+// Reset user password
+struct ResetUserPasswordRequest {
+    1: required string email (api.body = "email"),
+    2: required string new_password (api.body = "new_password"),
+    255: optional base.Base base,
+}
+
+struct ResetUserPasswordResponse {
     1: required i32 code,
     2: required string msg,
 }

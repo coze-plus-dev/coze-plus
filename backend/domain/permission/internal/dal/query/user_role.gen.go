@@ -46,11 +46,9 @@ func newUserRole(db *gorm.DB, opts ...gen.DOOption) userRole {
 	_userRole.ID = field.NewInt64(tableName, "id")
 	_userRole.UserID = field.NewInt64(tableName, "user_id")
 	_userRole.RoleID = field.NewInt64(tableName, "role_id")
-	_userRole.SpaceID = field.NewInt64(tableName, "space_id")
 	_userRole.AssignedBy = field.NewInt64(tableName, "assigned_by")
 	_userRole.AssignedAt = field.NewInt64(tableName, "assigned_at")
 	_userRole.ExpiredAt = field.NewInt64(tableName, "expired_at")
-	_userRole.IsDisabled = field.NewInt32(tableName, "is_disabled")
 	_userRole.DeletedAt = field.NewField(tableName, "deleted_at")
 
 	_userRole.fillFieldMap()
@@ -66,11 +64,9 @@ type userRole struct {
 	ID         field.Int64
 	UserID     field.Int64 // User ID
 	RoleID     field.Int64 // Role ID
-	SpaceID    field.Int64 // Permission scope - Space ID (NULL means global)
 	AssignedBy field.Int64 // Assigner ID
 	AssignedAt field.Int64 // Assignment time
 	ExpiredAt  field.Int64 // Expiration time (NULL means permanent)
-	IsDisabled field.Int32 // Is disabled: 0-Enabled, 1-Disabled
 	DeletedAt  field.Field // Soft delete timestamp (NULL means not deleted)
 
 	fieldMap map[string]field.Expr
@@ -91,11 +87,9 @@ func (u *userRole) updateTableName(table string) *userRole {
 	u.ID = field.NewInt64(table, "id")
 	u.UserID = field.NewInt64(table, "user_id")
 	u.RoleID = field.NewInt64(table, "role_id")
-	u.SpaceID = field.NewInt64(table, "space_id")
 	u.AssignedBy = field.NewInt64(table, "assigned_by")
 	u.AssignedAt = field.NewInt64(table, "assigned_at")
 	u.ExpiredAt = field.NewInt64(table, "expired_at")
-	u.IsDisabled = field.NewInt32(table, "is_disabled")
 	u.DeletedAt = field.NewField(table, "deleted_at")
 
 	u.fillFieldMap()
@@ -121,15 +115,13 @@ func (u *userRole) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (u *userRole) fillFieldMap() {
-	u.fieldMap = make(map[string]field.Expr, 9)
+	u.fieldMap = make(map[string]field.Expr, 7)
 	u.fieldMap["id"] = u.ID
 	u.fieldMap["user_id"] = u.UserID
 	u.fieldMap["role_id"] = u.RoleID
-	u.fieldMap["space_id"] = u.SpaceID
 	u.fieldMap["assigned_by"] = u.AssignedBy
 	u.fieldMap["assigned_at"] = u.AssignedAt
 	u.fieldMap["expired_at"] = u.ExpiredAt
-	u.fieldMap["is_disabled"] = u.IsDisabled
 	u.fieldMap["deleted_at"] = u.DeletedAt
 }
 

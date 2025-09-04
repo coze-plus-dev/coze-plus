@@ -85,7 +85,7 @@ export interface GetRoleResponse {
   msg: string,
 }
 export interface ListRolesRequest {
-  role_type?: number,
+  role_domain?: string,
   is_builtin?: number,
   is_disabled?: number,
   keyword?: string,
@@ -152,6 +152,42 @@ export interface UpdateUserStatusRequest {
   is_disabled: permission_common.UserStatus,
 }
 export interface UpdateUserStatusResponse {
+  code: number,
+  msg: string,
+}
+/** User role assignment */
+export interface AssignUserMultipleRolesRequest {
+  user_id: string,
+  role_ids: string[],
+}
+export interface AssignUserMultipleRolesResponse {
+  code: number,
+  msg: string,
+}
+/** Get user roles */
+export interface GetUserRolesRequest {
+  user_id: string
+}
+export interface GetUserRolesResponse {
+  data: RoleData[],
+  code: number,
+  msg: string,
+}
+/** Unassign user roles */
+export interface UnassignUserRolesRequest {
+  user_id: string,
+  role_ids: string[],
+}
+export interface UnassignUserRolesResponse {
+  code: number,
+  msg: string,
+}
+/** Reset user password */
+export interface ResetUserPasswordRequest {
+  email: string,
+  new_password: string,
+}
+export interface ResetUserPasswordResponse {
   code: number,
   msg: string,
 }

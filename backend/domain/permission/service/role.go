@@ -14,22 +14,6 @@
  * limitations under the License.
  */
 
-/*
- * Copyright 2025 coze-dev Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package service
 
 import (
@@ -70,14 +54,14 @@ func (r *RoleServiceImpl) CreateRole(ctx context.Context, request *CreateRoleReq
 	if exists {
 		return nil, errorx.New(errno.ErrPermissionRoleCodeExistsCode, errorx.KV("role_code", request.RoleCode))
 	}
-	
+
 	// Validate permissions JSON if provided
 	if request.Permissions != "" {
 		if err := r.validatePermissionsJSON(request.Permissions); err != nil {
 			return nil, errorx.New(errno.ErrPermissionInvalidJSONCode, errorx.KV("msg", err.Error()))
 		}
 	}
-	
+
 	// Create role entity
 	role := &entity.Role{
 		RoleCode:      request.RoleCode,
@@ -91,12 +75,12 @@ func (r *RoleServiceImpl) CreateRole(ctx context.Context, request *CreateRoleReq
 		Description:   request.Description,
 		CreatedBy:     request.CreatedBy,
 	}
-	
+
 	createdRole, err := r.roleRepo.Create(ctx, role)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create role: %w", err)
 	}
-	
+
 	return &CreateRoleResponse{
 		Role: createdRole,
 	}, nil
@@ -112,12 +96,12 @@ func (r *RoleServiceImpl) UpdateRole(ctx context.Context, request *UpdateRoleReq
 	if role == nil {
 		return errorx.New(errno.ErrPermissionRoleNotFoundCode, errorx.KV("role_id", strconv.FormatInt(request.ID, 10)))
 	}
-	
+
 	// Check if role is builtin (cannot be modified)
 	if role.IsBuiltin == 1 {
 		return errorx.New(errno.ErrPermissionRoleBuiltinCode)
 	}
-	
+
 	// Update role fields
 	if request.RoleName != nil {
 		role.RoleName = *request.RoleName
@@ -136,18 +120,18 @@ func (r *RoleServiceImpl) UpdateRole(ctx context.Context, request *UpdateRoleReq
 	if request.IsDisabled != nil {
 		role.IsDisabled = *request.IsDisabled
 	}
-	
+
 	if err := r.roleRepo.Update(ctx, role); err != nil {
 		return fmt.Errorf("failed to update role: %w", err)
 	}
-	
+
 	// Sync casbin policies if permissions were updated
 	if request.Permissions != nil && *request.Permissions != "" {
 		if err := r.syncCasbinPolicies(ctx, role.RoleCode, *request.Permissions); err != nil {
 			return fmt.Errorf("failed to sync casbin policies: %w", err)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -161,25 +145,25 @@ func (r *RoleServiceImpl) DeleteRole(ctx context.Context, request *DeleteRoleReq
 	if role == nil {
 		return errorx.New(errno.ErrPermissionRoleNotFoundCode, errorx.KV("role_id", strconv.FormatInt(request.ID, 10)))
 	}
-	
+
 	// Check if role is builtin (cannot be deleted)
 	if role.IsBuiltin == 1 {
 		return errorx.New(errno.ErrPermissionRoleBuiltinCode)
 	}
-	
+
 	// Check if role is in use
-	userCount, err := r.userRoleRepo.CountRoleUsers(ctx, request.ID, nil)
+	userCount, err := r.userRoleRepo.CountRoleUsers(ctx, request.ID)
 	if err != nil {
 		return fmt.Errorf("failed to check role usage: %w", err)
 	}
 	if userCount > 0 {
 		return errorx.New(errno.ErrPermissionRoleInUseCode, errorx.KV("user_count", strconv.FormatInt(userCount, 10)))
 	}
-	
+
 	if err := r.roleRepo.Delete(ctx, request.ID); err != nil {
 		return fmt.Errorf("failed to delete role: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -192,7 +176,7 @@ func (r *RoleServiceImpl) GetRoleByID(ctx context.Context, request *GetRoleByIDR
 	if role == nil {
 		return nil, errorx.New(errno.ErrPermissionRoleNotFoundCode, errorx.KV("role_id", strconv.FormatInt(request.ID, 10)))
 	}
-	
+
 	return &GetRoleByIDResponse{
 		Role: role,
 	}, nil
@@ -210,14 +194,14 @@ func (r *RoleServiceImpl) ListRoles(ctx context.Context, request *ListRolesReque
 		Page:          request.Page,
 		Limit:         request.Limit,
 	}
-	
+
 	roles, total, err := r.roleRepo.List(ctx, filter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list roles: %w", err)
 	}
-	
+
 	hasMore := int64(request.Page*request.Limit) < total
-	
+
 	return &ListRolesResponse{
 		Roles:   roles,
 		Total:   total,
@@ -234,7 +218,7 @@ func (r *RoleServiceImpl) GetRoleByCode(ctx context.Context, request *GetRoleByC
 	if role == nil {
 		return nil, fmt.Errorf("role with code '%s' not found", request.RoleCode)
 	}
-	
+
 	return &GetRoleByCodeResponse{
 		Role: role,
 	}, nil
@@ -246,7 +230,7 @@ func (r *RoleServiceImpl) GetRolesByDomain(ctx context.Context, request *GetRole
 	if err != nil {
 		return nil, fmt.Errorf("failed to get roles by domain: %w", err)
 	}
-	
+
 	return &GetRolesByDomainResponse{
 		Roles: roles,
 	}, nil
@@ -258,7 +242,7 @@ func (r *RoleServiceImpl) GetBuiltinRoles(ctx context.Context, request *GetBuilt
 	if err != nil {
 		return nil, fmt.Errorf("failed to get builtin roles: %w", err)
 	}
-	
+
 	return &GetBuiltinRolesResponse{
 		Roles: roles,
 	}, nil
@@ -274,16 +258,16 @@ func (r *RoleServiceImpl) UpdateRoleStatus(ctx context.Context, request *UpdateR
 	if role == nil {
 		return errorx.New(errno.ErrPermissionRoleNotFoundCode, errorx.KV("role_id", strconv.FormatInt(request.ID, 10)))
 	}
-	
+
 	// Check if role is builtin (cannot be modified)
 	if role.IsBuiltin == 1 {
 		return errorx.New(errno.ErrPermissionRoleBuiltinCode)
 	}
-	
+
 	if err := r.roleRepo.UpdateStatus(ctx, request.ID, request.Status); err != nil {
 		return fmt.Errorf("failed to update role status: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -297,16 +281,16 @@ func (r *RoleServiceImpl) validatePermissionsJSON(permissions string) error {
 	if permissions == "" {
 		return nil
 	}
-	
+
 	// Parse as array format (permissions should be an array of permission groups)
 	var permissionArray []interface{}
 	if err := json.Unmarshal([]byte(permissions), &permissionArray); err != nil {
 		return fmt.Errorf("invalid JSON format: %w", err)
 	}
-	
+
 	// Additional validation logic can be added here
 	// For example, validate specific permission structure, allowed keys, etc.
-	
+
 	return nil
 }
 
@@ -317,65 +301,65 @@ func (r *RoleServiceImpl) syncCasbinPolicies(ctx context.Context, roleCode strin
 	if err := json.Unmarshal([]byte(permissionsJSON), &permissionArray); err != nil {
 		return fmt.Errorf("invalid permissions JSON: %w", err)
 	}
-	
+
 	// Collect policies to create
 	var policiesToCreate []*entity.CasbinRule
-	
+
 	// Traverse permissions structure
 	for _, permGroup := range permissionArray {
 		groupMap, ok := permGroup.(map[string]interface{})
 		if !ok {
 			continue
 		}
-		
+
 		// Get domain from permission group
 		domain, ok := groupMap["domain"].(string)
 		if !ok {
 			continue
 		}
-		
+
 		// Get resources from permission group
 		resources, ok := groupMap["resources"].([]interface{})
 		if !ok {
 			continue
 		}
-		
+
 		// Process each resource
 		for _, resource := range resources {
 			resourceMap, ok := resource.(map[string]interface{})
 			if !ok {
 				continue
 			}
-			
+
 			resourceType, ok := resourceMap["resource"].(string)
 			if !ok {
 				continue
 			}
-			
+
 			// Get actions from resource
 			actions, ok := resourceMap["actions"].([]interface{})
 			if !ok {
 				continue
 			}
-			
+
 			// Process each action
 			for _, action := range actions {
 				actionMap, ok := action.(map[string]interface{})
 				if !ok {
 					continue
 				}
-				
+
 				actionName, ok := actionMap["action"].(string)
 				if !ok {
 					continue
 				}
-				
+
 				// Check is_default flag
 				isDefaultInterface, exists := actionMap["is_default"]
 				if !exists {
 					continue
 				}
-				
+
 				// Handle is_default as both float64 (from JSON) and int
 				var isDefault int
 				switch v := isDefaultInterface.(type) {
@@ -386,7 +370,7 @@ func (r *RoleServiceImpl) syncCasbinPolicies(ctx context.Context, roleCode strin
 				default:
 					continue
 				}
-				
+
 				// Handle casbin policy based on is_default value:
 				// - is_default = 1: create "allow" policy
 				// - is_default = 0: don't create policy (will be deleted by sync operation)
@@ -401,11 +385,11 @@ func (r *RoleServiceImpl) syncCasbinPolicies(ctx context.Context, roleCode strin
 			}
 		}
 	}
-	
+
 	// Sync policies in database (delete existing + create new)
 	if err := r.casbinRuleRepo.SyncRolePolicies(ctx, roleCode, policiesToCreate); err != nil {
 		return fmt.Errorf("failed to sync role policies: %w", err)
 	}
-	
+
 	return nil
 }

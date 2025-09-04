@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { type FC, useState } from 'react';
+import { type FC, useState, useMemo, useCallback } from 'react';
 
 import { IconCozRefresh } from '@coze-arch/coze-design/icons';
 import {
@@ -23,7 +23,6 @@ import {
   Select,
   Space,
   Pagination,
-  Toast,
   Spin,
 } from '@coze-arch/coze-design';
 
@@ -32,7 +31,11 @@ import { ENTERPRISE_I18N_KEYS } from '@/locales/keys';
 
 import type { UserData } from './types';
 import { useAccountList } from './hooks/use-account-list';
+import { useUserActions } from './hooks/use-user-actions';
 import UserCard from './components/user-card';
+import { AssignRoleModal } from './components/assign-role-modal';
+import { UserRoleDetailPanel } from './components/user-role-detail-panel';
+import { ResetPasswordModal } from './components/reset-password-modal';
 
 import styles from './index.module.less';
 
@@ -76,6 +79,12 @@ const AccountToolbar: FC<AccountToolbarProps> = ({
         value={searchKeyword}
         onChange={onSearchChange}
         style={{ width: 240 }}
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
+        data-lpignore="true"
+        data-form-type="other"
       />
       <Select
         placeholder={t(ENTERPRISE_I18N_KEYS.ACCOUNT_STATUS_FILTER_PLACEHOLDER)}
@@ -101,12 +110,16 @@ interface UserListContentProps {
   users: UserData[];
   loading: boolean;
   onActionClick: (action: string, record: UserData) => void;
+  openDropdownId: string | null;
+  setOpenDropdownId: (id: string | null) => void;
 }
 
 const UserListContent: FC<UserListContentProps> = ({
   users,
   loading,
   onActionClick,
+  openDropdownId,
+  setOpenDropdownId,
 }) => {
   if (loading) {
     return (
@@ -131,6 +144,8 @@ const UserListContent: FC<UserListContentProps> = ({
           key={item.user_id}
           item={item}
           onActionClick={onActionClick}
+          openDropdownId={openDropdownId}
+          setOpenDropdownId={setOpenDropdownId}
         />
       ))}
     </div>
@@ -168,77 +183,23 @@ const PaginationSection: FC<PaginationSectionProps> = ({
   );
 };
 
-// Custom hook for handling user actions
-const useUserActions = (
-  updateUserStatus: (
-    userId: string,
-    isDisabled: number,
-  ) => Promise<{ success: boolean; message: string }>,
-) => {
-  const handleUserStatusUpdate = async (action: string, record: UserData) => {
-    const isDisable = action === 'disable';
-    const newStatus = isDisable ? 1 : 0;
-    console.log(
-      'Updating user status - Action:',
-      action,
-      'User ID:',
-      record.user_id,
-      'New status:',
-      newStatus,
-    );
-
-    try {
-      const result = await updateUserStatus(String(record.user_id), newStatus);
-      console.log('Update result:', result);
-
-      if (result && result.success) {
-        Toast.success(
-          isDisable
-            ? t(ENTERPRISE_I18N_KEYS.ACCOUNT_DISABLE_SUCCESS)
-            : t(ENTERPRISE_I18N_KEYS.ACCOUNT_ENABLE_SUCCESS),
-        );
-      } else {
-        const message =
-          result?.message || t(ENTERPRISE_I18N_KEYS.ACCOUNT_OPERATION_FAILED);
-        Toast.error(message);
-      }
-    } catch (error) {
-      console.error('Error in handleUserStatusUpdate:', error);
-      Toast.error(t(ENTERPRISE_I18N_KEYS.ACCOUNT_OPERATION_FAILED));
-    }
-  };
-
-  const handleActionClick = async (action: string, record: UserData) => {
-    console.log('handleActionClick called - Action:', action, 'User:', record);
-
-    switch (action) {
-      case 'enable':
-      case 'disable':
-        await handleUserStatusUpdate(action, record);
-        break;
-      case 'assignRole':
-        // TODO: 实现分配角色
-        Toast.info(t(ENTERPRISE_I18N_KEYS.ACCOUNT_FEATURE_COMING_SOON));
-        break;
-      case 'roleList':
-        // TODO: 实现查看角色列表
-        Toast.info(t(ENTERPRISE_I18N_KEYS.ACCOUNT_FEATURE_COMING_SOON));
-        break;
-      case 'resetPassword':
-        // TODO: 实现重置密码
-        Toast.info(t(ENTERPRISE_I18N_KEYS.ACCOUNT_FEATURE_COMING_SOON));
-        break;
-      default:
-        break;
-    }
-  };
-
-  return { handleActionClick };
-};
 
 const AccountPage: FC = () => {
   const [searchKeyword, setSearchKeyword] = useState('');
   const [statusFilter, setStatusFilter] = useState<number | undefined>();
+  const [assignRoleModalVisible, setAssignRoleModalVisible] = useState(false);
+  const [selectedUserForRole, setSelectedUserForRole] = useState<UserData | null>(null);
+  const [userRoleDetailVisible, setUserRoleDetailVisible] = useState(false);
+  const [selectedUserForRoleDetail, setSelectedUserForRoleDetail] = useState<UserData | null>(null);
+  const [resetPasswordModalVisible, setResetPasswordModalVisible] = useState(false);
+  const [selectedUserForResetPassword, setSelectedUserForResetPassword] = useState<UserData | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+
+  // 使用 useMemo 来稳定 params 对象引用，避免不必要的重新渲染
+  const accountListParams = useMemo(() => ({
+    keyword: searchKeyword,
+    is_disabled: statusFilter,
+  }), [searchKeyword, statusFilter]);
 
   const {
     users,
@@ -248,14 +209,62 @@ const AccountPage: FC = () => {
     handlePageChange,
     handleSearch,
     updateUserStatus,
-  } = useAccountList({
-    keyword: searchKeyword,
-    is_disabled: statusFilter,
+  } = useAccountList(accountListParams);
+
+  const handleAssignRole = useCallback((user: UserData) => {
+    setSelectedUserForRole(user);
+    setAssignRoleModalVisible(true);
+  }, []);
+
+  const handleAssignRoleModalClose = useCallback(() => {
+    setAssignRoleModalVisible(false);
+    setSelectedUserForRole(null);
+  }, []);
+
+  const handleAssignRoleSuccess = useCallback(() => {
+    // 重置密码成功后不需要刷新用户列表
+    // 移除对 refreshUsers 的调用以避免循环依赖
+  }, []);
+
+  const handleShowUserRoleDetail = useCallback((user: UserData) => {
+    setSelectedUserForRoleDetail(user);
+    setUserRoleDetailVisible(true);
+    // 关闭所有下拉菜单
+    setOpenDropdownId(null);
+  }, []);
+
+  const handleCloseUserRoleDetail = useCallback(() => {
+    setUserRoleDetailVisible(false);
+    setSelectedUserForRoleDetail(null);
+  }, []);
+
+  const handleResetPassword = useCallback((user: UserData) => {
+    setSelectedUserForResetPassword(user);
+    setResetPasswordModalVisible(true);
+    setOpenDropdownId(null);
+  }, []);
+
+  const handleCloseResetPasswordModal = () => {
+    setResetPasswordModalVisible(false);
+    setSelectedUserForResetPassword(null);
+  };
+
+  const handleResetPasswordSuccess = () => {
+    // 重置密码成功后不需要刷新用户列表
+    // 只需要关闭弹窗即可
+  };
+
+  const { handleActionClick } = useUserActions({
+    updateUserStatus,
+    onAssignRole: handleAssignRole,
+    onShowRoleDetail: handleShowUserRoleDetail,
+    onResetPassword: handleResetPassword,
   });
 
-  const { handleActionClick } = useUserActions(updateUserStatus);
-
   const handleSearchChange = (value: string) => {
+    if (typeof value !== 'string' || value === searchKeyword) {
+      return;
+    }
     setSearchKeyword(value);
     handleSearch(value);
   };
@@ -285,6 +294,8 @@ const AccountPage: FC = () => {
           users={users}
           loading={loading}
           onActionClick={handleActionClick}
+          openDropdownId={openDropdownId}
+          setOpenDropdownId={setOpenDropdownId}
         />
 
         <PaginationSection
@@ -292,6 +303,29 @@ const AccountPage: FC = () => {
           onPageChange={handlePageChange}
         />
       </div>
+
+      {/* 分配角色弹出框 */}
+      <AssignRoleModal
+        visible={assignRoleModalVisible}
+        user={selectedUserForRole}
+        onClose={handleAssignRoleModalClose}
+        onSuccess={handleAssignRoleSuccess}
+      />
+
+      {/* 用户角色详情弹出框 */}
+      <UserRoleDetailPanel
+        visible={userRoleDetailVisible}
+        user={selectedUserForRoleDetail}
+        onClose={handleCloseUserRoleDetail}
+      />
+
+      {/* 重置密码弹出框 */}
+      <ResetPasswordModal
+        visible={resetPasswordModalVisible}
+        user={selectedUserForResetPassword}
+        onClose={handleCloseResetPasswordModal}
+        onSuccess={handleResetPasswordSuccess}
+      />
     </div>
   );
 };

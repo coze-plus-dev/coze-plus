@@ -73,7 +73,7 @@ export const ListRoles = /*#__PURE__*/createAPI<permission.ListRolesRequest, per
   "name": "ListRoles",
   "reqType": "permission.ListRolesRequest",
   "reqMapping": {
-    "body": ["role_type", "is_builtin", "is_disabled", "keyword", "page", "page_size"]
+    "body": ["role_domain", "is_builtin", "is_disabled", "keyword", "page", "page_size"]
   },
   "resType": "permission.ListRolesResponse",
   "schemaRoot": "api://schemas/idl_permission_permission_service",
@@ -112,6 +112,54 @@ export const UpdateUserStatus = /*#__PURE__*/createAPI<permission.UpdateUserStat
     "body": ["user_id", "is_disabled"]
   },
   "resType": "permission.UpdateUserStatusResponse",
+  "schemaRoot": "api://schemas/idl_permission_permission_service",
+  "service": "permission"
+});
+export const AssignUserMultipleRoles = /*#__PURE__*/createAPI<permission.AssignUserMultipleRolesRequest, permission.AssignUserMultipleRolesResponse>({
+  "url": "/api/permission_api/user/assign_roles",
+  "method": "POST",
+  "name": "AssignUserMultipleRoles",
+  "reqType": "permission.AssignUserMultipleRolesRequest",
+  "reqMapping": {
+    "body": ["user_id", "role_ids"]
+  },
+  "resType": "permission.AssignUserMultipleRolesResponse",
+  "schemaRoot": "api://schemas/idl_permission_permission_service",
+  "service": "permission"
+});
+export const UnassignUserRoles = /*#__PURE__*/createAPI<permission.UnassignUserRolesRequest, permission.UnassignUserRolesResponse>({
+  "url": "/api/permission_api/user/unassign_roles",
+  "method": "POST",
+  "name": "UnassignUserRoles",
+  "reqType": "permission.UnassignUserRolesRequest",
+  "reqMapping": {
+    "body": ["user_id", "role_ids"]
+  },
+  "resType": "permission.UnassignUserRolesResponse",
+  "schemaRoot": "api://schemas/idl_permission_permission_service",
+  "service": "permission"
+});
+export const GetUserRoles = /*#__PURE__*/createAPI<permission.GetUserRolesRequest, permission.GetUserRolesResponse>({
+  "url": "/api/permission_api/user/roles",
+  "method": "GET",
+  "name": "GetUserRoles",
+  "reqType": "permission.GetUserRolesRequest",
+  "reqMapping": {
+    "body": ["user_id"]
+  },
+  "resType": "permission.GetUserRolesResponse",
+  "schemaRoot": "api://schemas/idl_permission_permission_service",
+  "service": "permission"
+});
+export const ResetUserPassword = /*#__PURE__*/createAPI<permission.ResetUserPasswordRequest, permission.ResetUserPasswordResponse>({
+  "url": "/api/permission_api/user/reset_password",
+  "method": "POST",
+  "name": "ResetUserPassword",
+  "reqType": "permission.ResetUserPasswordRequest",
+  "reqMapping": {
+    "body": ["email", "new_password"]
+  },
+  "resType": "permission.ResetUserPasswordResponse",
   "schemaRoot": "api://schemas/idl_permission_permission_service",
   "service": "permission"
 });

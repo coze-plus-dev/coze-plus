@@ -14,22 +14,6 @@
  * limitations under the License.
  */
 
-/*
- * Copyright 2025 coze-dev Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package repository
 
 import (
@@ -75,7 +59,7 @@ type RoleRepo interface {
 	Update(ctx context.Context, role *entity.Role) error
 	Delete(ctx context.Context, id int64) error
 	List(ctx context.Context, filter *entity.RoleListFilter) ([]*entity.Role, int64, error)
-	
+
 	// Business specific operations
 	GetByRoleCode(ctx context.Context, roleCode string) (*entity.Role, error)
 	GetByDomain(ctx context.Context, domain entity.RoleDomain) ([]*entity.Role, error)
@@ -93,7 +77,7 @@ type PermissionTemplateRepo interface {
 	Update(ctx context.Context, template *entity.PermissionTemplate) error
 	Delete(ctx context.Context, id int64) error
 	List(ctx context.Context, filter *entity.PermissionTemplateListFilter) ([]*entity.PermissionTemplate, int64, error)
-	
+
 	// Business specific operations
 	GetByDomain(ctx context.Context, domain string) ([]*entity.PermissionTemplate, error)
 	GetByResource(ctx context.Context, domain, resource string) ([]*entity.PermissionTemplate, error)
@@ -105,6 +89,7 @@ type PermissionTemplateRepo interface {
 }
 
 // UserRoleRepo defines user role repository interface
+// Note: Only manages global roles now, space roles are managed by space_user table
 type UserRoleRepo interface {
 	// Basic CRUD operations
 	Create(ctx context.Context, userRole *entity.UserRole) (*entity.UserRole, error)
@@ -112,18 +97,19 @@ type UserRoleRepo interface {
 	Update(ctx context.Context, userRole *entity.UserRole) error
 	Delete(ctx context.Context, id int64) error
 	List(ctx context.Context, filter *entity.UserRoleListFilter) ([]*entity.UserRole, int64, error)
-	
-	// Business specific operations
-	GetUserRoles(ctx context.Context, userID int64, spaceID *int64) ([]*entity.UserRole, error)
-	GetRoleUsers(ctx context.Context, roleID int64, spaceID *int64) ([]*entity.UserRole, error)
-	CheckUserHasRole(ctx context.Context, userID, roleID int64, spaceID *int64) (bool, error)
-	AssignUserToRole(ctx context.Context, userID, roleID int64, spaceID *int64, assignedBy int64) error
-	RemoveUserFromRole(ctx context.Context, userID, roleID int64, spaceID *int64) error
-	GetUserGlobalRoles(ctx context.Context, userID int64) ([]*entity.UserRole, error)
-	GetUserSpaceRoles(ctx context.Context, userID, spaceID int64) ([]*entity.UserRole, error)
-	BatchAssignUsersToRole(ctx context.Context, userIDs []int64, roleID int64, spaceID *int64, assignedBy int64) error
-	BatchRemoveUsersFromRole(ctx context.Context, userIDs []int64, roleID int64, spaceID *int64) error
-	CountRoleUsers(ctx context.Context, roleID int64, spaceID *int64) (int64, error)
+
+	// Business specific operations (global roles only)
+	GetUserRoles(ctx context.Context, userID int64) ([]*entity.UserRole, error)
+	GetRoleUsers(ctx context.Context, roleID int64) ([]*entity.UserRole, error)
+	CheckUserHasRole(ctx context.Context, userID, roleID int64) (bool, error)
+	AssignUserToRole(ctx context.Context, userID, roleID int64, assignedBy int64) error
+	RemoveUserFromRole(ctx context.Context, userID, roleID int64) error
+	BatchAssignUsersToRole(ctx context.Context, userIDs []int64, roleID int64, assignedBy int64) error
+	BatchRemoveUsersFromRole(ctx context.Context, userIDs []int64, roleID int64) error
+	CountRoleUsers(ctx context.Context, roleID int64) (int64, error)
+	GetUsersByRoleCode(ctx context.Context, roleCode string) ([]int64, error)
+	// JOIN query for better performance
+	GetUserRolesWithRoleInfo(ctx context.Context, userID int64) ([]entity.UserRoleWithRole, error)
 }
 
 // CasbinRuleRepo defines casbin rule repository interface
@@ -134,7 +120,7 @@ type CasbinRuleRepo interface {
 	Update(ctx context.Context, rule *entity.CasbinRule) error
 	Delete(ctx context.Context, id int64) error
 	List(ctx context.Context, filter *entity.CasbinRuleListFilter) ([]*entity.CasbinRule, int64, error)
-	
+
 	// Business specific operations
 	GetRolePolicies(ctx context.Context, roleCode string) ([]*entity.CasbinRule, error)
 	DeleteRolePolicies(ctx context.Context, roleCode string) error

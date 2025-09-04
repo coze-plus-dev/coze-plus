@@ -1,0 +1,140 @@
+/*
+ * Copyright 2025 coze-plus Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+.assignRoleModalContainer {
+  // 确保模态框在所有其他组件之上
+  :global(.semi-modal-wrap) {
+    z-index: 1100 !important;
+  }
+  
+  // 确保遮罩层覆盖所有背景内容
+  :global(.semi-modal-mask) {
+    z-index: 1099 !important;
+  }
+  
+  :global(.semi-modal-body) {
+    height: 600px;
+    max-height: 600px;
+    padding: 24px;
+    overflow: hidden;
+  }
+  
+  :global(.semi-modal-content) {
+    max-width: 100vw; /* 确保不超出视窗宽度 */
+  }
+}
+
+// 当角色分配模态框打开时，隐藏所有可能的下拉菜单和提示框
+:global(body.assign-role-modal-open) {
+  :global(.semi-dropdown),
+  :global(.semi-tooltip),
+  :global(.semi-popover) {
+    display: none !important;
+  }
+}
+
+.assignRoleModal {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  
+  .userInfoHeader {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--semi-color-border);
+    flex-shrink: 0;
+    
+    .userInfo {
+      flex: 1;
+      
+      .userName {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--semi-color-text-0);
+        margin-bottom: 4px;
+      }
+      
+      .userEmail {
+        font-size: 14px;
+        color: var(--semi-color-text-2);
+      }
+    }
+  }
+
+  .content {
+    display: flex;
+    gap: 20px;
+    flex: 1;
+    min-height: 0;
+    min-width: 0; /* 允许收缩 */
+    height: calc(100% - 80px); /* 给用户头部和底部按钮留出空间 */
+
+    .leftPanel,
+    .rightPanel {
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--semi-color-border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .leftPanel {
+      width: 320px;
+      flex-shrink: 0;
+      max-height: 100%;
+    }
+
+    .rightPanel {
+      flex: 1;
+      min-width: 0; /* 允许收缩 */
+      max-height: 100%;
+      overflow: hidden; /* 确保内容不会溢出 */
+    }
+
+    .panelHeader {
+      padding: 12px 16px;
+      background: var(--semi-color-fill-0);
+      border-bottom: 1px solid var(--semi-color-border);
+
+      h3 {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--semi-color-text-0);
+      }
+    }
+
+    .panelContent {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 400px; // 确保有足够的最小高度
+      height: 100%;
+      // 确保内部内容能正确继承高度和居中布局
+      position: relative;
+    }
+  }
+
+  .footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+}

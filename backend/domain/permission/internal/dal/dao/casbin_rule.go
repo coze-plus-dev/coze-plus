@@ -14,22 +14,6 @@
  * limitations under the License.
  */
 
-/*
- * Copyright 2025 coze-dev Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package dao
 
 import (
@@ -63,7 +47,7 @@ func NewCasbinRuleDAO(db *gorm.DB, idGen idgen.IDGenerator) *CasbinRuleDAO {
 // Create creates a new casbin rule
 func (dao *CasbinRuleDAO) Create(ctx context.Context, rule *entity.CasbinRule) (*entity.CasbinRule, error) {
 	now := time.Now().UnixMilli()
-	
+
 	// Generate ID if not provided
 	if rule.ID == 0 {
 		id, err := dao.IDGen.GenID(ctx)
@@ -72,18 +56,18 @@ func (dao *CasbinRuleDAO) Create(ctx context.Context, rule *entity.CasbinRule) (
 		}
 		rule.ID = id
 	}
-	
+
 	rule.CreatedAt = now
 	rule.UpdatedAt = now
-	
+
 	// Convert entity to model
 	modelRule := dao.entityToModel(rule)
-	
+
 	// Create in database
 	if err := dao.Query.CasbinRule.WithContext(ctx).Create(modelRule); err != nil {
 		return nil, err
 	}
-	
+
 	// Convert back to entity
 	return dao.modelToEntity(modelRule), nil
 }
@@ -97,17 +81,17 @@ func (dao *CasbinRuleDAO) GetByID(ctx context.Context, id int64) (*entity.Casbin
 		}
 		return nil, err
 	}
-	
+
 	return dao.modelToEntity(modelRule), nil
 }
 
 // Update updates a casbin rule
 func (dao *CasbinRuleDAO) Update(ctx context.Context, rule *entity.CasbinRule) error {
 	rule.UpdatedAt = time.Now().UnixMilli()
-	
+
 	// Convert entity to model
 	modelRule := dao.entityToModel(rule)
-	
+
 	// Update in database
 	_, err := dao.Query.CasbinRule.WithContext(ctx).Where(dao.Query.CasbinRule.ID.Eq(rule.ID)).Updates(modelRule)
 	return err
@@ -122,7 +106,7 @@ func (dao *CasbinRuleDAO) Delete(ctx context.Context, id int64) error {
 // List lists casbin rules with pagination and filters
 func (dao *CasbinRuleDAO) List(ctx context.Context, filter *entity.CasbinRuleListFilter) ([]*entity.CasbinRule, int64, error) {
 	query := dao.Query.CasbinRule.WithContext(ctx)
-	
+
 	// Apply filters
 	if filter.Ptype != nil {
 		query = query.Where(dao.Query.CasbinRule.Ptype.Eq(*filter.Ptype))
@@ -142,13 +126,13 @@ func (dao *CasbinRuleDAO) List(ctx context.Context, filter *entity.CasbinRuleLis
 	if filter.V4 != nil {
 		query = query.Where(dao.Query.CasbinRule.V4.Eq(*filter.V4))
 	}
-	
+
 	// Count total
 	total, err := query.Count()
 	if err != nil {
 		return nil, 0, err
 	}
-	
+
 	// Apply pagination
 	if filter.Limit > 0 {
 		offset := (filter.Page - 1) * filter.Limit
@@ -157,22 +141,22 @@ func (dao *CasbinRuleDAO) List(ctx context.Context, filter *entity.CasbinRuleLis
 		}
 		query = query.Limit(filter.Limit)
 	}
-	
+
 	// Order by ID desc
 	query = query.Order(dao.Query.CasbinRule.ID.Desc())
-	
+
 	// Find results
 	modelRules, err := query.Find()
 	if err != nil {
 		return nil, 0, err
 	}
-	
+
 	// Convert models to entities
 	rules := make([]*entity.CasbinRule, len(modelRules))
 	for i, modelRule := range modelRules {
 		rules[i] = dao.modelToEntity(modelRule)
 	}
-	
+
 	return rules, total, nil
 }
 
@@ -185,13 +169,13 @@ func (dao *CasbinRuleDAO) GetRolePolicies(ctx context.Context, roleCode string) 
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Convert models to entities
 	rules := make([]*entity.CasbinRule, len(modelRules))
 	for i, modelRule := range modelRules {
 		rules[i] = dao.modelToEntity(modelRule)
 	}
-	
+
 	return rules, nil
 }
 
@@ -209,10 +193,10 @@ func (dao *CasbinRuleDAO) BatchCreate(ctx context.Context, rules []*entity.Casbi
 	if len(rules) == 0 {
 		return nil
 	}
-	
+
 	return dao.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		txQuery := query.Use(tx)
-		
+
 		// Convert entities to models and generate IDs
 		modelRules := make([]*model.CasbinRule, len(rules))
 		for i, rule := range rules {
@@ -223,14 +207,14 @@ func (dao *CasbinRuleDAO) BatchCreate(ctx context.Context, rules []*entity.Casbi
 				}
 				rule.ID = id
 			}
-			
+
 			now := time.Now().UnixMilli()
 			rule.CreatedAt = now
 			rule.UpdatedAt = now
-			
+
 			modelRules[i] = dao.entityToModel(rule)
 		}
-		
+
 		// Batch create
 		return txQuery.CasbinRule.WithContext(ctx).CreateInBatches(modelRules, 100)
 	})
@@ -240,7 +224,7 @@ func (dao *CasbinRuleDAO) BatchCreate(ctx context.Context, rules []*entity.Casbi
 func (dao *CasbinRuleDAO) SyncRolePolicies(ctx context.Context, roleCode string, policies []*entity.CasbinRule) error {
 	return dao.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		txQuery := query.Use(tx)
-		
+
 		// Delete existing policies for this role
 		_, err := txQuery.CasbinRule.WithContext(ctx).
 			Where(txQuery.CasbinRule.Ptype.Eq("p")).
@@ -249,7 +233,7 @@ func (dao *CasbinRuleDAO) SyncRolePolicies(ctx context.Context, roleCode string,
 		if err != nil {
 			return err
 		}
-		
+
 		// Create new policies if any
 		if len(policies) > 0 {
 			// Generate IDs and set timestamps
@@ -262,21 +246,21 @@ func (dao *CasbinRuleDAO) SyncRolePolicies(ctx context.Context, roleCode string,
 					}
 					policy.ID = id
 				}
-				
+
 				now := time.Now().UnixMilli()
 				policy.CreatedAt = now
 				policy.UpdatedAt = now
-				
+
 				modelRules[i] = dao.entityToModel(policy)
 			}
-			
+
 			// Batch create
 			err = txQuery.CasbinRule.WithContext(ctx).CreateInBatches(modelRules, 100)
 			if err != nil {
 				return err
 			}
 		}
-		
+
 		return nil
 	})
 }

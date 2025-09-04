@@ -31,11 +31,9 @@ type UserRole struct {
 	ID         int64          `gorm:"column:id;primaryKey;autoIncrement:true" json:"id"`
 	UserID     int64          `gorm:"column:user_id;not null;comment:User ID" json:"user_id"`                                     // User ID
 	RoleID     int64          `gorm:"column:role_id;not null;comment:Role ID" json:"role_id"`                                     // Role ID
-	SpaceID    int64          `gorm:"column:space_id;comment:Permission scope - Space ID (NULL means global)" json:"space_id"`    // Permission scope - Space ID (NULL means global)
 	AssignedBy int64          `gorm:"column:assigned_by;not null;comment:Assigner ID" json:"assigned_by"`                         // Assigner ID
 	AssignedAt int64          `gorm:"column:assigned_at;not null;comment:Assignment time" json:"assigned_at"`                     // Assignment time
 	ExpiredAt  int64          `gorm:"column:expired_at;comment:Expiration time (NULL means permanent)" json:"expired_at"`         // Expiration time (NULL means permanent)
-	IsDisabled int32          `gorm:"column:is_disabled;not null;comment:Is disabled: 0-Enabled, 1-Disabled" json:"is_disabled"`  // Is disabled: 0-Enabled, 1-Disabled
 	DeletedAt  gorm.DeletedAt `gorm:"column:deleted_at;comment:Soft delete timestamp (NULL means not deleted)" json:"deleted_at"` // Soft delete timestamp (NULL means not deleted)
 }
 

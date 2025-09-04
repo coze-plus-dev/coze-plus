@@ -19,6 +19,7 @@ package permission
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 	"time"
 
 	"github.com/coze-dev/coze-studio/backend/api/model/permission/common"
@@ -166,6 +167,27 @@ func (p *PermissionApplicationService) ListRoles(ctx context.Context, req *permi
 		// CreatedBy will be set from context
 		Page:          int(req.GetPage()),
 		Limit:         int(req.GetPageSize()),
+	}
+
+	// Handle role_domain filter
+	if req.RoleDomain != nil && *req.RoleDomain != "" {
+		roleDomain := entity.RoleDomain(*req.RoleDomain)
+		// Validate role domain value
+		if roleDomain != entity.RoleDomainGlobal && roleDomain != entity.RoleDomainSpace {
+			return nil, errorx.New(errno.ErrPermissionInvalidParamCode, errorx.KV("msg", "invalid role_domain, must be 'global' or 'space'"))
+		}
+		listReq.RoleDomain = &roleDomain
+	}
+
+	// Handle is_builtin filter
+	if req.IsBuiltin != nil {
+		listReq.IsBuiltin = req.IsBuiltin
+	}
+
+	// Handle is_disabled filter
+	if req.IsDisabled != nil {
+		isDisabled := entity.RoleStatus(*req.IsDisabled)
+		listReq.IsDisabled = &isDisabled
 	}
 
 	domainResp, err := p.DomainSVC.RoleService.ListRoles(ctx, listReq)
@@ -358,6 +380,12 @@ func (p *PermissionApplicationService) UpdateUserStatus(ctx context.Context, req
 		return nil, errorx.New(errno.ErrPermissionInvalidParamCode, errorx.KV("msg", "session required"))
 	}
 
+	// Parse user_id from string to int64
+	userID := parseInt64FromString(req.UserID)
+	if userID <= 0 {
+		return nil, errorx.New(errno.ErrPermissionInvalidParamCode, errorx.KV("msg", "invalid user_id format"))
+	}
+
 	// Convert enum to int32 - note the enum values mapping
 	// common.UserStatus_ENABLED = 0 maps to IsDisabled = 0
 	// common.UserStatus_DISABLED = 1 maps to IsDisabled = 1
@@ -365,7 +393,7 @@ func (p *PermissionApplicationService) UpdateUserStatus(ctx context.Context, req
 
 	// Build request for crossdomain user service
 	crossReq := &crossuser.UpdateUserStatusRequest{
-		UserID:     req.UserID,
+		UserID:     userID,
 		IsDisabled: isDisabled,
 	}
 
@@ -380,6 +408,396 @@ func (p *PermissionApplicationService) UpdateUserStatus(ctx context.Context, req
 		Code: 0,
 		Msg:  "success",
 	}, nil
+}
+
+// AssignUserMultipleRoles assigns multiple roles to a single user
+func (p *PermissionApplicationService) AssignUserMultipleRoles(ctx context.Context, req *permission1.AssignUserMultipleRolesRequest) (*permission1.AssignUserMultipleRolesResponse, error) {
+	// Get user ID from context to ensure user is authenticated
+	uid := ctxutil.GetUIDFromCtx(ctx)
+	if uid == nil {
+		return nil, errorx.New(errno.ErrPermissionInvalidParamCode, errorx.KV("msg", "session required"))
+	}
+
+	// Validate input
+	if len(req.RoleIds) == 0 {
+		return nil, errorx.New(errno.ErrPermissionInvalidParamCode, errorx.KV("msg", "role_ids cannot be empty"))
+	}
+
+	// Parse user_id from string to int64
+	userID := parseInt64FromString(req.UserID)
+	if userID <= 0 {
+		return nil, errorx.New(errno.ErrPermissionInvalidParamCode, errorx.KV("msg", "invalid user_id format"))
+	}
+
+	// Convert string role IDs to int64
+	roleIDs := make([]int64, 0, len(req.RoleIds))
+	for _, roleIDStr := range req.RoleIds {
+		// Parse role ID from string to int64
+		roleID := parseInt64FromString(roleIDStr)
+		if roleID <= 0 {
+			logs.CtxErrorf(ctx, "invalid role_id: %s", roleIDStr)
+			return nil, errorx.New(errno.ErrPermissionInvalidParamCode, errorx.KV("msg", "invalid role_id format"))
+		}
+		roleIDs = append(roleIDs, roleID)
+	}
+
+	// Use current user ID as assignedBy
+	assignedBy := *uid
+
+	// Get user's current global roles
+	getUserRolesReq := &service.GetUserRolesRequest{UserID: userID}
+	currentUserRolesResp, err := p.DomainSVC.UserRoleService.GetUserRoles(ctx, getUserRolesReq)
+	if err != nil {
+		logs.CtxErrorf(ctx, "get current user roles failed for user %s, err: %v", req.UserID, err)
+		return nil, err
+	}
+
+	// Build current role IDs set for comparison
+	currentRoleIDs := make(map[int64]string) // roleID -> roleCode
+	for _, userRole := range currentUserRolesResp.UserRoles {
+		// Get role code for each current role
+		getRoleReq := &service.GetRoleByIDRequest{ID: userRole.RoleID}
+		roleResp, err := p.DomainSVC.RoleService.GetRoleByID(ctx, getRoleReq)
+		if err != nil {
+			logs.CtxWarnf(ctx, "get current role failed for roleID %d, err: %v", userRole.RoleID, err)
+			continue
+		}
+		currentRoleIDs[userRole.RoleID] = roleResp.Role.RoleCode
+	}
+
+	// Validate target roles and build target role set
+	targetRoleIDs := make(map[int64]string) // roleID -> roleCode
+	for _, roleID := range roleIDs {
+		// Validate role exists and get role information
+		getRoleReq := &service.GetRoleByIDRequest{ID: roleID}
+		roleResp, err := p.DomainSVC.RoleService.GetRoleByID(ctx, getRoleReq)
+		if err != nil {
+			logs.CtxErrorf(ctx, "get role failed for roleID %d, err: %v", roleID, err)
+			return nil, err
+		}
+
+		// Ensure it's a global role
+		if roleResp.Role.RoleDomain != entity.RoleDomainGlobal {
+			logs.CtxErrorf(ctx, "only global roles can be assigned, roleID %d is not global", roleID)
+			return nil, errorx.New(errno.ErrPermissionInvalidParamCode, errorx.KV("msg", "only global roles can be assigned"))
+		}
+
+		targetRoleIDs[roleID] = roleResp.Role.RoleCode
+	}
+
+	// Calculate roles to add and remove
+	var rolesToAdd []int64
+	var rolesToRemove []int64
+
+	// Find roles to add (in target but not in current)
+	for roleID := range targetRoleIDs {
+		if _, exists := currentRoleIDs[roleID]; !exists {
+			rolesToAdd = append(rolesToAdd, roleID)
+		}
+	}
+
+	// Find roles to remove (in current but not in target) and collect role codes
+	rolesToRemoveWithCodes := make(map[int64]string) // roleID -> roleCode
+	for roleID, roleCode := range currentRoleIDs {
+		if _, exists := targetRoleIDs[roleID]; !exists {
+			rolesToRemove = append(rolesToRemove, roleID)
+			rolesToRemoveWithCodes[roleID] = roleCode
+		}
+	}
+
+	// Process role additions
+	for _, roleID := range rolesToAdd {
+		assignReq := &service.AssignUserToRoleRequest{
+			UserID:     userID,
+			RoleID:     roleID,
+			AssignedBy: assignedBy,
+		}
+
+		if err := p.DomainSVC.UserRoleService.AssignUserToRole(ctx, assignReq); err != nil {
+			logs.CtxErrorf(ctx, "assign user %s to role %d failed, err: %v", req.UserID, roleID, err)
+			return nil, err
+		}
+
+		logs.CtxInfof(ctx, "successfully assigned user %s to role %d (code: %s)", req.UserID, roleID, targetRoleIDs[roleID])
+	}
+
+	// Process role removals
+	for _, roleID := range rolesToRemove {
+		removeReq := &service.RemoveUserFromRoleRequest{
+			UserID: userID,
+			RoleID: roleID,
+		}
+
+		if err := p.DomainSVC.UserRoleService.RemoveUserFromRole(ctx, removeReq); err != nil {
+			logs.CtxErrorf(ctx, "remove user %s from role %d failed, err: %v", req.UserID, roleID, err)
+			return nil, err
+		}
+
+		logs.CtxInfof(ctx, "successfully removed user %s from role %d", req.UserID, roleID)
+	}
+
+	logs.CtxInfof(ctx, "role sync completed: added %d roles, removed %d roles for user %s", len(rolesToAdd), len(rolesToRemove), req.UserID)
+
+	// Sync casbin group rules for role changes
+	userIDStr := req.UserID
+	
+	// Add casbin group rules for newly assigned roles
+	for _, roleID := range rolesToAdd {
+		roleCode := targetRoleIDs[roleID]
+		if err := p.syncUserRoleGroupPolicy(ctx, userIDStr, roleCode); err != nil {
+			logs.CtxWarnf(ctx, "create casbin group policy failed for user %s, role %s, err: %v", req.UserID, roleCode, err)
+		} else {
+			logs.CtxInfof(ctx, "created casbin group policy: user %s -> role %s", req.UserID, roleCode)
+		}
+	}
+	
+	// Remove casbin group rules for unassigned roles
+	for _, roleID := range rolesToRemove {
+		if roleCode, exists := rolesToRemoveWithCodes[roleID]; exists {
+			if err := p.removeUserRoleGroupPolicy(ctx, userIDStr, roleCode); err != nil {
+				logs.CtxWarnf(ctx, "delete casbin group policy failed for user %s, role %s, err: %v", req.UserID, roleCode, err)
+			} else {
+				logs.CtxInfof(ctx, "deleted casbin group policy: user %s -> role %s", req.UserID, roleCode)
+			}
+		}
+	}
+
+	logs.CtxInfof(ctx, "successfully assigned %d roles to user %s", len(roleIDs), req.UserID)
+
+	return &permission1.AssignUserMultipleRolesResponse{
+		Code: 0,
+		Msg:  "success",
+	}, nil
+}
+
+// syncUserRoleGroupPolicy synchronizes casbin group policy for user-role relationship
+func (p *PermissionApplicationService) syncUserRoleGroupPolicy(ctx context.Context, userID, roleCode string) error {
+	// Create casbin group rule: g, user_id, role_code
+	createReq := &service.CreateGroupRuleRequest{
+		UserID:   userID,
+		RoleCode: roleCode,
+	}
+	
+	err := p.DomainSVC.CasbinRuleService.CreateGroupRule(ctx, createReq)
+	if err != nil {
+		return err
+	}
+	
+	logs.CtxInfof(ctx, "Created casbin group rule: g, %s, %s", userID, roleCode)
+	return nil
+}
+
+// removeUserRoleGroupPolicy removes casbin group policy for user-role relationship
+func (p *PermissionApplicationService) removeUserRoleGroupPolicy(ctx context.Context, userID, roleCode string) error {
+	// Delete casbin group rule: g, user_id, role_code
+	deleteReq := &service.DeleteGroupRuleRequest{
+		UserID:   userID,
+		RoleCode: roleCode,
+	}
+	
+	err := p.DomainSVC.CasbinRuleService.DeleteGroupRule(ctx, deleteReq)
+	if err != nil {
+		return err
+	}
+	
+	logs.CtxInfof(ctx, "Deleted casbin group rule: g, %s, %s", userID, roleCode)
+	return nil
+}
+
+// GetUserRoles gets roles assigned to a user
+func (p *PermissionApplicationService) GetUserRoles(ctx context.Context, req *permission1.GetUserRolesRequest) (*permission1.GetUserRolesResponse, error) {
+	// Get user ID from context to ensure user is authenticated
+	uid := ctxutil.GetUIDFromCtx(ctx)
+	if uid == nil {
+		return nil, errorx.New(errno.ErrPermissionInvalidParamCode, errorx.KV("msg", "session required"))
+	}
+
+	// Parse user_id from string to int64
+	userID := parseInt64FromString(req.UserID)
+	if userID <= 0 {
+		return nil, errorx.New(errno.ErrPermissionInvalidParamCode, errorx.KV("msg", "invalid user_id format"))
+	}
+
+	// Use efficient JOIN query for better performance (single query vs N+1)
+	getUserRolesReq := &service.GetUserRolesRequest{UserID: userID}
+	userRoleInfosResp, err := p.DomainSVC.UserRoleService.GetUserRolesWithRoleInfo(ctx, getUserRolesReq)
+	if err != nil {
+		logs.CtxErrorf(ctx, "get user roles with role info failed for user %s, err: %v", req.UserID, err)
+		return &permission1.GetUserRolesResponse{}, err
+	}
+
+	// Convert to role data with basic info (no permissions field)
+	roles := make([]*permission1.RoleData, 0, len(userRoleInfosResp.UserRoleInfos))
+	for _, userRoleInfo := range userRoleInfosResp.UserRoleInfos {
+		roleData := &permission1.RoleData{
+			ID:          &userRoleInfo.RoleID,
+			RoleCode:    &userRoleInfo.RoleCode,
+			RoleName:    &userRoleInfo.RoleName,
+			Description: &userRoleInfo.Description,
+		}
+		roles = append(roles, roleData)
+	}
+
+	logs.CtxInfof(ctx, "retrieved %d roles for user %s", len(roles), req.UserID)
+
+	return &permission1.GetUserRolesResponse{
+		Code: 0,
+		Msg:  "success",
+		Data: roles,
+	}, nil
+}
+
+// UnassignUserRoles removes multiple roles from a single user
+func (p *PermissionApplicationService) UnassignUserRoles(ctx context.Context, req *permission1.UnassignUserRolesRequest) (*permission1.UnassignUserRolesResponse, error) {
+	// Get user ID from context to ensure user is authenticated
+	uid := ctxutil.GetUIDFromCtx(ctx)
+	if uid == nil {
+		return nil, errorx.New(errno.ErrPermissionInvalidParamCode, errorx.KV("msg", "session required"))
+	}
+
+	// Validate input
+	if len(req.RoleIds) == 0 {
+		return nil, errorx.New(errno.ErrPermissionInvalidParamCode, errorx.KV("msg", "role_ids cannot be empty"))
+	}
+
+	// Parse user_id from string to int64
+	userID := parseInt64FromString(req.UserID)
+	if userID <= 0 {
+		return nil, errorx.New(errno.ErrPermissionInvalidParamCode, errorx.KV("msg", "invalid user_id format"))
+	}
+
+	// Convert string role IDs to int64
+	roleIDs := make([]int64, 0, len(req.RoleIds))
+	for _, roleIDStr := range req.RoleIds {
+		roleID := parseInt64FromString(roleIDStr)
+		if roleID <= 0 {
+			logs.CtxErrorf(ctx, "invalid role_id: %s", roleIDStr)
+			return nil, errorx.New(errno.ErrPermissionInvalidParamCode, errorx.KV("msg", "invalid role_id format"))
+		}
+		roleIDs = append(roleIDs, roleID)
+	}
+
+	// Get user's current roles to validate the roles exist and are assigned
+	getUserRolesReq := &service.GetUserRolesRequest{UserID: userID}
+	currentUserRolesResp, err := p.DomainSVC.UserRoleService.GetUserRoles(ctx, getUserRolesReq)
+	if err != nil {
+		logs.CtxErrorf(ctx, "get current user roles failed for user %d, err: %v", userID, err)
+		return nil, err
+	}
+
+	// Build current role IDs set for validation
+	currentRoleIDs := make(map[int64]string) // roleID -> roleCode
+	for _, userRole := range currentUserRolesResp.UserRoles {
+		// Get role code for each current role
+		getRoleReq := &service.GetRoleByIDRequest{ID: userRole.RoleID}
+		roleResp, err := p.DomainSVC.RoleService.GetRoleByID(ctx, getRoleReq)
+		if err != nil {
+			logs.CtxWarnf(ctx, "get current role failed for roleID %d, err: %v", userRole.RoleID, err)
+			continue
+		}
+		currentRoleIDs[userRole.RoleID] = roleResp.Role.RoleCode
+	}
+
+	// Validate that all roles to unassign are currently assigned to the user
+	var rolesToRemove []int64
+	roleCodesToRemove := make(map[int64]string) // roleID -> roleCode
+	
+	for _, roleID := range roleIDs {
+		if roleCode, exists := currentRoleIDs[roleID]; exists {
+			rolesToRemove = append(rolesToRemove, roleID)
+			roleCodesToRemove[roleID] = roleCode
+		} else {
+			// Role is not assigned to user, log warning but don't fail
+			logs.CtxWarnf(ctx, "role %d is not assigned to user %d, skipping", roleID, userID)
+		}
+	}
+
+	// If no valid roles to remove, return success
+	if len(rolesToRemove) == 0 {
+		logs.CtxInfof(ctx, "no roles to remove for user %d", userID)
+		return &permission1.UnassignUserRolesResponse{
+			Code: 0,
+			Msg:  "success",
+		}, nil
+	}
+
+	// Process role removals
+	for _, roleID := range rolesToRemove {
+		removeReq := &service.RemoveUserFromRoleRequest{
+			UserID: userID,
+			RoleID: roleID,
+		}
+
+		if err := p.DomainSVC.UserRoleService.RemoveUserFromRole(ctx, removeReq); err != nil {
+			logs.CtxErrorf(ctx, "remove user %d from role %d failed, err: %v", userID, roleID, err)
+			return nil, err
+		}
+
+		logs.CtxInfof(ctx, "successfully removed user %d from role %d", userID, roleID)
+	}
+
+	// Remove casbin group rules for unassigned roles
+	userIDStr := req.UserID
+	for _, roleID := range rolesToRemove {
+		if roleCode, exists := roleCodesToRemove[roleID]; exists {
+			if err := p.removeUserRoleGroupPolicy(ctx, userIDStr, roleCode); err != nil {
+				logs.CtxWarnf(ctx, "delete casbin group policy failed for user %s, role %s, err: %v", userIDStr, roleCode, err)
+			} else {
+				logs.CtxInfof(ctx, "deleted casbin group policy: user %s -> role %s", userIDStr, roleCode)
+			}
+		}
+	}
+
+	logs.CtxInfof(ctx, "successfully removed %d roles from user %d", len(rolesToRemove), userID)
+
+	return &permission1.UnassignUserRolesResponse{
+		Code: 0,
+		Msg:  "success",
+	}, nil
+}
+
+// ResetUserPassword resets a user's password by email
+func (p *PermissionApplicationService) ResetUserPassword(ctx context.Context, req *permission1.ResetUserPasswordRequest) (*permission1.ResetUserPasswordResponse, error) {
+	// Get user ID from context to ensure user is authenticated
+	uid := ctxutil.GetUIDFromCtx(ctx)
+	if uid == nil {
+		return nil, errorx.New(errno.ErrPermissionInvalidParamCode, errorx.KV("msg", "session required"))
+	}
+
+	// Validate input
+	if req.Email == "" {
+		return nil, errorx.New(errno.ErrPermissionInvalidParamCode, errorx.KV("msg", "email cannot be empty"))
+	}
+	if req.NewPassword == "" {
+		return nil, errorx.New(errno.ErrPermissionInvalidParamCode, errorx.KV("msg", "new_password cannot be empty"))
+	}
+
+	// Call crossdomain user service to reset password
+	resetReq := &crossuser.ResetUserPasswordRequest{
+		Email:       req.Email,
+		NewPassword: req.NewPassword,
+	}
+
+	if err := crossuser.DefaultSVC().ResetUserPassword(ctx, resetReq); err != nil {
+		logs.CtxErrorf(ctx, "reset user password failed for email %s, err: %v", req.Email, err)
+		return nil, err
+	}
+
+	logs.CtxInfof(ctx, "successfully reset password for user email %s", req.Email)
+
+	return &permission1.ResetUserPasswordResponse{
+		Code: 0,
+		Msg:  "success",
+	}, nil
+}
+
+// parseInt64FromString parses string to int64, returns 0 if invalid
+func parseInt64FromString(s string) int64 {
+	// Try to parse as int64
+	if val, err := strconv.ParseInt(s, 10, 64); err == nil {
+		return val
+	}
+	return 0
 }
 
 // convertCrossUserToAPIModel converts crossdomain user to API model

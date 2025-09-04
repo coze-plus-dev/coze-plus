@@ -250,13 +250,6 @@ func Register(r *server.Hertz) {
 							_reset.GET("/", append(_passportwebemailpasswordresetgetMw(), coze.PassportWebEmailPasswordResetGet)...)
 						}
 					}
-					{
-						_register := _email.Group("/register", _registerMw()...)
-						{
-							_v20 := _register.Group("/v2", _v20Mw()...)
-							_v20.POST("/", append(_passportwebemailregisterv2postMw(), coze.PassportWebEmailRegisterV2Post)...)
-						}
-					}
 				}
 				{
 					_logout := _web.Group("/logout", _logoutMw()...)
@@ -292,7 +285,11 @@ func Register(r *server.Hertz) {
 			}
 			{
 				_user := _permission_api.Group("/user", _userMw()...)
+				_user.POST("/assign_roles", append(_assignusermultiplerolesMw(), coze.AssignUserMultipleRoles)...)
 				_user.POST("/list", append(_listusersMw(), coze.ListUsers)...)
+				_user.POST("/reset_password", append(_resetuserpasswordMw(), coze.ResetUserPassword)...)
+				_user.GET("/roles", append(_getuserrolesMw(), coze.GetUserRoles)...)
+				_user.POST("/unassign_roles", append(_unassignuserrolesMw(), coze.UnassignUserRoles)...)
 				{
 					_status := _user.Group("/status", _statusMw()...)
 					_status.POST("/update", append(_updateuserstatusMw(), coze.UpdateUserStatus)...)

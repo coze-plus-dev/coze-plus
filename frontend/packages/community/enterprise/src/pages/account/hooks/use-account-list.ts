@@ -82,33 +82,34 @@ const handleApiError = (
 };
 
 // Helper function for fetching users
-const fetchUsersImpl = (
-  setState: React.Dispatch<React.SetStateAction<AccountListState>>,
-  paramsRef: React.MutableRefObject<UseAccountListProps>,
-  requestParams?: Partial<AccountListParams>,
-) => {
-  setState(prev => {
-    const currentParams = paramsRef.current;
-    const queryParams = {
-      keyword: currentParams.keyword,
-      is_disabled: currentParams.is_disabled,
-      page: prev.pagination.current,
-      limit: prev.pagination.pageSize,
-      ...requestParams,
-    };
+interface FetchUsersOptions {
+  state: AccountListState;
+  setState: React.Dispatch<React.SetStateAction<AccountListState>>;
+  paramsRef: React.MutableRefObject<UseAccountListProps>;
+  requestParams?: Partial<AccountListParams>;
+}
 
-    // Set loading to true and start the async request
-    permission
-      .ListUsers(queryParams)
-      .then((response: ApiResponse) => {
-        handleApiResponse(response, setState);
-      })
-      .catch((error: unknown) => {
-        handleApiError(error, setState);
-      });
+const fetchUsersImpl = async (options: FetchUsersOptions) => {
+  const { state, setState, paramsRef, requestParams } = options;
+  // 设置loading状态
+  setState(prev => ({ ...prev, loading: true }));
+  
+  // 准备请求参数
+  const currentParams = paramsRef.current;
+  const queryParams = {
+    keyword: currentParams.keyword,
+    is_disabled: currentParams.is_disabled,
+    page: requestParams?.page ?? state.pagination.current,
+    limit: requestParams?.limit ?? state.pagination.pageSize,
+  };
 
-    return { ...prev, loading: true };
-  });
+  try {
+    // 执行API请求
+    const response: ApiResponse = await permission.ListUsers(queryParams);
+    handleApiResponse(response, setState);
+  } catch (error) {
+    handleApiError(error, setState);
+  }
 };
 
 // Helper function for updating user status
@@ -187,15 +188,21 @@ export const useAccountList = (params: UseAccountListProps) => {
     },
   });
 
+  // 保持paramsRef的引用稳定
   const paramsRef = useRef(params);
   paramsRef.current = params;
 
-  // Fetch users list
+  // Fetch users list - 使用稳定的回调
   const fetchUsers = useCallback(
     (requestParams?: Partial<AccountListParams>) => {
-      fetchUsersImpl(setState, paramsRef, requestParams);
+      fetchUsersImpl({
+        state,
+        setState,
+        paramsRef,
+        requestParams,
+      });
     },
-    [], // Remove state dependencies to prevent infinite loop
+    [state], // 依赖state以获取最新的分页信息
   );
 
   // Update user status
@@ -205,12 +212,16 @@ export const useAccountList = (params: UseAccountListProps) => {
     [],
   );
 
-  // Refresh users list
+  // Refresh users list - 使用稳定的回调
   const refreshUsers = useCallback(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+    fetchUsersImpl({
+      state,
+      setState,
+      paramsRef,
+    });
+  }, [state]);
 
-  // Handle pagination change
+  // Handle pagination change - 使用稳定的回调
   const handlePageChange = useCallback(
     (page: number, pageSize?: number) => {
       setState(prev => ({
@@ -222,12 +233,25 @@ export const useAccountList = (params: UseAccountListProps) => {
         },
       }));
       // Fetch data with new pagination parameters
-      fetchUsers({ page, limit: pageSize });
+      const updatedState = {
+        ...state,
+        pagination: {
+          ...state.pagination,
+          current: page,
+          pageSize: pageSize || state.pagination.pageSize,
+        },
+      };
+      fetchUsersImpl({
+        state: updatedState,
+        setState,
+        paramsRef,
+        requestParams: { page, limit: pageSize },
+      });
     },
-    [fetchUsers],
+    [state],
   );
 
-  // Handle search
+  // Handle search - 使用稳定的回调
   const handleSearch = useCallback(
     (keyword: string) => {
       setState(prev => ({
@@ -237,15 +261,32 @@ export const useAccountList = (params: UseAccountListProps) => {
           current: 1, // Reset to first page when searching
         },
       }));
-      fetchUsers({ keyword, page: 1 });
+      const updatedState = {
+        ...state,
+        pagination: {
+          ...state.pagination,
+          current: 1,
+        },
+      };
+      fetchUsersImpl({
+        state: updatedState,
+        setState,
+        paramsRef,
+        requestParams: { keyword, page: 1 },
+      });
     },
-    [fetchUsers],
+    [state],
   );
 
-  // Initial data fetch on component mount
+  // Initial data fetch on component mount - 只在组件挂载时执行一次
   useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]); // Include fetchUsers in dependency array
+    fetchUsersImpl({
+      state,
+      setState,
+      paramsRef,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Initial fetch should only happen once
+  }, []); // 空依赖数组确保只执行一次
 
   return {
     users: state.users,

@@ -36,7 +36,7 @@ export function t(
   key: EnterpriseI18nKey,
   options?: Record<string, unknown>,
 ): string {
-  return I18n.t(key as string, options);
+  return I18n.t(key as any, options);
 }
 
 /**
@@ -45,7 +45,7 @@ export function t(
  * @returns 翻译后的文本数组
  */
 export function tBatch(keys: EnterpriseI18nKey[]): string[] {
-  return keys.map(key => I18n.t(key as string));
+  return keys.map(key => I18n.t(key as any));
 }
 
 /**
@@ -59,7 +59,7 @@ export function tWithDefault(
   defaultValue: string,
 ): string {
   try {
-    const result = I18n.t(key as string);
+    const result = I18n.t(key as any);
     return result || defaultValue;
   } catch (error) {
     console.warn('Translation failed for key:', key, error);

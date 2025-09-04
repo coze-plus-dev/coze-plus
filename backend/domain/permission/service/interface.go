@@ -14,22 +14,6 @@
  * limitations under the License.
  */
 
-/*
- * Copyright 2025 coze-dev Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package service
 
 import (
@@ -46,7 +30,7 @@ type RoleService interface {
 	DeleteRole(ctx context.Context, request *DeleteRoleRequest) error
 	GetRoleByID(ctx context.Context, request *GetRoleByIDRequest) (*GetRoleByIDResponse, error)
 	ListRoles(ctx context.Context, request *ListRolesRequest) (*ListRolesResponse, error)
-	
+
 	// Business operations
 	GetRoleByCode(ctx context.Context, request *GetRoleByCodeRequest) (*GetRoleByCodeResponse, error)
 	GetRolesByDomain(ctx context.Context, request *GetRolesByDomainRequest) (*GetRolesByDomainResponse, error)
@@ -55,7 +39,7 @@ type RoleService interface {
 	ValidateRolePermissions(ctx context.Context, request *ValidateRolePermissionsRequest) error
 }
 
-// PermissionTemplateService defines permission template domain service interface  
+// PermissionTemplateService defines permission template domain service interface
 type PermissionTemplateService interface {
 	// Basic operations
 	CreatePermissionTemplate(ctx context.Context, request *CreatePermissionTemplateRequest) (*CreatePermissionTemplateResponse, error)
@@ -63,7 +47,7 @@ type PermissionTemplateService interface {
 	DeletePermissionTemplate(ctx context.Context, request *DeletePermissionTemplateRequest) error
 	GetPermissionTemplateByID(ctx context.Context, request *GetPermissionTemplateByIDRequest) (*GetPermissionTemplateByIDResponse, error)
 	ListPermissionTemplates(ctx context.Context, request *ListPermissionTemplatesRequest) (*ListPermissionTemplatesResponse, error)
-	
+
 	// Business operations
 	GetPermissionTemplatesByDomain(ctx context.Context, request *GetPermissionTemplatesByDomainRequest) (*GetPermissionTemplatesByDomainResponse, error)
 	GetActivePermissionTemplates(ctx context.Context, request *GetActivePermissionTemplatesRequest) (*GetActivePermissionTemplatesResponse, error)
@@ -73,19 +57,31 @@ type PermissionTemplateService interface {
 }
 
 // UserRoleService defines user role domain service interface
+// Note: Only manages global roles now, space roles are managed separately
 type UserRoleService interface {
-	// Basic operations
+	// Basic operations (global roles only)
 	AssignUserToRole(ctx context.Context, request *AssignUserToRoleRequest) error
 	RemoveUserFromRole(ctx context.Context, request *RemoveUserFromRoleRequest) error
 	GetUserRoles(ctx context.Context, request *GetUserRolesRequest) (*GetUserRolesResponse, error)
+	GetUserRolesWithRoleInfo(ctx context.Context, request *GetUserRolesRequest) (*GetUserRolesWithRoleInfoResponse, error)
 	GetRoleUsers(ctx context.Context, request *GetRoleUsersRequest) (*GetRoleUsersResponse, error)
-	
-	// Business operations  
+	ListUserRoles(ctx context.Context, request *ListUserRolesRequest) (*ListUserRolesResponse, error)
+
+	// Business operations
 	CheckUserPermission(ctx context.Context, request *CheckUserPermissionRequest) (*CheckUserPermissionResponse, error)
-	GetUserGlobalRoles(ctx context.Context, request *GetUserGlobalRolesRequest) (*GetUserGlobalRolesResponse, error)
-	GetUserSpaceRoles(ctx context.Context, request *GetUserSpaceRolesRequest) (*GetUserSpaceRolesResponse, error)
 	BatchAssignUsersToRole(ctx context.Context, request *BatchAssignUsersToRoleRequest) error
 	BatchRemoveUsersFromRole(ctx context.Context, request *BatchRemoveUsersFromRoleRequest) error
+	GetUsersByRoleCode(ctx context.Context, roleCode string) ([]int64, error)
+	CountRoleUsers(ctx context.Context, roleID int64) (int64, error)
+}
+
+// CasbinRuleService defines casbin rule domain service interface
+type CasbinRuleService interface {
+	// Group rule operations (user-role relationships)
+	CreateGroupRule(ctx context.Context, request *CreateGroupRuleRequest) error
+	DeleteGroupRule(ctx context.Context, request *DeleteGroupRuleRequest) error
+	GetUserRoles(ctx context.Context, userID string) ([]string, error)
+	BatchCreateGroupRules(ctx context.Context, request *BatchCreateGroupRulesRequest) error
 }
 
 // Request/Response structures for RoleService
@@ -269,38 +265,51 @@ type UpdatePermissionTemplateStatusRequest struct {
 // Request/Response structures for UserRoleService
 
 type AssignUserToRoleRequest struct {
-	UserID     int64  `json:"user_id"`
-	RoleID     int64  `json:"role_id"`
-	SpaceID    *int64 `json:"space_id,omitempty"`
-	AssignedBy int64  `json:"assigned_by"`
+	UserID     int64 `json:"user_id"`
+	RoleID     int64 `json:"role_id"`
+	AssignedBy int64 `json:"assigned_by"`
 }
 
 type RemoveUserFromRoleRequest struct {
-	UserID  int64  `json:"user_id"`
-	RoleID  int64  `json:"role_id"`
-	SpaceID *int64 `json:"space_id,omitempty"`
+	UserID int64 `json:"user_id"`
+	RoleID int64 `json:"role_id"`
 }
 
 type GetUserRolesRequest struct {
-	UserID  int64  `json:"user_id"`
-	SpaceID *int64 `json:"space_id,omitempty"`
+	UserID int64 `json:"user_id"`
 }
 
 type GetUserRolesResponse struct {
 	UserRoles []*entity.UserRole `json:"user_roles"`
 }
 
+// GetUserRolesWithRoleInfoResponse contains user roles with role info joined
+type GetUserRolesWithRoleInfoResponse struct {
+	UserRoleInfos []entity.UserRoleWithRole `json:"user_role_infos"`
+}
+
+type ListUserRolesRequest struct {
+	UserID *int64 `json:"user_id,omitempty"`
+	RoleID *int64 `json:"role_id,omitempty"`
+	Page   int    `json:"page"`
+	Limit  int    `json:"limit"`
+}
+
+type ListUserRolesResponse struct {
+	UserRoles []*entity.UserRole `json:"user_roles"`
+	Total     int64              `json:"total"`
+	Page      int                `json:"page"`
+	Limit     int                `json:"limit"`
+}
+
 type GetRoleUsersRequest struct {
-	RoleID  int64  `json:"role_id"`
-	SpaceID *int64 `json:"space_id,omitempty"`
-	Page    int    `json:"page"`
-	Limit   int    `json:"limit"`
+	RoleID int64 `json:"role_id"`
+	Page   int   `json:"page"`
+	Limit  int   `json:"limit"`
 }
 
 type GetRoleUsersResponse struct {
 	UserRoles []*entity.UserRole `json:"user_roles"`
-	Total     int64              `json:"total"`
-	HasMore   bool               `json:"has_more"`
 }
 
 type CheckUserPermissionRequest struct {
@@ -334,12 +343,27 @@ type GetUserSpaceRolesResponse struct {
 type BatchAssignUsersToRoleRequest struct {
 	UserIDs    []int64 `json:"user_ids"`
 	RoleID     int64   `json:"role_id"`
-	SpaceID    *int64  `json:"space_id,omitempty"`
 	AssignedBy int64   `json:"assigned_by"`
 }
 
 type BatchRemoveUsersFromRoleRequest struct {
 	UserIDs []int64 `json:"user_ids"`
 	RoleID  int64   `json:"role_id"`
-	SpaceID *int64  `json:"space_id,omitempty"`
+}
+
+// Request/Response structures for CasbinRuleService
+
+type CreateGroupRuleRequest struct {
+	UserID   string `json:"user_id"`
+	RoleCode string `json:"role_code"`
+}
+
+type DeleteGroupRuleRequest struct {
+	UserID   string `json:"user_id"`
+	RoleCode string `json:"role_code"`
+}
+
+type BatchCreateGroupRulesRequest struct {
+	UserID    string   `json:"user_id"`
+	RoleCodes []string `json:"role_codes"`
 }
