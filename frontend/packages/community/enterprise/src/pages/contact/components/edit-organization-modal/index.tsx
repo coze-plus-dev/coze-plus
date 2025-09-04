@@ -14,27 +14,23 @@
  * limitations under the License.
  */
 
-import { type FC, useState, useEffect, useRef } from 'react';
+import { type FC, useEffect, useRef } from 'react';
 
-import { useRequest } from 'ahooks';
-import { Modal, Form, Toast } from '@coze-arch/coze-design';
+import { Modal } from '@coze-arch/coze-design';
 
-import { t } from '../../../../utils/i18n';
-import { ENTERPRISE_I18N_KEYS } from '../../../../locales/keys';
-import { corporationApi } from '../../../../api/corporation-api';
+import { t } from '@/utils/i18n';
+import { ENTERPRISE_I18N_KEYS } from '@/locales/keys';
 
-import styles from './index.module.less';
+import { useOrganizationUpdate } from './hooks/use-organization-update';
+import { useOrganizationData } from './hooks/use-organization-data';
+import { OrganizationForm } from './components/organization-form';
 
 interface EditOrganizationModalProps {
   visible: boolean;
   organizationId: string;
   onClose: () => void;
   onSuccess?: () => void;
-}
-
-interface OrganizationOption {
-  label: string;
-  value: string;
+  onModalOpen?: () => void;
 }
 
 export const EditOrganizationModal: FC<EditOrganizationModalProps> = ({
@@ -42,212 +38,98 @@ export const EditOrganizationModal: FC<EditOrganizationModalProps> = ({
   organizationId,
   onClose,
   onSuccess,
+  onModalOpen,
 }) => {
-  const formApiRef = useRef<any>(null);
-  const [organizationOptions, setOrganizationOptions] = useState<
-    OrganizationOption[]
-  >([]);
-  const [formValues, setFormValues] = useState({
-    name: '',
-    corp_type: 0,
-    parent_id: undefined as string | undefined,
-  });
+  const formApiRef = useRef<{
+    validate: () => Promise<unknown>;
+    getValues: () => { name: string; parent_id: string; corp_type: number };
+    setValues: (values: {
+      name: string;
+      parent_id: string;
+      corp_type: number;
+    }) => void;
+    reset: () => void;
+  } | null>(null);
 
-  // 获取组织详情
-  const { run: fetchOrganizationDetail } = useRequest(
-    async () => {
-      if (!organizationId) {
-        return null;
-      }
-      const result = await corporationApi.getCorporation(organizationId);
-      return result;
-    },
+  const {
+    organizationOptions,
+    formValues,
+    setFormValues,
+    fetchOrganizationDetail,
+    fetchOrganizations,
+    detailLoading,
+  } = useOrganizationData(organizationId);
+
+  const handleClose = () => {
+    setFormValues({
+      name: '',
+      parent_id: '',
+      corp_type: 1,
+    });
+    if (formApiRef.current) {
+      formApiRef.current.reset();
+    }
+    onClose();
+  };
+
+  const { loading, run: updateOrganization } = useOrganizationUpdate(
+    organizationId,
+    formApiRef,
     {
-      manual: true,
-      onSuccess: data => {
-        if (data) {
-          // 只通过state管理表单值
-          setFormValues({
-            name: data.name || '',
-            corp_type: data.corp_type || 0,
-            parent_id: data.parent_id,
-          });
-        }
-      },
-      onError: error => {
-        console.error('Failed to fetch organization detail:', error);
-        Toast.error(
-          error.message || t(ENTERPRISE_I18N_KEYS.ENTERPRISE_LOAD_FAILED),
-        );
+      formValues,
+      onSuccess: () => {
+        handleClose();
+        onSuccess?.();
       },
     },
   );
 
-  // 获取组织列表（用于父组织选择）
-  const { run: fetchOrganizations } = useRequest(
-    async () => {
-      const result = await corporationApi.listCorporations({
-        page: 1,
-        page_size: 1000,
-      });
-      return result.data || [];
-    },
-    {
-      manual: true,
-      onSuccess: data => {
-        // 过滤掉当前组织，避免设置自己为父组织
-        const options = data
-          .filter((org: any) => org.id !== organizationId)
-          .map((org: any) => ({
-            label: org.name,
-            value: org.id,
-          }));
-        setOrganizationOptions(options);
-      },
-    },
-  );
-
-  // 当弹窗打开时获取数据
   useEffect(() => {
     if (visible && organizationId) {
       fetchOrganizationDetail();
       fetchOrganizations();
+      // 通知父组件关闭下拉菜单
+      onModalOpen?.();
     }
-  }, [visible, organizationId, fetchOrganizationDetail, fetchOrganizations]);
+  }, [
+    visible,
+    organizationId,
+    fetchOrganizationDetail,
+    fetchOrganizations,
+    onModalOpen,
+  ]);
 
-  // 更新组织请求
-  const { loading, run: updateOrganization } = useRequest(
-    async () => {
-      // 验证表单
-      try {
-        await formApiRef.current?.validate();
-      } catch (errors) {
-        return;
-      }
-
-      // 使用表单的值进行更新
-      const values = formApiRef.current?.getValues() || formValues;
-      await corporationApi.updateCorporation({
-        id: organizationId,
-        name: values.name,
-        corp_type: values.corp_type,
-        parent_id: values.parent_id,
+  // 当formValues变化且模态框可见时，设置表单值确保正确显示
+  useEffect(() => {
+    if (visible && formApiRef.current && formValues.name && !detailLoading) {
+      formApiRef.current.setValues({
+        name: formValues.name,
+        parent_id: formValues.parent_id,
+        corp_type: formValues.corp_type,
       });
-    },
-    {
-      manual: true,
-      onSuccess: () => {
-        Toast.success(t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PLUGIN_UPDATE_SUCCESS));
-        handleClose();
-        onSuccess?.();
-      },
-      onError: error => {
-        Toast.error(
-          error.message || t(ENTERPRISE_I18N_KEYS.ENTERPRISE_UPDATE_FAILED),
-        );
-      },
-    },
-  );
-
-  // 处理提交
-  const handleSubmit = () => {
-    updateOrganization();
-  };
-
-  // 处理关闭
-  const handleClose = () => {
-    // 重置表单值
-    setFormValues({
-      name: '',
-      corp_type: 0,
-      parent_id: undefined,
-    });
-    onClose();
-  };
-
-  // 组织类型选项
-  const corpTypeOptions = [
-    { label: t(ENTERPRISE_I18N_KEYS.ENTERPRISE_CORP_TYPE_GROUP), value: 1 },
-    { label: t(ENTERPRISE_I18N_KEYS.ENTERPRISE_CORP_TYPE_COMPANY), value: 2 },
-    { label: t(ENTERPRISE_I18N_KEYS.ENTERPRISE_CORP_TYPE_BRANCH), value: 3 },
-  ];
+    }
+  }, [visible, formValues, detailLoading]);
 
   return (
     <Modal
-      visible={visible}
-      onOk={handleSubmit}
-      onCancel={handleClose}
       title={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_EDIT_ORGANIZATION)}
-      okText={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_SAVE)}
-      cancelText={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_COMMON_CANCEL)}
-      confirmLoading={loading}
+      visible={visible}
+      onCancel={handleClose}
+      onOk={updateOrganization}
+      okText={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_EDIT_ORGANIZATION_BUTTONS_SAVE)}
+      cancelText={t(
+        ENTERPRISE_I18N_KEYS.ENTERPRISE_EDIT_ORGANIZATION_BUTTONS_CANCEL,
+      )}
       width={480}
-      centered
-      className={styles.editOrgModal}
-      maskClosable={false}
+      confirmLoading={loading}
     >
-      <Form
-        getFormApi={api => (formApiRef.current = api)}
-        layout="vertical"
-        className={styles.form}
-        key={`${organizationId}-${JSON.stringify(formValues)}`}
-      >
-        <Form.Input
-          field="name"
-          label={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_ORGANIZATION_NAME)}
-          placeholder={t(
-            ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_ORGANIZATION_NAME,
-          )}
-          rules={[
-            {
-              required: true,
-              message: t(
-                ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_INPUT_ORGANIZATION_NAME,
-              ),
-            },
-            {
-              max: 50,
-              message: t(
-                ENTERPRISE_I18N_KEYS.ENTERPRISE_ORGANIZATION_NAME_TOO_LONG,
-              ),
-            },
-          ]}
-          maxLength={50}
-          showClear
-          initValue={formValues.name}
-        />
-
-        <Form.Select
-          field="corp_type"
-          label={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_ORGANIZATION_TYPE)}
-          placeholder={t(
-            ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_ORGANIZATION_TYPE,
-          )}
-          rules={[
-            {
-              required: true,
-              message: t(
-                ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_ORGANIZATION_TYPE,
-              ),
-            },
-          ]}
-          optionList={corpTypeOptions}
-          style={{ width: '100%' }}
-          initValue={formValues.corp_type}
-        />
-
-        <Form.Select
-          field="parent_id"
-          label={t(ENTERPRISE_I18N_KEYS.ENTERPRISE_PARENT_ORGANIZATION)}
-          placeholder={t(
-            ENTERPRISE_I18N_KEYS.ENTERPRISE_PLEASE_SELECT_PARENT_ORGANIZATION,
-          )}
-          optionList={organizationOptions}
-          style={{ width: '100%' }}
-          showClear
-          initValue={formValues.parent_id}
-        />
-      </Form>
+      <OrganizationForm
+        formApiRef={formApiRef}
+        organizationId={organizationId}
+        formValues={formValues}
+        setFormValues={setFormValues}
+        organizationOptions={organizationOptions}
+      />
     </Modal>
   );
 };

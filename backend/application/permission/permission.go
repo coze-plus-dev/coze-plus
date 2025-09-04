@@ -121,11 +121,24 @@ func (p *PermissionApplicationService) UpdateRole(ctx context.Context, req *perm
 
 // DeleteRole deletes a role
 func (p *PermissionApplicationService) DeleteRole(ctx context.Context, req *permission1.DeleteRoleRequest) (*permission1.DeleteRoleResponse, error) {
+	// Check if role is bound to any users
+	userCount, err := p.DomainSVC.UserRoleService.CountRoleUsers(ctx, req.ID)
+	if err != nil {
+		logs.CtxErrorf(ctx, "count role users failed for role %d, err: %v", req.ID, err)
+		return &permission1.DeleteRoleResponse{}, err
+	}
+
+	// If role is bound to users, prevent deletion
+	if userCount > 0 {
+		logs.CtxWarnf(ctx, "cannot delete role %d: role is assigned to %d users", req.ID, userCount)
+		return &permission1.DeleteRoleResponse{}, errorx.New(errno.ErrPermissionRoleInUseCode, errorx.KV("user_count", strconv.FormatInt(userCount, 10)))
+	}
+
 	deleteReq := &service.DeleteRoleRequest{
 		ID: req.ID,
 	}
 
-	err := p.DomainSVC.RoleService.DeleteRole(ctx, deleteReq)
+	err = p.DomainSVC.RoleService.DeleteRole(ctx, deleteReq)
 	if err != nil {
 		logs.CtxErrorf(ctx, "delete role failed, err: %v", err)
 		return &permission1.DeleteRoleResponse{}, err
