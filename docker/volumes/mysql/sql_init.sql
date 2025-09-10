@@ -663,4 +663,157 @@ INSERT INTO workflow_draft (id, canvas, input_params, output_params, test_run_su
     ON DUPLICATE KEY UPDATE
     id = VALUES(id);
 
+-- ============================================
+-- Permission System Initialization Data
+-- From 20250901130000_update.sql and 20250910000001_init_super_admin.sql
+-- ============================================
+
+-- Permission Templates
+INSERT INTO permission_template (`template_code`, `template_name`, `domain`, `resource`, `resource_name`, `action`, `action_name`, `description`, `is_default`, `sort_order`, `is_active`, `created_at`, `updated_at`) VALUES
+
+-- 1. 组织管理权限 (Organization Management)
+('ORG_CREATE', '创建组织', 'global', 'organization', '组织管理', 'create', '创建组织', '可以创建新的组织架构', 0, 100, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('ORG_EDIT', '编辑组织', 'global', 'organization', '组织管理', 'edit', '编辑组织', '编辑组织基本信息', 0, 101, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('ORG_DELETE', '删除组织', 'global', 'organization', '组织管理', 'delete', '删除组织', '删除不需要的组织单位', 0, 102, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+
+-- 2. 部门管理权限 (Department Management)
+('DEPT_CREATE', '添加部门', 'global', 'department', '部门管理', 'create', '添加部门', '在组织架构中创建新的部门，设置部门层级关系和基本信息', 0, 110, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('DEPT_EDIT', '编辑部门', 'global', 'department', '部门管理', 'edit', '编辑部门', '修改部门信息、调整部门层级、删除空部门或不需要的部门', 0, 111, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('DEPT_DELETE', '删除部门', 'global', 'department', '部门管理', 'delete', '删除部门', '删除空部门或不需要的部门', 0, 112, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+
+-- 3. 人员管理权限 (Employee Management)
+('EMP_INVITE', '添加人员', 'global', 'employee', '人员管理', 'create', '添加人员', '添加新成员入组织，设置成员的基本信息和所属部门', 0, 120, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('EMP_EDIT', '编辑人员', 'global', 'employee', '人员管理', 'edit', '修改人员基本信息', '修改人员基本信息', 0, 121, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('EMP_MANAGE_POS', '操作离职', 'global', 'employee', '人员管理', 'manage_quit', '操作离职', '处理员工离职，包括账号禁用、权限回收', 0, 122, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('EMP_CHANGE_DEPT', '变更人员部门', 'global', 'employee', '人员管理', 'change_department', '变更人员部门', '调整组织成员的部门归属，处理人员调动和组织架构变更', 0, 123, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('EMP_VIEW', '查看组织人员', 'global', 'employee', '人员管理', 'view', '查看组织人员', '查看组织内所有成员的基本信息、部门归属和联系方式', 0, 124, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+
+-- 4. 用户管理权限 (User Management)
+('USER_DISABLE_ENABLE', '启用/禁用用户', 'global', 'user', '用户管理', 'disable_enable', '启用/禁用用户', '控制用户账号的启用和禁用状态', 0, 200, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('USER_RESET_PWD', '重置密码', 'global', 'user', '用户管理', 'reset_password', '重置密码', '为用户重置登录密码', 0, 201, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('USER_ROLE_ASSIGN', '分配用户角色', 'global', 'user', '用户管理', 'assign', '分配用户角色', '分配和调整用户的角色，如管理员、成员等级别权限', 0, 202, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('USER_ROLE_UNBIND', '解绑用户角色', 'global', 'user', '用户管理', 'unbind', '解绑用户角色', '移除用户的特定角色绑定关系，回收对应权限', 0, 203, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+
+-- 5. 角色管理权限 (Role Management)
+('ROLE_VIEW', '查看角色', 'global', 'role', '角色管理', 'view', '查看角色', '查看系统中的所有角色定义', 0, 300, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('ROLE_CREATE', '创建角色', 'global', 'role', '角色管理', 'create', '创建角色', '创建新的自定义角色', 0, 301, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('ROLE_EDIT', '编辑角色', 'global', 'role', '角色管理', 'edit', '编辑角色', '修改角色信息和权限配置', 0, 302, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('ROLE_DELETE', '删除角色', 'global', 'role', '角色管理', 'delete', '删除角色', '删除自定义角色', 0, 303, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+
+-- 6. 工作空间管理权限 (Workspace Management)
+('WS_CREATE', '新建工作空间', 'global', 'workspace', '工作空间管理', 'create', '新建工作空间', '创建新的工作空间，设置空间访问权限和协作范围', 0, 400, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+
+-- Space permission domain templates
+('SPACE_INVITE_MEMBER', '添加成员', 'space', 'member', '成员管理', 'invite', '添加成员', '将用户添加到空间中', 0, 100, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('SPACE_REMOVE_MEMBER', '移除成员', 'space', 'member', '成员管理', 'remove', '移除成员', '从空间中移除某个用户', 0, 101, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('SPACE_ADJUST_ROLE', '调整角色', 'space', 'member', '成员管理', 'adjust_role', '调整角色', '控制为空间中的用户设置空间角色，可以设置为成员或管理员', 0, 102, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('SPACE_DELETE_SPACE', '删除空间、修改空间名称、转让空间所有权', 'space', 'config', '空间配置', 'delete_transfer', '删除空间、修改空间名称、转让空间所有权', '空间一旦删除无法恢复，空间内的所有资源和数据也会同步删除', 0, 110, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('SPACE_LEAVE', '离开空间', 'space', 'config', '空间配置', 'leave', '离开空间', '普通成员和管理员可以随时离开空间，所有者转移空间所有权后才能离开空间。离开空间后，用户创建的资源会转移给空间所有者，这些资源的协作者权限不会变', 1, 111, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('SPACE_CREATE_RESOURCE', '创建、查看、复制', 'space', 'resource', '管理资源', 'create_view_copy', '创建、查看、复制', '在空间中创建、查看、复制智能体等资源', 1, 200, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('SPACE_EDIT_PUBLISH', '修改、发布', 'space', 'resource', '管理资源', 'edit_publish', '修改、发布', '默认仅资源的所有者可修改、发布资源。创建者也可以将其他成员设置为智能体或工作流的协作者，协作者可以协同编辑、发布智能体或工作流。其他资源仅资源所有者或管理员可以修改、发布资源', 0, 201, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('SPACE_IMPORT_EXPORT', '导入', 'space', 'workflow', '工作流', 'import', '导入', '目前仅工作流支持导入功能', 1, 210, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('SPACE_EXPORT', '导出', 'space', 'workflow', '工作流', 'export', '导出', '目前仅工作流支持导出功能。工作流的所有者、空间所有者或管理员可以导出工作流。空间成员不可导出其他成员拥有的工作流', 0, 211, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('SPACE_DELETE_RESOURCE', '删除资源', 'space', 'resource', '管理资源', 'delete', '删除资源', '空间成员不可删除其他成员拥有的资源', 0, 220, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000)
+ON DUPLICATE KEY UPDATE template_code = VALUES(template_code);
+
+-- Super Admin User 
+INSERT INTO user (
+  `id`,
+  `name`,
+  `unique_name`,
+  `email`,
+  `password`,
+  `description`,
+  `icon_uri`,
+  `user_verified`,
+  `locale`,
+  `is_disabled`,
+  `created_by`,
+  `created_at`,
+  `updated_at`
+)
+SELECT
+  1 as id,
+  '超级管理员' as name,
+  'Administrator' as unique_name,
+  'administrator@coze-plus.cn' as email,
+  '$argon2id$v=19$m=65536,t=3,p=4$4VgdFFA0A1yfSdK/iZEiRQ$GQG5+aEz4zYnhZ7SByTiEZOMrZl/dXSra5psuQPAoYs' as password,
+  '系统超级管理员，拥有完整的系统管理权限' as description,
+  'default_icon/user_default_icon.png' as icon_uri,
+  1 as user_verified,
+  'zh-CN' as locale,
+  0 as is_disabled,
+  1 as created_by,
+  UNIX_TIMESTAMP(NOW()) * 1000 as created_at,
+  UNIX_TIMESTAMP(NOW()) * 1000 as updated_at
+WHERE NOT EXISTS (
+  SELECT 1 FROM user WHERE `email` = 'administrator@coze-plus.cn'
+);
+
+-- Super Admin Default Personal Space
+INSERT INTO space (
+  `id`,
+  `name`,
+  `description`,
+  `type`,
+  `icon_uri`,
+  `creator_id`,
+  `created_at`,
+  `updated_at`
+)
+SELECT
+  999999 as id,
+  '超级管理员个人空间' as name,
+  '系统默认个人工作空间，包含预设的示例资源' as description,
+  1 as type,
+  'default_icon/team_default_icon.png' as icon_uri,
+  1 as creator_id,
+  UNIX_TIMESTAMP(NOW()) * 1000 as created_at,
+  UNIX_TIMESTAMP(NOW()) * 1000 as updated_at
+WHERE NOT EXISTS (
+  SELECT 1 FROM space WHERE `id` = 999999
+);
+
+-- Assign Super Admin to Personal Space
+INSERT INTO space_user (
+  `space_id`,
+  `user_id`,
+  `role_type`,
+  `creator_id`,
+  `created_at`,
+  `updated_at`
+)
+SELECT
+  999999 as space_id,
+  1 as user_id,
+  1 as role_type,
+  1 as creator_id,
+  UNIX_TIMESTAMP(NOW()) * 1000 as created_at,
+  UNIX_TIMESTAMP(NOW()) * 1000 as updated_at
+WHERE NOT EXISTS (
+  SELECT 1 FROM space_user WHERE `space_id` = 999999 AND `user_id` = 1
+);
+
+-- Initialize Basic Roles (Simplified versions for Docker initialization)
+-- Note: Complex JSON permissions will be handled by application code
+INSERT INTO role (`id`, `role_code`, `role_name`, `role_domain`, `super_admin`, `space_role_type`, `is_builtin`, `is_disabled`, `description`, `created_by`, `created_at`, `updated_at`) VALUES
+(1, 'super_admin', '超级管理员', 'global', 1, NULL, 1, 0, '系统超级管理员，拥有完整的功能级权限', 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+(2, 'space_owner', '空间所有者', 'space', 0, 1, 1, 0, '空间所有者，拥有空间完全控制权', 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+(3, 'space_admin', '空间管理员', 'space', 0, 2, 1, 0, '空间管理员，可管理成员、编辑内容', 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+(4, 'space_member', '空间成员', 'space', 0, 3, 1, 0, '空间普通成员，可创建、查看资源', 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000)
+ON DUPLICATE KEY UPDATE role_code = VALUES(role_code);
+
+-- Assign Super Admin Role to User
+INSERT INTO user_role (`user_id`, `role_id`, `assigned_by`, `assigned_at`)
+SELECT 1, 1, 1, UNIX_TIMESTAMP(NOW()) * 1000
+WHERE NOT EXISTS (
+  SELECT 1 FROM user_role WHERE `user_id` = 1 AND `role_id` = 1
+);
+
+-- Basic Casbin Rules for Super Admin
+INSERT INTO casbin_rule (`ptype`, `v0`, `v1`, `v2`, `v3`, `v4`, `created_at`, `updated_at`) VALUES
+('p', 'super_admin', 'global', '*', '*', 'allow', UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('g', '1', 'super_admin', '', '', '', UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000)
+ON DUPLICATE KEY UPDATE ptype = VALUES(ptype);
+
 
