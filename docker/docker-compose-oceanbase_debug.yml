@@ -345,6 +345,7 @@ services:
       OB_DATAFILE_SIZE: 1G
       OB_SYS_PASSWORD: ${OCEANBASE_PASSWORD:-coze123}
       OB_TENANT_PASSWORD: ${OCEANBASE_PASSWORD:-coze123}
+      OB_CLUSTER_NAME: ${OCEANBASE_CLUSTER_NAME:-cozeAi}
     profiles: ['middleware']
     env_file: *env_file
     ports:

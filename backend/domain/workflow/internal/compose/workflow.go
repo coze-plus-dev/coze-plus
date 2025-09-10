@@ -148,11 +148,6 @@ func NewWorkflow(ctx context.Context, sc *schema.WorkflowSchema, opts ...Workflo
 		compileOpts = append(compileOpts, compose.WithGraphName(strconv.FormatInt(wfOpts.wfID, 10)))
 	}
 
-	fanInConfigs := sc.FanInMergeConfigs()
-	if len(fanInConfigs) > 0 {
-		compileOpts = append(compileOpts, compose.WithFanInMergeConfig(fanInConfigs))
-	}
-
 	r, err := wf.Compile(ctx, compileOpts...)
 	if err != nil {
 		return nil, err
@@ -373,23 +368,7 @@ func (w *Workflow) getInnerWorkflow(ctx context.Context, cNode *schema.Composite
 				continue
 			}
 
-			if _, ok := carryOvers[fromNodeKey]; !ok {
-				carryOvers[fromNodeKey] = make([]*compose.FieldMapping, 0)
-			}
-
-			for _, fm := range fieldMappings {
-				duplicate := false
-				for _, existing := range carryOvers[fromNodeKey] {
-					if fm.Equals(existing) {
-						duplicate = true
-						break
-					}
-				}
-
-				if !duplicate {
-					carryOvers[fromNodeKey] = append(carryOvers[fromNodeKey], fieldMappings...)
-				}
-			}
+			addFieldMappingsWithDeduplication(carryOvers, fromNodeKey, fieldMappings)
 		}
 	}
 
@@ -886,4 +865,30 @@ func (w *Workflow) resolveDependenciesAsParent(n vo.NodeKey, sourceWithPaths []*
 		staticValues:             staticValues,
 		variableInfos:            variableInfos,
 	}, nil
+}
+
+// addFieldMappingsWithDeduplication adds field mappings to carryOvers while avoiding duplicates
+func addFieldMappingsWithDeduplication(
+	carryOvers map[vo.NodeKey][]*compose.FieldMapping,
+	fromNodeKey vo.NodeKey,
+	fieldMappings []*compose.FieldMapping,
+) {
+	if _, ok := carryOvers[fromNodeKey]; !ok {
+		carryOvers[fromNodeKey] = make([]*compose.FieldMapping, 0)
+	}
+
+	for i := range fieldMappings {
+		fm := fieldMappings[i]
+		duplicate := false
+		for _, existing := range carryOvers[fromNodeKey] {
+			if fm.Equals(existing) {
+				duplicate = true
+				break
+			}
+		}
+
+		if !duplicate {
+			carryOvers[fromNodeKey] = append(carryOvers[fromNodeKey], fm)
+		}
+	}
 }

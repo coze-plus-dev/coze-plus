@@ -61,12 +61,12 @@ func TestCustomSQL_Execute(t *testing.T) {
 		validate: func(req *database.CustomSQLRequest) {
 			assert.Equal(t, int64(111), req.DatabaseInfoID)
 			ps := []database.SQLParam{
-				{Value: "v1_value"},
 				{Value: "v2_value"},
 				{Value: "v3_value"},
+				{Value: "1"},
 			}
 			assert.Equal(t, ps, req.Params)
-			assert.Equal(t, "select * from v1 where v1 = ? and v2 = ? and v3 = ?", req.SQL)
+			assert.Equal(t, "select * from v1 where v1 = v1_value and v2 = ? and v3 = ? and v4 = ?", req.SQL)
 		},
 	}
 
@@ -86,7 +86,7 @@ func TestCustomSQL_Execute(t *testing.T) {
 
 	cfg := &CustomSQLConfig{
 		DatabaseInfoID: 111,
-		SQLTemplate:    "select * from v1 where v1 = {{v1}} and v2 = '{{v2}}' and v3 = `{{v3}}`",
+		SQLTemplate:    "select * from v1 where v1 = {{v1}} and v2 = '{{v2}}' and v3 = `{{v3}}` and v4 = '{{v4}}'",
 	}
 
 	c1, err := cfg.Build(context.Background(), &schema.NodeSchema{
@@ -104,6 +104,7 @@ func TestCustomSQL_Execute(t *testing.T) {
 		"v1": "v1_value",
 		"v2": "v2_value",
 		"v3": "v3_value",
+		"v4": true,
 	})
 
 	assert.Nil(t, err)

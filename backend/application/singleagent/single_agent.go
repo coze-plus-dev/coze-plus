@@ -38,6 +38,7 @@ import (
 	"github.com/coze-dev/coze-studio/backend/api/model/data/database/table"
 	"github.com/coze-dev/coze-studio/backend/api/model/playground"
 	"github.com/coze-dev/coze-studio/backend/application/base/ctxutil"
+	"github.com/coze-dev/coze-studio/backend/crossdomain/contract/agent"
 	crossdatabase "github.com/coze-dev/coze-studio/backend/crossdomain/contract/database"
 	"github.com/coze-dev/coze-studio/backend/domain/agent/singleagent/entity"
 	singleagent "github.com/coze-dev/coze-studio/backend/domain/agent/singleagent/service"
@@ -730,16 +731,67 @@ func (s *SingleAgentApplicationService) getAgentInfo(ctx context.Context, botID 
 				AgentID:       ptr.Of(si.ObjectID),
 				Command:       si.ShortcutCommand,
 				Components: slices.Transform(si.Components, func(i *playground.Components) *bot_common.ShortcutCommandComponent {
-					return &bot_common.ShortcutCommandComponent{
+					sc := &bot_common.ShortcutCommandComponent{
 						Name:          i.Name,
 						Description:   i.Description,
-						Type:          i.InputType.String(),
+						Type:          getShortcutCommandComponentType(i.InputType),
 						ToolParameter: ptr.Of(i.Parameter),
-						Options:       i.Options,
-						DefaultValue:  ptr.Of(i.DefaultValue.Value),
 						IsHide:        i.Hide,
 					}
+					if i.DefaultValue != nil {
+						sc.DefaultValue = ptr.Of(i.DefaultValue.Value)
+					}
+
+					switch i.InputType {
+					case playground.InputType_Select:
+						sc.Options = i.Options
+					case playground.InputType_MixUpload:
+						options := make([]string, 0, len(i.UploadOptions))
+						for _, uploadOption := range i.UploadOptions {
+							options = append(options, string(getShortcutCommandComponentFileType(uploadOption)))
+						}
+						sc.Options = options
+					case playground.InputType_UploadImage, playground.InputType_UploadDoc, playground.InputType_UploadTable, playground.InputType_UploadAudio,
+						playground.InputType_VIDEO, playground.InputType_ARCHIVE, playground.InputType_CODE, playground.InputType_TXT,
+						playground.InputType_PPT:
+						sc.Options = []string{string(getShortcutCommandComponentFileType(i.InputType))}
+					default:
+					}
+
+					return sc
 				}),
+				Tool: &bot_common.ShortcutCommandToolInfo{
+					Name: si.ToolInfo.ToolName,
+					Type: func() string {
+						if si.ToolType == 1 {
+							return string(agent.ShortcutCommandToolTypePlugin)
+						}
+						if si.ToolType == 2 {
+							return string(agent.ShortcutCommandToolTypeWorkflow)
+						}
+						return ""
+					}(),
+					PluginID:      ptr.Of(si.PluginID),
+					WorkflowID:    ptr.Of(si.WorkFlowID),
+					PluginAPIName: &si.PluginToolName,
+					Params: slices.Transform(si.ToolInfo.ToolParamsList, func(i *playground.ToolParams) *bot_common.ShortcutToolParam {
+						return &bot_common.ShortcutToolParam{
+							Name:             i.Name,
+							Type:             i.Type,
+							DefaultValue:     i.DefaultValue,
+							IsReferComponent: i.ReferComponent,
+							IsRequired:       i.Required,
+							Description:      i.Desc,
+						}
+					}),
+				},
+				SendType: func() *bot_common.ShortcutSendType {
+					if si.SendType == 1 {
+						return ptr.Of(bot_common.ShortcutSendTypePanel)
+					}
+					return ptr.Of(bot_common.ShortcutSendTypeQuery)
+				}(),
+				CardSchema: ptr.Of(si.CardSchema),
 			}
 		})
 
@@ -763,4 +815,13 @@ func (s *SingleAgentApplicationService) OpenGetBotInfo(ctx context.Context, req 
 	}
 	resp.Data = agentInfo
 	return resp, nil
+}
+
+func getShortcutCommandComponentType(inputType playground.InputType) string {
+	componentType := agent.ShortcutCommandComponentTypeMapping[inputType]
+	return string(componentType)
+}
+
+func getShortcutCommandComponentFileType(inputType playground.InputType) string {
+	return string(agent.ShortcutCommandComponentFileTypeMapping[inputType])
 }

@@ -17,7 +17,7 @@ require (
 	github.com/bytedance/gopkg v0.1.3
 	github.com/bytedance/mockey v1.2.14
 	github.com/bytedance/sonic v1.14.0
-	github.com/cloudwego/eino v0.3.55
+	github.com/cloudwego/eino v0.4.8
 	github.com/cloudwego/eino-ext/components/embedding/ark v0.1.0
 	github.com/cloudwego/eino-ext/components/embedding/gemini v0.0.0-20250814083140-54b99ff82f8e
 	github.com/cloudwego/eino-ext/components/embedding/ollama v0.0.0-20250728060543-79ec300857b8
@@ -79,8 +79,8 @@ require (
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/driver/sqlite v1.4.3
 	gorm.io/gen v0.3.26
-	gorm.io/gorm v1.30.0
-	gorm.io/plugin/dbresolver v1.6.0
+	gorm.io/gorm v1.25.11
+	gorm.io/plugin/dbresolver v1.5.2
 )
 
 require (
@@ -286,6 +286,10 @@ require (
 )
 
 require (
+	github.com/bahlo/generic-list-go v0.2.0 // indirect
+	github.com/buger/jsonparser v1.1.1 // indirect
+	github.com/eino-contrib/jsonschema v1.0.0 // indirect
+	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
 	github.com/casbin/casbin/v2 v2.122.0
 	github.com/casbin/gorm-adapter/v3 v3.36.0
 )

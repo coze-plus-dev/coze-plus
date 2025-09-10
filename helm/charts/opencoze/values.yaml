@@ -19,6 +19,46 @@ mysql:
   initScripts:
     - files/mysql/schema.sql
 
+oceanbase:
+  enabled: false
+  port: 2881
+  targetPort: 2881
+  clusterName: 'cozeai'
+  clusterId: 1
+  image:
+    repository: oceanbase/oceanbase-cloud-native
+    tag: '4.3.5.3-103000092025080818'
+  obAgentVersion: '4.2.2-100000042024011120'
+  monitorEnabled: true
+  storageClass: ''
+  observerConfig:
+    resource:
+      cpu: 2
+      memory: 8Gi
+    storages:
+      dataStorage: 30Gi
+      redoLogStorage: 30Gi
+      logStorage: 10Gi
+  monitorResource:
+    cpu: 100m
+    memory: 256Mi
+  generateUserSecrets: true
+  userSecrets:
+    root: 'coze123'
+    monitor: 'coze123'
+    operator: 'coze123'
+    proxyro: 'coze123'
+  topology:
+    - zone: zone1
+      replica: 1
+  parameters:
+    - name: system_memory
+      value: '2G'
+    - name: '__min_full_resource_pool_memory'
+      value: '2147483648'
+  annotations: {}
+  backupVolumeEnabled: false
+
 redis:
   enabled: true
   image:
@@ -266,4 +306,3 @@ ingress:
   #  - secretName: chart-example-tls
   #    hosts:
   #      - chart-example.local
-

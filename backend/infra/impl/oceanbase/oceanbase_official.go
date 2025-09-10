@@ -43,6 +43,15 @@ type VectorResult struct {
 	CreatedAt       time.Time `json:"created_at"`
 }
 
+type VectorRecord struct {
+	VectorID  string    `gorm:"column:vector_id;primaryKey"`
+	Content   string    `gorm:"column:content;type:text;not null"`
+	Metadata  string    `gorm:"column:metadata;type:json"`
+	Embedding string    `gorm:"column:embedding;type:vector;not null"`
+	CreatedAt time.Time `gorm:"column:created_at;type:timestamp;default:CURRENT_TIMESTAMP"`
+	UpdatedAt time.Time `gorm:"column:updated_at;type:timestamp;default:CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"`
+}
+
 type CollectionInfo struct {
 	Name      string `json:"name"`
 	Dimension int    `json:"dimension"`
@@ -83,21 +92,23 @@ func (c *OceanBaseOfficialClient) setVectorParameters() error {
 }
 
 func (c *OceanBaseOfficialClient) CreateCollection(ctx context.Context, collectionName string, dimension int) error {
-	createTableSQL := fmt.Sprintf(`
-		CREATE TABLE IF NOT EXISTS %s (
-			vector_id VARCHAR(255) PRIMARY KEY,
-			content TEXT NOT NULL,
-			metadata JSON,
-			embedding VECTOR(%d) NOT NULL,
-			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-			updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-			INDEX idx_created_at (created_at),
-			INDEX idx_content (content(100))
-		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-	`, collectionName, dimension)
+	if !c.db.WithContext(ctx).Migrator().HasTable(collectionName) {
+		createTableSQL := fmt.Sprintf(`
+			CREATE TABLE IF NOT EXISTS %s (
+				vector_id VARCHAR(255) PRIMARY KEY,
+				content TEXT NOT NULL,
+				metadata JSON,
+				embedding VECTOR(%d) NOT NULL,
+				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+				updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+				INDEX idx_created_at (created_at),
+				INDEX idx_content (content(100))
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+		`, collectionName, dimension)
 
-	if err := c.db.WithContext(ctx).Exec(createTableSQL).Error; err != nil {
-		return fmt.Errorf("failed to create table: %v", err)
+		if err := c.db.WithContext(ctx).Exec(createTableSQL).Error; err != nil {
+			return fmt.Errorf("failed to create table: %v", err)
+		}
 	}
 
 	createIndexSQL := fmt.Sprintf(`
@@ -136,30 +147,19 @@ func (c *OceanBaseOfficialClient) InsertVectors(ctx context.Context, collectionN
 }
 
 func (c *OceanBaseOfficialClient) insertBatch(ctx context.Context, collectionName string, batch []VectorResult) error {
-	placeholders := make([]string, len(batch))
-	values := make([]interface{}, 0, len(batch)*5)
-
-	for j, vector := range batch {
-		placeholders[j] = "(?, ?, ?, ?, NOW())"
-		values = append(values,
-			vector.VectorID,
-			vector.Content,
-			vector.Metadata,
-			c.vectorToString(vector.Embedding),
-		)
+	records := make([]VectorRecord, len(batch))
+	for i, vector := range batch {
+		records[i] = VectorRecord{
+			VectorID:  vector.VectorID,
+			Content:   vector.Content,
+			Metadata:  vector.Metadata,
+			Embedding: c.vectorToString(vector.Embedding),
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
 	}
 
-	sql := fmt.Sprintf(`
-		INSERT INTO %s (vector_id, content, metadata, embedding, created_at)
-		VALUES %s
-		ON DUPLICATE KEY UPDATE
-			content = VALUES(content),
-			metadata = VALUES(metadata),
-			embedding = VALUES(embedding),
-			updated_at = NOW()
-	`, collectionName, strings.Join(placeholders, ","))
-
-	return c.db.WithContext(ctx).Exec(sql, values...).Error
+	return c.db.WithContext(ctx).Table(collectionName).Save(&records).Error
 }
 
 func (c *OceanBaseOfficialClient) SearchVectors(
@@ -341,24 +341,28 @@ func (c *OceanBaseOfficialClient) DebugCollectionData(ctx context.Context, colle
 	log.Printf("[Debug] Collection '%s' exists with %d vectors", collectionName, count)
 
 	log.Printf("[Debug] Sample data from collection '%s':", collectionName)
-	rows, err := c.db.WithContext(ctx).Raw(`
-		SELECT vector_id, content, created_at
-		FROM ` + collectionName + `
-		ORDER BY created_at DESC
-		LIMIT 5
-	`).Rows()
+	var samples []struct {
+		VectorID  string    `gorm:"column:vector_id"`
+		Content   string    `gorm:"column:content"`
+		CreatedAt time.Time `gorm:"column:created_at"`
+	}
+
+	err := c.db.WithContext(ctx).Table(collectionName).
+		Select("vector_id, content, created_at").
+		Order("created_at DESC").
+		Limit(5).
+		Find(&samples).Error
+
 	if err != nil {
 		log.Printf("[Debug] Failed to get sample data: %v", err)
 	} else {
-		defer rows.Close()
-		for rows.Next() {
-			var vectorID, content string
-			var createdAt time.Time
-			if err := rows.Scan(&vectorID, &content, &createdAt); err != nil {
-				log.Printf("[Debug] Failed to scan sample row: %v", err)
-				continue
+		for _, sample := range samples {
+			contentPreview := sample.Content
+			if len(contentPreview) > 50 {
+				contentPreview = contentPreview[:50]
 			}
-			log.Printf("[Debug] Sample: ID=%s, Content=%s, Created=%s", vectorID, content[:min(50, len(content))], createdAt)
+			log.Printf("[Debug] Sample: ID=%s, Content=%s, Created=%s",
+				sample.VectorID, contentPreview, sample.CreatedAt)
 		}
 	}
 

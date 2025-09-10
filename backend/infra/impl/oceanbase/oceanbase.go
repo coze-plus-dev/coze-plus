@@ -64,15 +64,16 @@ func (c *OceanBaseClient) BatchInsertVectors(ctx context.Context, collectionName
 }
 
 func (c *OceanBaseClient) DeleteVector(ctx context.Context, collectionName string, vectorID string) error {
-	return c.official.GetDB().WithContext(ctx).Exec("DELETE FROM "+collectionName+" WHERE vector_id = ?", vectorID).Error
+	return c.official.GetDB().WithContext(ctx).Table(collectionName).Where("vector_id = ?", vectorID).Delete(nil).Error
 }
 
 func (c *OceanBaseClient) InitDatabase(ctx context.Context) error {
-	return c.official.GetDB().WithContext(ctx).Exec("SELECT 1").Error
+	var result int
+	return c.official.GetDB().WithContext(ctx).Raw("SELECT 1").Scan(&result).Error
 }
 
 func (c *OceanBaseClient) DropCollection(ctx context.Context, collectionName string) error {
-	return c.official.GetDB().WithContext(ctx).Exec("DROP TABLE IF EXISTS " + collectionName).Error
+	return c.official.GetDB().WithContext(ctx).Migrator().DropTable(collectionName)
 }
 
 type SearchStrategy interface {

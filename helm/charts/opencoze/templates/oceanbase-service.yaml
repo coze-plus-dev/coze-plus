@@ -1,0 +1,20 @@
+{{- if .Values.oceanbase.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "opencoze.fullname" . }}-oceanbase
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "opencoze.labels" . | nindent 4 }}
+    app.kubernetes.io/component: oceanbase
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.oceanbase.port }}
+      targetPort: {{ .Values.oceanbase.targetPort }}
+      name: oceanbase
+  selector:
+    app.kubernetes.io/component: oceanbase
+    app.kubernetes.io/name: {{ include "opencoze.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}

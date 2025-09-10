@@ -107,8 +107,6 @@ case "oceanbase":
     }
 ```
 
-
-
 ## 配置说明
 
 ### 环境变量配置
@@ -225,6 +223,266 @@ docker logs coze-oceanbase | grep "slow query"
 
 # 查看连接数
 mysql -h localhost -P 2881 -u root -p -e "SHOW PROCESSLIST;"
+```
+
+## Helm 部署指南（Kubernetes）
+
+### 1. 环境准备
+
+确保已安装以下工具：
+
+- Kubernetes 集群（推荐使用 k3s 或 kind）
+- Helm 3.x
+- kubectl
+
+### 2. 安装依赖
+
+#### 安装 cert-manager
+
+```bash
+# 添加 cert-manager Helm 仓库
+helm repo add jetstack https://charts.jetstack.io
+helm repo update
+
+# 安装 cert-manager
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.16.2/cert-manager.yaml
+
+# 等待 cert-manager 就绪
+kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=cert-manager -n cert-manager --timeout=300s
+```
+
+#### 安装 ob-operator
+
+```bash
+# 添加 ob-operator Helm 仓库
+helm repo add ob-operator https://oceanbase.github.io/ob-operator/
+helm repo update
+
+# 安装 ob-operator
+helm install ob-operator ob-operator/ob-operator --set reporter=cozeAi --namespace=oceanbase-system --create-namespace
+
+# 等待 ob-operator 就绪
+kubectl wait --for=condition=ready pod -l control-plane=controller-manager -n oceanbase-system --timeout=300s
+```
+
+### 3. 部署 OceanBase
+
+#### 使用集成 Helm Chart
+
+```bash
+# 部署完整的 Coze Studio 应用（包含 OceanBase）
+helm install coze-studio helm/charts/opencoze \
+  --set oceanbase.enabled=true \
+  --namespace coze-studio \
+  --create-namespace
+
+# 或者只部署 OceanBase 组件
+helm install oceanbase-only helm/charts/opencoze \
+  --set oceanbase.enabled=true \
+  --set mysql.enabled=false \
+  --set redis.enabled=false \
+  --set minio.enabled=false \
+  --set elasticsearch.enabled=false \
+  --set milvus.enabled=false \
+  --set rocketmq.enabled=false \
+  --namespace oceanbase \
+  --create-namespace
+```
+
+#### 自定义配置
+
+创建 `oceanbase-values.yaml` 文件：
+
+```yaml
+oceanbase:
+  enabled: true
+  port: 2881
+  targetPort: 2881
+  clusterName: 'cozeAi'
+  clusterId: 1
+  image:
+    repository: oceanbase/oceanbase-ce
+    tag: 'latest'
+  obAgentVersion: '4.2.2-100000042024011120'
+  monitorEnabled: true
+  storageClass: ''
+  observerConfig:
+    resource:
+      cpu: 2
+      memory: 8Gi
+    storages:
+      dataStorage: 10G
+      redoLogStorage: 5G
+      logStorage: 5G
+  monitorResource:
+    cpu: 100m
+    memory: 256Mi
+  generateUserSecrets: true
+  userSecrets:
+    root: 'coze123'
+    monitor: 'coze123'
+    operator: 'coze123'
+    proxyro: 'coze123'
+  topology:
+    - zone: zone1
+      replica: 1
+  parameters:
+    - name: system_memory
+      value: '4G'
+    - name: '__min_full_resource_pool_memory'
+      value: '4294967296'
+  annotations: {}
+  backupVolumeEnabled: false
+```
+
+使用自定义配置部署：
+
+```bash
+helm install oceanbase-custom helm/charts/opencoze \
+  -f oceanbase-values.yaml \
+  --namespace oceanbase \
+  --create-namespace
+```
+
+### 4. 验证部署
+
+```bash
+# 检查 OBCluster 状态
+kubectl get obcluster -n oceanbase
+
+# 检查 OceanBase pods
+kubectl get pods -n oceanbase
+
+# 检查服务
+kubectl get svc -n oceanbase
+
+# 查看详细状态
+kubectl describe obcluster -n oceanbase
+```
+
+### 5. 连接测试
+
+#### 端口转发
+
+```bash
+# 转发 OceanBase 端口
+kubectl port-forward svc/oceanbase-service -n oceanbase 2881:2881
+```
+
+#### 使用 obclient 连接
+
+```bash
+# 在集群内连接
+kubectl exec -it deployment/oceanbase-obcluster-zone1 -n oceanbase -- obclient -h127.0.0.1 -P2881 -uroot@test -pcoze123 -Dtest
+
+# 从外部连接（需要端口转发）
+obclient -h127.0.0.1 -P2881 -uroot@test -pcoze123 -Dtest
+```
+
+#### 使用 MySQL 客户端连接
+
+```bash
+# 使用 MySQL 客户端
+mysql -h127.0.0.1 -P2881 -uroot@test -pcoze123 -Dtest
+```
+
+### 6. 监控和管理
+
+#### 查看日志
+
+```bash
+# 查看 OceanBase 日志
+kubectl logs -f deployment/oceanbase-obcluster-zone1 -n oceanbase
+
+# 查看 ob-operator 日志
+kubectl logs -f deployment/oceanbase-controller-manager -n oceanbase-system
+```
+
+#### 扩缩容
+
+```bash
+# 扩展副本数
+kubectl patch obcluster oceanbase-obcluster -n oceanbase --type='merge' -p='{"spec":{"topology":[{"zone":"zone1","replica":2}]}}'
+
+# 调整资源配置
+kubectl patch obcluster oceanbase-obcluster -n oceanbase --type='merge' -p='{"spec":{"observer":{"resource":{"cpu":4,"memory":"16Gi"}}}}'
+```
+
+#### 备份和恢复
+
+```bash
+# 创建备份
+kubectl apply -f - <<EOF
+apiVersion: oceanbase.oceanbase.com/v1alpha1
+kind: OBTenantBackupPolicy
+metadata:
+  name: backup-policy
+  namespace: oceanbase
+spec:
+  obClusterName: oceanbase-obcluster
+  tenantName: test
+  backupType: FULL
+  schedule: "0 2 * * *"
+  destination:
+    path: "file:///backup"
+EOF
+```
+
+### 7. 故障排除
+
+#### 常见问题
+
+1. **OBCluster 创建失败**
+
+   ```bash
+   # 检查 ob-operator 状态
+   kubectl get pods -n oceanbase-system
+
+   # 查看详细错误
+   kubectl describe obcluster -n oceanbase
+   ```
+2. **镜像拉取失败**
+
+   ```bash
+   # 检查节点镜像拉取能力
+   kubectl describe node
+
+   # 手动拉取镜像
+   docker pull oceanbase/oceanbase-cloud-native:4.3.5.3-103000092025080818
+   ```
+3. **存储问题**
+
+   ```bash
+   # 检查 PVC 状态
+   kubectl get pvc -n oceanbase
+
+   # 检查存储类
+   kubectl get storageclass
+   ```
+
+#### 日志分析
+
+```bash
+# 查看所有相关日志
+kubectl logs -f deployment/oceanbase-controller-manager -n oceanbase-system
+kubectl logs -f deployment/oceanbase-obcluster-zone1 -n oceanbase
+kubectl logs -f deployment/cert-manager -n cert-manager
+```
+
+### 8. 卸载
+
+```bash
+# 卸载 OceanBase
+helm uninstall oceanbase-custom -n oceanbase
+
+# 删除 namespace
+kubectl delete namespace oceanbase
+
+# 卸载 ob-operator
+helm uninstall ob-operator -n oceanbase-system
+
+# 卸载 cert-manager
+kubectl delete -f https://github.com/cert-manager/cert-manager/releases/download/v1.16.2/cert-manager.yaml
 ```
 
 ## 适配特点

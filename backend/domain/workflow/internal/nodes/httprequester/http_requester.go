@@ -627,7 +627,8 @@ func httpGet(ctx context.Context, url string) (*http.Response, error) {
 	return http.DefaultClient.Do(request)
 }
 
-func (hg *HTTPRequester) ToCallbackInput(_ context.Context, input map[string]any) (map[string]any, error) {
+func (hg *HTTPRequester) ToCallbackInput(_ context.Context, input map[string]any) (
+	*nodes.StructuredCallbackInput, error) {
 	var request = &Request{}
 
 	request, err := hg.parserToRequest(input)
@@ -696,7 +697,9 @@ func (hg *HTTPRequester) ToCallbackInput(_ context.Context, input map[string]any
 		result["body"] = request.FileURL
 
 	}
-	return result, nil
+	return &nodes.StructuredCallbackInput{
+		Input: result,
+	}, nil
 }
 
 const (
@@ -815,15 +818,13 @@ func (hg *HTTPRequester) parserToRequest(input map[string]any) (*Request, error)
 func (hg *HTTPRequester) ToCallbackOutput(_ context.Context, out map[string]any) (*nodes.StructuredCallbackOutput, error) {
 	if body, ok := out["body"]; !ok {
 		return &nodes.StructuredCallbackOutput{
-			RawOutput: out,
-			Output:    out,
+			Output: out,
 		}, nil
 	} else {
 		output := maps.Clone(out)
 		output["body"] = decodeUnicode(body.(string))
 		return &nodes.StructuredCallbackOutput{
-			RawOutput: out,
-			Output:    output,
+			Output: output,
 		}, nil
 	}
 

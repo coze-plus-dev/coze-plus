@@ -567,9 +567,10 @@ func (c *Config) Build(ctx context.Context, ns *schema2.NodeSchema, _ ...schema2
 		}
 	}
 
-	g := compose.NewGraph[map[string]any, map[string]any](compose.WithGenLocalState(func(ctx context.Context) (state llmState) {
-		return llmState{}
-	}))
+	g := compose.NewGraph[map[string]any, map[string]any](
+		compose.WithGenLocalState(func(ctx context.Context) (state llmState) {
+			return llmState{}
+		}))
 
 	var hasReasoning bool
 
@@ -678,6 +679,7 @@ func (c *Config) Build(ctx context.Context, ns *schema2.NodeSchema, _ ...schema2
 
 	_ = g.AddEdge(templateNodeKey, llmNodeKey)
 
+	var outputKey string
 	if format == FormatJSON {
 		iConvert := func(ctx context.Context, msg *schema.Message) (map[string]any, error) {
 			return jsonParse(ctx, msg.Content, ns.OutputTypes)
@@ -687,7 +689,6 @@ func (c *Config) Build(ctx context.Context, ns *schema2.NodeSchema, _ ...schema2
 
 		_ = g.AddLambdaNode(outputConvertNodeKey, convertNode)
 	} else {
-		var outputKey string
 		if len(ns.OutputTypes) != 1 && len(ns.OutputTypes) != 2 {
 			panic("impossible")
 		}
@@ -785,6 +786,8 @@ func (c *Config) Build(ctx context.Context, ns *schema2.NodeSchema, _ ...schema2
 		requireCheckpoint:  requireCheckpoint,
 		fullSources:        ns.FullSources,
 		chatHistorySetting: c.ChatHistorySetting,
+		nodeKey:            ns.Key,
+		outputKey:          outputKey,
 	}
 
 	return llm, nil
@@ -845,6 +848,17 @@ func (c *Config) FieldStreamType(path compose.FieldPath, ns *schema2.NodeSchema,
 	return schema2.FieldNotStream, nil
 }
 
+func (c *Config) ChatHistoryEnabled() bool {
+	return c.ChatHistorySetting != nil && c.ChatHistorySetting.EnableChatHistory
+}
+
+func (c *Config) ChatHistoryRounds() int64 {
+	if c.ChatHistorySetting == nil {
+		return 0
+	}
+	return c.ChatHistorySetting.ChatHistoryRound
+}
+
 func toRetrievalSearchType(s int64) (knowledge.SearchType, error) {
 	switch s {
 	case 0:
@@ -864,6 +878,8 @@ type LLM struct {
 	requireCheckpoint  bool
 	fullSources        map[string]*schema2.SourceInfo
 	chatHistorySetting *vo.ChatHistorySetting
+	nodeKey            vo.NodeKey
+	outputKey          string
 }
 
 const (
@@ -923,24 +939,21 @@ func (l *LLM) prepare(ctx context.Context, _ map[string]any, opts ...nodes.NodeO
 	if c != nil {
 		resumingEvent = c.NodeCtx.ResumingEvent
 	}
-	var previousToolES map[string]*entity.ToolInterruptEvent
 
 	if c != nil && c.RootCtx.ResumeEvent != nil {
 		// check if we are not resuming, but previously interrupted. Interrupt immediately.
 		if resumingEvent == nil {
-			err = compose.ProcessState(ctx, func(ctx context.Context, state ToolInterruptEventStore) error {
-				var e error
-				previousToolES, e = state.GetToolInterruptEvents(c.NodeKey)
-				if e != nil {
-					return e
-				}
+			var previouslyInterrupted bool
+			err = compose.ProcessState(ctx, func(ctx context.Context, state nodes.IntermediateResultStore) error {
+				previousToolES := state.GetIntermediateResult(c.NodeKey)
+				previouslyInterrupted = len(previousToolES) > 0
 				return nil
 			})
 			if err != nil {
 				return
 			}
 
-			if len(previousToolES) > 0 {
+			if previouslyInterrupted {
 				err = compose.InterruptAndRerun
 				return
 			}
@@ -959,24 +972,24 @@ func (l *LLM) prepare(ctx context.Context, _ map[string]any, opts ...nodes.NodeO
 	if resumingEvent != nil {
 		var (
 			resumeData string
-			e          error
-			allIEs     = make(map[string]*entity.ToolInterruptEvent)
+			allIEs     map[string]int64
 		)
-		err = compose.ProcessState(ctx, func(ctx context.Context, state ToolInterruptEventStore) error {
-			allIEs, e = state.GetToolInterruptEvents(c.NodeKey)
-			if e != nil {
-				return e
+
+		_ = compose.ProcessState(ctx, func(_ context.Context, state nodes.IntermediateResultStore) error {
+			existingIEs := state.GetIntermediateResult(l.nodeKey)
+			allIEs = make(map[string]int64, len(existingIEs))
+			for toolCallID, exeID := range existingIEs {
+				allIEs[toolCallID] = exeID.(int64)
 			}
-
-			allIEs = maps.Clone(allIEs)
-
-			resumeData, e = state.ResumeToolInterruptEvent(c.NodeKey, resumingEvent.ToolInterruptEvent.ToolCallID)
-
-			return e
+			delete(existingIEs, resumingEvent.ToolInterruptEvent.ToolCallID)
+			state.SetIntermediateResult(l.nodeKey, existingIEs)
+			return nil
 		})
-		if err != nil {
-			return
-		}
+		_ = compose.ProcessState(ctx, func(ctx context.Context, state nodes.InterruptEventStore) error {
+			resumeData, _ = state.GetAndClearResumeData(c.NodeKey)
+			return nil
+		})
+
 		composeOpts = append(composeOpts, compose.WithToolsNodeOption(
 			compose.WithToolOption(
 				execute.WithResume(&entity.ResumeRequest{
@@ -1030,7 +1043,11 @@ func (l *LLM) prepare(ctx context.Context, _ map[string]any, opts ...nodes.NodeO
 			execute.WithParentStreamContainer(container))))
 	}
 
-	resolvedSources, err := nodes.ResolveStreamSources(ctx, l.fullSources)
+	var resolvedSources map[string]*schema2.SourceInfo
+	err = compose.ProcessState(ctx, func(_ context.Context, state nodes.DynamicStreamContainer) error {
+		resolvedSources = state.GetFullSources(l.nodeKey)
+		return nil
+	})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1044,7 +1061,7 @@ func (l *LLM) prepare(ctx context.Context, _ map[string]any, opts ...nodes.NodeO
 	return composeOpts, resumingEvent, nil
 }
 
-func handleInterrupt(ctx context.Context, err error, resumingEvent *entity.InterruptEvent) error {
+func (l *LLM) handleInterrupt(ctx context.Context, err error, resumingEvent *entity.InterruptEvent) error {
 	info, ok := compose.ExtractInterruptInfo(err)
 	if !ok {
 		return err
@@ -1108,18 +1125,20 @@ func handleInterrupt(ctx context.Context, err error, resumingEvent *entity.Inter
 		ie.ToolInterruptEvent = toolIEs[0]
 	}
 
-	err = compose.ProcessState(ctx, func(ctx context.Context, ieStore ToolInterruptEventStore) error {
-		for i := range toolIEs {
-			e := ieStore.SetToolInterruptEvent(c.NodeKey, toolIEs[i].ToolCallID, toolIEs[i])
-			if e != nil {
-				return e
+	callID2ExeID := make(map[string]any, len(toolIEs))
+	for i := range toolIEs {
+		callID2ExeID[toolIEs[i].ToolCallID] = toolIEs[i].ExecuteID
+	}
+	_ = compose.ProcessState(ctx, func(ctx context.Context, state nodes.IntermediateResultStore) error {
+		previous := state.GetIntermediateResult(l.nodeKey)
+		for k, v := range previous {
+			if _, ok := callID2ExeID[k]; !ok {
+				callID2ExeID[k] = v
 			}
 		}
+		state.SetIntermediateResult(l.nodeKey, callID2ExeID)
 		return nil
 	})
-	if err != nil {
-		return err
-	}
 
 	return compose.NewInterruptAndRerunErr(ie)
 }
@@ -1132,7 +1151,7 @@ func (l *LLM) Invoke(ctx context.Context, in map[string]any, opts ...nodes.NodeO
 
 	out, err = l.r.Invoke(ctx, in, composeOpts...)
 	if err != nil {
-		err = handleInterrupt(ctx, err, resumingEvent)
+		err = l.handleInterrupt(ctx, err, resumingEvent)
 		return nil, err
 	}
 
@@ -1147,7 +1166,7 @@ func (l *LLM) Stream(ctx context.Context, in map[string]any, opts ...nodes.NodeO
 
 	out, err = l.r.Stream(ctx, in, composeOpts...)
 	if err != nil {
-		err = handleInterrupt(ctx, err, resumingEvent)
+		err = l.handleInterrupt(ctx, err, resumingEvent)
 		return nil, err
 	}
 
@@ -1222,15 +1241,10 @@ func injectKnowledgeTool(_ context.Context, g *compose.Graph[map[string]any, map
 	return nil
 }
 
-type ToolInterruptEventStore interface {
-	SetToolInterruptEvent(llmNodeKey vo.NodeKey, toolCallID string, ie *entity.ToolInterruptEvent) error
-	GetToolInterruptEvents(llmNodeKey vo.NodeKey) (map[string]*entity.ToolInterruptEvent, error)
-	ResumeToolInterruptEvent(llmNodeKey vo.NodeKey, toolCallID string) (string, error)
-}
-
-func (l *LLM) ToCallbackInput(ctx context.Context, input map[string]any) (map[string]any, error) {
+func (l *LLM) ToCallbackInput(ctx context.Context, input map[string]any) (
+	*nodes.StructuredCallbackInput, error) {
 	if l.chatHistorySetting == nil || !l.chatHistorySetting.EnableChatHistory {
-		return input, nil
+		return &nodes.StructuredCallbackInput{Input: input}, nil
 	}
 
 	var messages []*crossmessage.WfMessage
@@ -1249,11 +1263,11 @@ func (l *LLM) ToCallbackInput(ctx context.Context, input map[string]any) (map[st
 	maps.Copy(ret, input)
 
 	if len(messages) == 0 {
-		return ret, nil
+		return &nodes.StructuredCallbackInput{Input: ret}, nil
 	}
 
 	if sectionID != nil && messages[0].SectionID != *sectionID {
-		return ret, nil
+		return &nodes.StructuredCallbackInput{Input: ret}, nil
 	}
 
 	maxRounds := int(l.chatHistorySetting.ChatHistoryRound)
@@ -1287,7 +1301,7 @@ func (l *LLM) ToCallbackInput(ctx context.Context, input map[string]any) (map[st
 	ctxcache.Store(ctx, chatHistoryKey, scMessages[startIdx:])
 
 	ret["chatHistory"] = historyMessages
-	return ret, nil
+	return &nodes.StructuredCallbackInput{Input: ret}, nil
 }
 
 func (l *LLM) ToCallbackOutput(ctx context.Context, output map[string]any) (*nodes.StructuredCallbackOutput, error) {
@@ -1295,30 +1309,44 @@ func (l *LLM) ToCallbackOutput(ctx context.Context, output map[string]any) (*nod
 	if c == nil {
 		return &nodes.StructuredCallbackOutput{
 			Output:    output,
-			RawOutput: output,
+			RawOutput: ptr.Of(output[l.outputKey].(string)),
 		}, nil
 	}
 	rawOutputK := fmt.Sprintf(rawOutputKey, c.NodeKey)
 	warningK := fmt.Sprintf(warningKey, c.NodeKey)
 	rawOutput, found := ctxcache.Get[string](ctx, rawOutputK)
 	if !found {
-		return &nodes.StructuredCallbackOutput{
-			Output:    output,
-			RawOutput: output,
-		}, nil
+		structuredOut := &nodes.StructuredCallbackOutput{
+			Output: output,
+		}
+
+		if _, ok := output[l.outputKey]; ok {
+			structuredOut.RawOutput = ptr.Of(output[l.outputKey].(string))
+		}
+
+		return structuredOut, nil
 	}
 
 	warning, found := ctxcache.Get[vo.WorkflowError](ctx, warningK)
 	if !found {
 		return &nodes.StructuredCallbackOutput{
 			Output:    output,
-			RawOutput: map[string]any{"output": rawOutput},
+			RawOutput: ptr.Of(rawOutput),
 		}, nil
 	}
 
-	return &nodes.StructuredCallbackOutput{
+	structuredOut := &nodes.StructuredCallbackOutput{
 		Output:    output,
-		RawOutput: map[string]any{"output": rawOutput},
+		RawOutput: ptr.Of(rawOutput),
 		Error:     warning,
-	}, nil
+	}
+
+	reasoning, ok := output[ReasoningOutputKey]
+	if ok {
+		structuredOut.Extra = map[string]any{
+			ReasoningOutputKey: reasoning,
+		}
+	}
+
+	return structuredOut, nil
 }

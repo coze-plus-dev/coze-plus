@@ -225,6 +225,266 @@ docker logs coze-oceanbase | grep "slow query"
 mysql -h localhost -P 2881 -u root -p -e "SHOW PROCESSLIST;"
 ```
 
+## Helm Deployment Guide (Kubernetes)
+
+### 1. Environment Preparation
+
+Ensure the following tools are installed:
+
+- Kubernetes cluster (recommended: k3s or kind)
+- Helm 3.x
+- kubectl
+
+### 2. Install Dependencies
+
+#### Install cert-manager
+
+```bash
+# Add cert-manager Helm repository
+helm repo add jetstack https://charts.jetstack.io
+helm repo update
+
+# Install cert-manager
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.16.2/cert-manager.yaml
+
+# Wait for cert-manager to be ready
+kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=cert-manager -n cert-manager --timeout=300s
+```
+
+#### Install ob-operator
+
+```bash
+# Add ob-operator Helm repository
+helm repo add ob-operator https://oceanbase.github.io/ob-operator/
+helm repo update
+
+# Install ob-operator
+helm install ob-operator ob-operator/ob-operator --set reporter=cozeAi --namespace=oceanbase-system --create-namespace
+
+# Wait for ob-operator to be ready
+kubectl wait --for=condition=ready pod -l control-plane=controller-manager -n oceanbase-system --timeout=300s
+```
+
+### 3. Deploy OceanBase
+
+#### Using Integrated Helm Chart
+
+```bash
+# Deploy complete Coze Studio application (including OceanBase)
+helm install coze-studio helm/charts/opencoze \
+  --set oceanbase.enabled=true \
+  --namespace coze-studio \
+  --create-namespace
+
+# Or deploy only OceanBase component
+helm install oceanbase-only helm/charts/opencoze \
+  --set oceanbase.enabled=true \
+  --set mysql.enabled=false \
+  --set redis.enabled=false \
+  --set minio.enabled=false \
+  --set elasticsearch.enabled=false \
+  --set milvus.enabled=false \
+  --set rocketmq.enabled=false \
+  --namespace oceanbase \
+  --create-namespace
+```
+
+#### Custom Configuration
+
+Create `oceanbase-values.yaml` file:
+
+```yaml
+oceanbase:
+  enabled: true
+  port: 2881
+  targetPort: 2881
+  clusterName: 'cozeAi'
+  clusterId: 1
+  image:
+    repository: oceanbase/oceanbase-ce
+    tag: 'latest'
+  obAgentVersion: '4.2.2-100000042024011120'
+  monitorEnabled: true
+  storageClass: ''
+  observerConfig:
+    resource:
+      cpu: 2
+      memory: 8Gi
+    storages:
+      dataStorage: 10G
+      redoLogStorage: 5G
+      logStorage: 5G
+  monitorResource:
+    cpu: 100m
+    memory: 256Mi
+  generateUserSecrets: true
+  userSecrets:
+    root: 'coze123'
+    monitor: 'coze123'
+    operator: 'coze123'
+    proxyro: 'coze123'
+  topology:
+    - zone: zone1
+      replica: 1
+  parameters:
+    - name: system_memory
+      value: '4G'
+    - name: '__min_full_resource_pool_memory'
+      value: '4294967296'
+  annotations: {}
+  backupVolumeEnabled: false
+```
+
+Deploy with custom configuration:
+
+```bash
+helm install oceanbase-custom helm/charts/opencoze \
+  -f oceanbase-values.yaml \
+  --namespace oceanbase \
+  --create-namespace
+```
+
+### 4. Verify Deployment
+
+```bash
+# Check OBCluster status
+kubectl get obcluster -n oceanbase
+
+# Check OceanBase pods
+kubectl get pods -n oceanbase
+
+# Check services
+kubectl get svc -n oceanbase
+
+# View detailed status
+kubectl describe obcluster -n oceanbase
+```
+
+### 5. Connection Testing
+
+#### Port Forwarding
+
+```bash
+# Forward OceanBase port
+kubectl port-forward svc/oceanbase-service -n oceanbase 2881:2881
+```
+
+#### Using obclient Connection
+
+```bash
+# Connect within cluster
+kubectl exec -it deployment/oceanbase-obcluster-zone1 -n oceanbase -- obclient -h127.0.0.1 -P2881 -uroot@test -pcoze123 -Dtest
+
+# Connect from external (requires port forwarding)
+obclient -h127.0.0.1 -P2881 -uroot@test -pcoze123 -Dtest
+```
+
+#### Using MySQL Client Connection
+
+```bash
+# Using MySQL client
+mysql -h127.0.0.1 -P2881 -uroot@test -pcoze123 -Dtest
+```
+
+### 6. Monitoring and Management
+
+#### View Logs
+
+```bash
+# View OceanBase logs
+kubectl logs -f deployment/oceanbase-obcluster-zone1 -n oceanbase
+
+# View ob-operator logs
+kubectl logs -f deployment/oceanbase-controller-manager -n oceanbase-system
+```
+
+#### Scaling
+
+```bash
+# Scale replica count
+kubectl patch obcluster oceanbase-obcluster -n oceanbase --type='merge' -p='{"spec":{"topology":[{"zone":"zone1","replica":2}]}}'
+
+# Adjust resource configuration
+kubectl patch obcluster oceanbase-obcluster -n oceanbase --type='merge' -p='{"spec":{"observer":{"resource":{"cpu":4,"memory":"16Gi"}}}}'
+```
+
+#### Backup and Recovery
+
+```bash
+# Create backup
+kubectl apply -f - <<EOF
+apiVersion: oceanbase.oceanbase.com/v1alpha1
+kind: OBTenantBackupPolicy
+metadata:
+  name: backup-policy
+  namespace: oceanbase
+spec:
+  obClusterName: oceanbase-obcluster
+  tenantName: test
+  backupType: FULL
+  schedule: "0 2 * * *"
+  destination:
+    path: "file:///backup"
+EOF
+```
+
+### 7. Troubleshooting
+
+#### Common Issues
+
+1. **OBCluster Creation Failed**
+
+   ```bash
+   # Check ob-operator status
+   kubectl get pods -n oceanbase-system
+
+   # View detailed errors
+   kubectl describe obcluster -n oceanbase
+   ```
+2. **Image Pull Failed**
+
+   ```bash
+   # Check node image pull capability
+   kubectl describe node
+
+   # Manually pull image
+   docker pull oceanbase/oceanbase-cloud-native:4.3.5.3-103000092025080818
+   ```
+3. **Storage Issues**
+
+   ```bash
+   # Check PVC status
+   kubectl get pvc -n oceanbase
+
+   # Check storage class
+   kubectl get storageclass
+   ```
+
+#### Log Analysis
+
+```bash
+# View all related logs
+kubectl logs -f deployment/oceanbase-controller-manager -n oceanbase-system
+kubectl logs -f deployment/oceanbase-obcluster-zone1 -n oceanbase
+kubectl logs -f deployment/cert-manager -n cert-manager
+```
+
+### 8. Uninstallation
+
+```bash
+# Uninstall OceanBase
+helm uninstall oceanbase-custom -n oceanbase
+
+# Delete namespace
+kubectl delete namespace oceanbase
+
+# Uninstall ob-operator
+helm uninstall ob-operator -n oceanbase-system
+
+# Uninstall cert-manager
+kubectl delete -f https://github.com/cert-manager/cert-manager/releases/download/v1.16.2/cert-manager.yaml
+```
+
 ## Integration Features
 
 ### 1. Design Principles

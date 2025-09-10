@@ -105,6 +105,10 @@ type AppDependencies struct {
 func Init(ctx context.Context) (*AppDependencies, error) {
 	deps := &AppDependencies{}
 	var err error
+	deps.TOSClient, err = initTOS(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("init tos client failed, err=%w", err)
+	}
 
 	deps.DB, err = mysql.New()
 	if err != nil {
@@ -126,11 +130,6 @@ func Init(ctx context.Context) (*AppDependencies, error) {
 	deps.ImageXClient, err = initImageX(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("init imagex client failed, err=%w", err)
-	}
-
-	deps.TOSClient, err = initTOS(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("init tos client failed, err=%w", err)
 	}
 
 	deps.ResourceEventProducer, err = initResourceEventBusProducer()
@@ -436,13 +435,17 @@ func getVectorStore(ctx context.Context) (searchstore.Manager, error) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second*5)
 		defer cancel()
 
-		milvusAddr := os.Getenv("MILVUS_ADDR")
-		user := os.Getenv("MILVUS_USER")
-		password := os.Getenv("MILVUS_PASSWORD")
+		var (
+			milvusAddr  = os.Getenv("MILVUS_ADDR")
+			user        = os.Getenv("MILVUS_USER")
+			password    = os.Getenv("MILVUS_PASSWORD")
+			milvusToken = os.Getenv("MILVUS_TOKEN")
+		)
 		mc, err := milvusclient.New(ctx, &milvusclient.ClientConfig{
 			Address:  milvusAddr,
 			Username: user,
 			Password: password,
+			APIKey:   milvusToken,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("init milvus client failed, err=%w", err)
@@ -590,13 +593,13 @@ func getVectorStore(ctx context.Context) (searchstore.Manager, error) {
 		}
 
 		managerConfig := &oceanbase.ManagerConfig{
-			Client:        client,
-			Embedding:     emb,
-			BatchSize:     batchSize,
-			EnableCache:   enableCache,
-			CacheTTL:      cacheTTL,
+			Client:         client,
+			Embedding:      emb,
+			BatchSize:      batchSize,
+			EnableCache:    enableCache,
+			CacheTTL:       cacheTTL,
 			MaxConnections: maxConnections,
-			ConnTimeout:   connTimeout,
+			ConnTimeout:    connTimeout,
 		}
 		mgr, err := oceanbase.NewManager(managerConfig)
 		if err != nil {

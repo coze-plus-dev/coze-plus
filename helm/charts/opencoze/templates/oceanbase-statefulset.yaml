@@ -1,0 +1,52 @@
+{{- if .Values.oceanbase.enabled }}
+apiVersion: oceanbase.oceanbase.com/v1alpha1
+kind: OBCluster
+metadata:
+  name: {{ include "opencoze.fullname" . }}-oceanbase
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "opencoze.labels" . | nindent 4 }}
+    app.kubernetes.io/component: oceanbase
+  annotations:
+    {{- toYaml .Values.oceanbase.annotations | nindent 4 }}
+spec:
+  clusterName: {{ .Values.oceanbase.clusterName | default .Release.Name | quote }}
+  clusterId: {{ .Values.oceanbase.clusterId | default 1 }}
+  serviceAccount: {{ include "opencoze.fullname" . }}-oceanbase
+  userSecrets:
+    root: {{ include "opencoze.fullname" . }}-oceanbase-root-secret
+    monitor: {{ include "opencoze.fullname" . }}-oceanbase-monitor-secret
+    operator: {{ include "opencoze.fullname" . }}-oceanbase-operator-secret
+    proxyro: {{ include "opencoze.fullname" . }}-oceanbase-proxyro-secret
+  topology:
+    {{- toYaml .Values.oceanbase.topology | nindent 4 }}
+  observer:
+    image: {{ .Values.oceanbase.image.repository }}:{{ .Values.oceanbase.image.tag }}
+    {{- with .Values.oceanbase.observerConfig }}
+    resource:
+      {{- toYaml .resource | nindent 6 }}
+    storage:
+     {{- range $key, $size := .storages }}
+      {{ $key }}:
+        storageClass: {{ $.Values.oceanbase.storageClass }}
+        size: {{ $size }}
+     {{- end }}
+    {{- end }}
+  {{- if .Values.oceanbase.monitorEnabled }}
+  monitor:
+    image: oceanbase/obagent:{{ .Values.oceanbase.obAgentVersion }}
+    resource:
+      {{- toYaml .Values.oceanbase.monitorResource | nindent 6 }}
+  {{- end }}
+  parameters:
+  {{- range $param := .Values.oceanbase.parameters }}
+    - name: {{ $param.name }}
+      value: {{ $param.value | quote }}
+  {{- end }}
+  {{- if .Values.oceanbase.backupVolumeEnabled }}
+  backupVolume:
+    volume:
+      name: backup
+      {{- toYaml .Values.oceanbase.backupVolume | nindent 6 }}
+  {{- end }}
+{{- end }}

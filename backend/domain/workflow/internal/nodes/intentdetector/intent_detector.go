@@ -194,6 +194,17 @@ func (c *Config) ExpectPorts(ctx context.Context, n *vo.Node) []string {
 	return expects
 }
 
+func (c *Config) ChatHistoryEnabled() bool {
+	return c.ChatHistorySetting != nil && c.ChatHistorySetting.EnableChatHistory
+}
+
+func (c *Config) ChatHistoryRounds() int64 {
+	if c.ChatHistorySetting == nil {
+		return 0
+	}
+	return c.ChatHistorySetting.ChatHistoryRound
+}
+
 type contextKey string
 
 const chatHistoryKey contextKey = "chatHistory"
@@ -338,9 +349,10 @@ func toIntentString(its []string) (string, error) {
 	return sonic.MarshalString(vs)
 }
 
-func (id *IntentDetector) ToCallbackInput(ctx context.Context, in map[string]any) (map[string]any, error) {
+func (id *IntentDetector) ToCallbackInput(ctx context.Context, in map[string]any) (
+	*nodes.StructuredCallbackInput, error) {
 	if id.ChatHistorySetting == nil || !id.ChatHistorySetting.EnableChatHistory {
-		return in, nil
+		return &nodes.StructuredCallbackInput{Input: in}, nil
 	}
 
 	var messages []*crossmessage.WfMessage
@@ -359,10 +371,10 @@ func (id *IntentDetector) ToCallbackInput(ctx context.Context, in map[string]any
 	maps.Copy(ret, in)
 
 	if len(messages) == 0 {
-		return ret, nil
+		return &nodes.StructuredCallbackInput{Input: ret}, nil
 	}
 	if sectionID != nil && messages[0].SectionID != *sectionID {
-		return ret, nil
+		return &nodes.StructuredCallbackInput{Input: ret}, nil
 	}
 
 	maxRounds := int(id.ChatHistorySetting.ChatHistoryRound)
@@ -398,5 +410,5 @@ func (id *IntentDetector) ToCallbackInput(ctx context.Context, in map[string]any
 	ctxcache.Store(ctx, chatHistoryKey, scMessages[startIdx:])
 
 	ret["chatHistory"] = historyMessages
-	return ret, nil
+	return &nodes.StructuredCallbackInput{Input: ret}, nil
 }

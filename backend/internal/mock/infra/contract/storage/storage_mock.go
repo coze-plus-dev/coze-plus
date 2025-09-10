@@ -91,34 +91,64 @@ func (mr *MockStorageMockRecorder) GetObjectUrl(ctx, objectKey any, opts ...any)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetObjectUrl", reflect.TypeOf((*MockStorage)(nil).GetObjectUrl), varargs...)
 }
 
-// ListAllObjects mocks base method.
-func (m *MockStorage) ListAllObjects(ctx context.Context, prefix string, withTagging bool) ([]*storage.FileInfo, error) {
+// HeadObject mocks base method.
+func (m *MockStorage) HeadObject(ctx context.Context, objectKey string, opts ...storage.GetOptFn) (*storage.FileInfo, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListAllObjects", ctx, prefix, withTagging)
+	varargs := []any{ctx, objectKey}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "HeadObject", varargs...)
+	ret0, _ := ret[0].(*storage.FileInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// HeadObject indicates an expected call of HeadObject.
+func (mr *MockStorageMockRecorder) HeadObject(ctx, objectKey any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, objectKey}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HeadObject", reflect.TypeOf((*MockStorage)(nil).HeadObject), varargs...)
+}
+
+// ListAllObjects mocks base method.
+func (m *MockStorage) ListAllObjects(ctx context.Context, prefix string, opts ...storage.GetOptFn) ([]*storage.FileInfo, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, prefix}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListAllObjects", varargs...)
 	ret0, _ := ret[0].([]*storage.FileInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ListAllObjects indicates an expected call of ListAllObjects.
-func (mr *MockStorageMockRecorder) ListAllObjects(ctx, prefix, withTagging any) *gomock.Call {
+func (mr *MockStorageMockRecorder) ListAllObjects(ctx, prefix any, opts ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAllObjects", reflect.TypeOf((*MockStorage)(nil).ListAllObjects), ctx, prefix, withTagging)
+	varargs := append([]any{ctx, prefix}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAllObjects", reflect.TypeOf((*MockStorage)(nil).ListAllObjects), varargs...)
 }
 
 // ListObjectsPaginated mocks base method.
-func (m *MockStorage) ListObjectsPaginated(ctx context.Context, input *storage.ListObjectsPaginatedInput) (*storage.ListObjectsPaginatedOutput, error) {
+func (m *MockStorage) ListObjectsPaginated(ctx context.Context, input *storage.ListObjectsPaginatedInput, opts ...storage.GetOptFn) (*storage.ListObjectsPaginatedOutput, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListObjectsPaginated", ctx, input)
+	varargs := []any{ctx, input}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListObjectsPaginated", varargs...)
 	ret0, _ := ret[0].(*storage.ListObjectsPaginatedOutput)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ListObjectsPaginated indicates an expected call of ListObjectsPaginated.
-func (mr *MockStorageMockRecorder) ListObjectsPaginated(ctx, input any) *gomock.Call {
+func (mr *MockStorageMockRecorder) ListObjectsPaginated(ctx, input any, opts ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListObjectsPaginated", reflect.TypeOf((*MockStorage)(nil).ListObjectsPaginated), ctx, input)
+	varargs := append([]any{ctx, input}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListObjectsPaginated", reflect.TypeOf((*MockStorage)(nil).ListObjectsPaginated), varargs...)
 }
 
 // PutObject mocks base method.

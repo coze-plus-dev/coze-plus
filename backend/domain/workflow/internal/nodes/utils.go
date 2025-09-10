@@ -144,7 +144,7 @@ func ConcatTwoMaps(m1, m2 map[string]any) (map[string]any, error) {
 
 		var cv reflect.Value
 		if reflect.TypeOf(v).Kind() == reflect.Map {
-			cv, err = concatMaps(items)
+			cv, err = ConcatMaps(items)
 		} else {
 			cv, err = concatSliceValue(items)
 		}
@@ -159,7 +159,7 @@ func ConcatTwoMaps(m1, m2 map[string]any) (map[string]any, error) {
 
 // the following codes are copied from github.com/cloudwego/eino
 
-func concatMaps(ms reflect.Value) (reflect.Value, error) {
+func ConcatMaps(ms reflect.Value) (reflect.Value, error) {
 	typ := ms.Type().Elem()
 
 	rms := reflect.MakeMap(reflect.MapOf(typ.Key(), reflect.TypeOf((*[]any)(nil)).Elem()))
@@ -194,7 +194,7 @@ func concatMaps(ms reflect.Value) (reflect.Value, error) {
 		var cv reflect.Value
 
 		if v.Type().Elem().Kind() == reflect.Map {
-			cv, err = concatMaps(v)
+			cv, err = ConcatMaps(v)
 		} else {
 			cv, err = concatSliceValue(v)
 		}
@@ -262,8 +262,28 @@ func toSliceValue(vs []any) (reflect.Value, error) {
 }
 
 var (
-	concatFunctions = map[reflect.Type]any{}
+	concatFunctions = map[reflect.Type]any{
+		reflect.TypeOf(""): concatStrings,
+	}
 )
+
+func concatStrings(ss []string) (string, error) {
+	var n int
+	for _, s := range ss {
+		n += len(s)
+	}
+
+	var b strings.Builder
+	b.Grow(n)
+	for _, s := range ss {
+		_, err := b.WriteString(s)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return TrimKeyFinishedMarker(b.String()), nil
+}
 
 func RegisterStreamChunkConcatFunc[T any](fn func([]T) (T, error)) {
 	concatFunctions[reflect.TypeOf((*T)(nil)).Elem()] = fn

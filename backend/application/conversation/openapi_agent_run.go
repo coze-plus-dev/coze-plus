@@ -127,7 +127,7 @@ func (a *OpenapiAgentRunApplication) checkAgent(ctx context.Context, ar *run.Cha
 	}
 
 	if agentInfo == nil {
-		return nil, errors.New("agent info is nil")
+		return nil, errorx.New(errno.ErrAgentNotExists)
 	}
 	return agentInfo, nil
 }
@@ -156,6 +156,8 @@ func (a *OpenapiAgentRunApplication) buildAgentRunRequest(ctx context.Context, a
 		ConnectorID:      connectorID,
 		ContentType:      contentType,
 		Ext:              ar.ExtraParams,
+		CustomVariables:  ar.CustomVariables,
+		CozeUID:          conversationData.CreatorID,
 	}
 	return arm, nil
 }
