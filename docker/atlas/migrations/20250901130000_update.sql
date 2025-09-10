@@ -1,7 +1,7 @@
 -- Step 1: Create Permission System Tables
 
 -- Create role table
-CREATE TABLE `role` (
+CREATE TABLE `opencoze`.`role` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT "Role ID",
   `role_code` varchar(50) NOT NULL COMMENT "Role code",
   `role_name` varchar(100) NOT NULL COMMENT "Role name",
@@ -27,7 +27,7 @@ CREATE TABLE `role` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT="Role definition table";
 
 -- Create user_role table
-CREATE TABLE `user_role` (
+CREATE TABLE `opencoze`.`user_role` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `user_id` bigint unsigned NOT NULL COMMENT "User ID",
   `role_id` bigint unsigned NOT NULL COMMENT "Role ID",
@@ -48,7 +48,7 @@ CREATE TABLE `user_role` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT="User role relationship table";
 
 -- Create casbin_rule table
-CREATE TABLE `casbin_rule` (
+CREATE TABLE `opencoze`.`casbin_rule` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `ptype` varchar(100) NOT NULL COMMENT "Policy type: p(policy), g(user role)",
   `v0` varchar(100) NOT NULL COMMENT "User ID/Role",
@@ -65,7 +65,7 @@ CREATE TABLE `casbin_rule` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT="Casbin permission policy table";
 
 -- Create permission_template table
-CREATE TABLE `permission_template` (
+CREATE TABLE `opencoze`.`permission_template` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT "Template ID",
   `template_code` varchar(50) NOT NULL COMMENT "Template code",
   `template_name` varchar(100) NOT NULL COMMENT "Template name",
@@ -90,7 +90,7 @@ CREATE TABLE `permission_template` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT="Permission template table";
 
 -- Step 2: Extend existing space_user table for compatibility
-ALTER TABLE `space_user`
+ALTER TABLE `opencoze`.`space_user`
 ADD COLUMN `role_id` bigint unsigned NULL COMMENT 'Custom role ID (NULL uses role_type)' AFTER `role_type`,
 ADD COLUMN `expired_at` bigint unsigned NULL COMMENT 'Permission expiration time (NULL means permanent)' AFTER `updated_at`,
 ADD INDEX `idx_role_id` (`role_id`);
@@ -106,7 +106,7 @@ ALTER TABLE `opencoze`.`corporation_employee`
 ADD UNIQUE INDEX `uk_user_id` (`user_id`);
 
 -- Step 4: Initialize global permission domain template
-INSERT INTO `permission_template` (`template_code`, `template_name`, `domain`, `resource`, `resource_name`, `action`, `action_name`, `description`, `is_default`, `sort_order`, `is_active`, `created_at`, `updated_at`) VALUES
+INSERT INTO `opencoze`.`permission_template` (`template_code`, `template_name`, `domain`, `resource`, `resource_name`, `action`, `action_name`, `description`, `is_default`, `sort_order`, `is_active`, `created_at`, `updated_at`) VALUES
 
 -- 1. 组织管理权限 (Organization Management)
 ('ORG_CREATE', '创建组织', 'global', 'organization', '组织管理', 'create', '创建组织', '可以创建新的组织架构', 0, 100, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
@@ -141,7 +141,7 @@ INSERT INTO `permission_template` (`template_code`, `template_name`, `domain`, `
 ('WS_CREATE', '新建工作空间', 'global', 'workspace', '工作空间管理', 'create', '新建工作空间', '创建新的工作空间，设置空间访问权限和协作范围', 0, 400, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000);
 
 -- Initialize space permission domain template
-INSERT INTO `permission_template` (`template_code`, `template_name`, `domain`, `resource`, `resource_name`, `action`, `action_name`, `description`, `is_default`, `sort_order`, `is_active`, `created_at`, `updated_at`) VALUES
+INSERT INTO `opencoze`.`permission_template` (`template_code`, `template_name`, `domain`, `resource`, `resource_name`, `action`, `action_name`, `description`, `is_default`, `sort_order`, `is_active`, `created_at`, `updated_at`) VALUES
 
 -- 1. 管理空间权限 (Space Management)
 ('SPACE_INVITE_MEMBER', '添加成员', 'space', 'member', '成员管理', 'invite', '添加成员', '将用户添加到空间中', 0, 100, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
@@ -159,7 +159,7 @@ INSERT INTO `permission_template` (`template_code`, `template_name`, `domain`, `
 
 -- Step 5: Initialize builtin roles with list<PermissionTemplateGroup> structure
 -- 1. Super Admin Role (has all global permissions)
-INSERT INTO `role` (`id`, `role_code`, `role_name`, `role_domain`, `super_admin`, `space_role_type`, `is_builtin`, `permissions`, `description`, `created_by`, `created_at`, `updated_at`)
+INSERT INTO `opencoze`.`role` (`id`, `role_code`, `role_name`, `role_domain`, `super_admin`, `space_role_type`, `is_builtin`, `permissions`, `description`, `created_by`, `created_at`, `updated_at`)
 SELECT
   1 as id,
   'super_admin' as role_code,
@@ -195,7 +195,7 @@ SELECT
                   'is_active', pt2.is_active
                 )
               )
-              FROM permission_template pt2
+              FROM opencoze.permission_template pt2
               WHERE pt2.domain = 'global'
                 AND pt2.resource = resource_group.resource
                 AND pt2.is_active = 1
@@ -206,7 +206,7 @@ SELECT
         FROM (
           SELECT DISTINCT resource,
                  FIRST_VALUE(resource_name) OVER (PARTITION BY resource ORDER BY sort_order) as resource_name
-          FROM permission_template
+          FROM opencoze.permission_template
           WHERE domain = 'global' AND is_active = 1
         ) as resource_group
         ORDER BY resource_group.resource
@@ -219,7 +219,7 @@ SELECT
   UNIX_TIMESTAMP(NOW()) * 1000 as updated_at;
 
 -- 2. Space Owner Role (ID=2, corresponds to space_user.role_type=1)
-INSERT INTO `role` (`id`, `role_code`, `role_name`, `role_domain`, `super_admin`, `space_role_type`, `is_builtin`, `permissions`, `description`, `created_by`, `created_at`, `updated_at`)
+INSERT INTO `opencoze`.`role` (`id`, `role_code`, `role_name`, `role_domain`, `super_admin`, `space_role_type`, `is_builtin`, `permissions`, `description`, `created_by`, `created_at`, `updated_at`)
 SELECT
   2 as id,
   'space_owner' as role_code,
@@ -255,7 +255,7 @@ SELECT
                   'is_active', pt2.is_active
                 )
               )
-              FROM permission_template pt2
+              FROM opencoze.permission_template pt2
               WHERE pt2.domain = 'space'
                 AND pt2.resource = resource_group.resource
                 AND pt2.is_active = 1
@@ -266,7 +266,7 @@ SELECT
         FROM (
           SELECT DISTINCT resource,
                  FIRST_VALUE(resource_name) OVER (PARTITION BY resource ORDER BY sort_order) as resource_name
-          FROM permission_template
+          FROM opencoze.permission_template
           WHERE domain = 'space' AND is_active = 1
         ) as resource_group
         ORDER BY resource_group.resource
@@ -280,7 +280,7 @@ SELECT
 
 -- 3. Space Admin Role (ID=3, corresponds to space_user.role_type=2)
 -- Note: Space Admin includes all space permissions but some are disabled (is_default=0)
-INSERT INTO `role` (`id`, `role_code`, `role_name`, `role_domain`, `super_admin`, `space_role_type`, `is_builtin`, `permissions`, `description`, `created_by`, `created_at`, `updated_at`)
+INSERT INTO `opencoze`.`role` (`id`, `role_code`, `role_name`, `role_domain`, `super_admin`, `space_role_type`, `is_builtin`, `permissions`, `description`, `created_by`, `created_at`, `updated_at`)
 SELECT
   3 as id,
   'space_admin' as role_code,
@@ -319,7 +319,7 @@ SELECT
                   'is_active', pt2.is_active
                 )
               )
-              FROM permission_template pt2
+              FROM opencoze.permission_template pt2
               WHERE pt2.domain = 'space'
                 AND pt2.resource = resource_group.resource
                 AND pt2.is_active = 1
@@ -330,7 +330,7 @@ SELECT
         FROM (
           SELECT DISTINCT resource,
                  FIRST_VALUE(resource_name) OVER (PARTITION BY resource ORDER BY sort_order) as resource_name
-          FROM permission_template
+          FROM opencoze.permission_template
           WHERE domain = 'space' AND is_active = 1
         ) as resource_group
         ORDER BY resource_group.resource
@@ -344,7 +344,7 @@ SELECT
 
 -- 4. Space Member Role (ID=4, corresponds to space_user.role_type=3)
 -- Note: Space Member includes all space permissions but only basic ones are enabled (is_default matches original template)
-INSERT INTO `role` (`id`, `role_code`, `role_name`, `role_domain`, `super_admin`, `space_role_type`, `is_builtin`, `permissions`, `description`, `created_by`, `created_at`, `updated_at`)
+INSERT INTO `opencoze`.`role` (`id`, `role_code`, `role_name`, `role_domain`, `super_admin`, `space_role_type`, `is_builtin`, `permissions`, `description`, `created_by`, `created_at`, `updated_at`)
 SELECT
   4 as id,
   'space_member' as role_code,
@@ -380,7 +380,7 @@ SELECT
                   'is_active', pt2.is_active
                 )
               )
-              FROM permission_template pt2
+              FROM opencoze.permission_template pt2
               WHERE pt2.domain = 'space'
                 AND pt2.resource = resource_group.resource
                 AND pt2.is_active = 1
@@ -391,7 +391,7 @@ SELECT
         FROM (
           SELECT DISTINCT resource,
                  FIRST_VALUE(resource_name) OVER (PARTITION BY resource ORDER BY sort_order) as resource_name
-          FROM permission_template
+          FROM opencoze.permission_template
           WHERE domain = 'space' AND is_active = 1
         ) as resource_group
         ORDER BY resource_group.resource
@@ -405,7 +405,7 @@ SELECT
 
 -- Step 6: Initialize Casbin policy rules for all builtin roles based on permission templates
 -- 1. Generate Super Admin policies (all global permissions)
-INSERT INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`, `v3`, `v4`, `created_at`, `updated_at`)
+INSERT INTO `opencoze`.`casbin_rule` (`ptype`, `v0`, `v1`, `v2`, `v3`, `v4`, `created_at`, `updated_at`)
 SELECT
   'p' as ptype,
   'super_admin' as v0,
@@ -415,11 +415,11 @@ SELECT
   'allow' as v4,
   UNIX_TIMESTAMP(NOW()) * 1000 as created_at,
   UNIX_TIMESTAMP(NOW()) * 1000 as updated_at
-FROM permission_template pt
+FROM opencoze.permission_template pt
 WHERE pt.domain = 'global' AND pt.is_active = 1;
 
 -- 2. Generate Space Owner policies (all space permissions)
-INSERT INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`, `v3`, `v4`, `created_at`, `updated_at`)
+INSERT INTO `opencoze`.`casbin_rule` (`ptype`, `v0`, `v1`, `v2`, `v3`, `v4`, `created_at`, `updated_at`)
 SELECT
   'p' as ptype,
   'space_owner' as v0,
@@ -429,11 +429,11 @@ SELECT
   'allow' as v4,
   UNIX_TIMESTAMP(NOW()) * 1000 as created_at,
   UNIX_TIMESTAMP(NOW()) * 1000 as updated_at
-FROM permission_template pt
+FROM opencoze.permission_template pt
 WHERE pt.domain = 'space' AND pt.is_active = 1;
 
 -- 3. Generate Space Admin policies (deny delete_transfer and delete actions, allow others)
-INSERT INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`, `v3`, `v4`, `created_at`, `updated_at`)
+INSERT INTO `opencoze`.`casbin_rule` (`ptype`, `v0`, `v1`, `v2`, `v3`, `v4`, `created_at`, `updated_at`)
 SELECT
   'p' as ptype,
   'space_admin' as v0,
@@ -446,11 +446,11 @@ SELECT
   END as v4,
   UNIX_TIMESTAMP(NOW()) * 1000 as created_at,
   UNIX_TIMESTAMP(NOW()) * 1000 as updated_at
-FROM permission_template pt
+FROM opencoze.permission_template pt
 WHERE pt.domain = 'space' AND pt.is_active = 1;
 
 -- 4. Generate Space Member policies (allow if original template is_default=1, deny others)
-INSERT INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`, `v3`, `v4`, `created_at`, `updated_at`)
+INSERT INTO `opencoze`.`casbin_rule` (`ptype`, `v0`, `v1`, `v2`, `v3`, `v4`, `created_at`, `updated_at`)
 SELECT
   'p' as ptype,
   'space_member' as v0,
@@ -463,5 +463,5 @@ SELECT
   END as v4,
   UNIX_TIMESTAMP(NOW()) * 1000 as created_at,
   UNIX_TIMESTAMP(NOW()) * 1000 as updated_at
-FROM permission_template pt
+FROM opencoze.permission_template pt
 WHERE pt.domain = 'space' AND pt.is_active = 1;
