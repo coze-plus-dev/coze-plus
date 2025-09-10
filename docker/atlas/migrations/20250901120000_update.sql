@@ -11,8 +11,8 @@ CREATE TABLE `opencoze`.`corporation_employee` (`id` bigint unsigned NOT NULL AU
 CREATE TABLE `opencoze`.`corporation_employee_department` (`id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT "Relationship ID", `employee_id` bigint unsigned NOT NULL COMMENT "Employee ID", `department_id` bigint unsigned NOT NULL COMMENT "Department ID", `job_title` varchar(100) NULL COMMENT "Job Title", `status` tinyint NOT NULL DEFAULT 1 COMMENT "Status: 1-Active, 2-Transferred", `creator_id` bigint unsigned NOT NULL COMMENT "Creator ID", `created_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT "Create Time in Milliseconds", `updated_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT "Update Time in Milliseconds", `deleted_at` bigint unsigned NULL COMMENT "Delete Time in Milliseconds", PRIMARY KEY (`id`), INDEX `idx_employee_id` (`employee_id`), INDEX `idx_department_id` (`department_id`), INDEX `idx_status` (`status`), INDEX `idx_creator_id` (`creator_id`), INDEX `idx_deleted_at` (`deleted_at`), INDEX `idx_dept_status` (`department_id`, `status`), UNIQUE INDEX `uk_employee_department` (`employee_id`, `department_id`)) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT "Employee Department Relationship Table";
 
 -- Add corp_id and is_primary columns to corporation_employee_department table
-ALTER TABLE `opencoze`.`corporation_employee_department` 
-ADD COLUMN `corp_id` bigint unsigned NOT NULL COMMENT 'Corporation ID (department\'s corporation)' AFTER `department_id`,
+ALTER TABLE `opencoze`.`corporation_employee_department`
+ADD COLUMN `corp_id` bigint unsigned NOT NULL COMMENT 'Corporation ID (departments corporation)' AFTER `department_id`,
 ADD COLUMN `is_primary` tinyint NOT NULL DEFAULT 0 COMMENT 'Is Primary Department: 0-No, 1-Yes' AFTER `job_title`;
 
 ALTER TABLE `opencoze`.`corporation_employee_department`
@@ -21,11 +21,11 @@ ADD INDEX `idx_is_primary` (`is_primary`),
 ADD INDEX `idx_employee_corp` (`employee_id`, `corp_id`);
 
 -- First drop indexes that include corp_id
-ALTER TABLE `opencoze`.`corporation_employee` 
+ALTER TABLE `opencoze`.`corporation_employee`
 DROP INDEX `idx_corp_id`,
 DROP INDEX `idx_corp_status`,
 DROP INDEX `uk_corp_employee_no`,
-DROP INDEX `uk_corp_mobile`, 
+DROP INDEX `uk_corp_mobile`,
 DROP INDEX `uk_corp_email`,
 DROP INDEX `uk_out_emp_source_corp`;
 
@@ -41,10 +41,10 @@ ADD UNIQUE INDEX `uk_email` (`email`),
 ADD UNIQUE INDEX `uk_out_emp_source` (`out_employee_id`, `employee_source`);
 
 -- Update corporation table
-ALTER TABLE `opencoze`.`corporation` 
+ALTER TABLE `opencoze`.`corporation`
 MODIFY COLUMN `deleted_at` datetime(3) NULL COMMENT "Deletion timestamp";
 
--- Update corporation_department table  
+-- Update corporation_department table
 ALTER TABLE `opencoze`.`corporation_department`
 MODIFY COLUMN `deleted_at` datetime(3) NULL COMMENT "Deletion timestamp";
 

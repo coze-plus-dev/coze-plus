@@ -1549,7 +1549,7 @@ table "corporation_employee_department" {
     null     = false
     type     = bigint
     unsigned = true
-    comment  = "Corporation ID (department's corporation)"
+    comment  = "Corporation ID (departments corporation)"
   }
   column "job_title" {
     null    = true
