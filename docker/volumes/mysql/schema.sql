@@ -342,7 +342,7 @@ CREATE TABLE IF NOT EXISTS `corporation_employee_department` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Relationship ID',
   `employee_id` bigint unsigned NOT NULL COMMENT 'Employee ID',
   `department_id` bigint unsigned NOT NULL COMMENT 'Department ID',
-  `corp_id` bigint unsigned NOT NULL COMMENT 'Corporation ID (department's corporation)',
+  `corp_id` bigint unsigned NOT NULL COMMENT 'Corporation ID (departments corporation)',
   `job_title` varchar(100) NULL COMMENT 'Job Title',
   `is_primary` tinyint NOT NULL DEFAULT 0 COMMENT 'Is Primary Department: 0-No, 1-Yes',
   `status` tinyint NOT NULL DEFAULT 1 COMMENT 'Status: 1-Active, 2-Transferred',
