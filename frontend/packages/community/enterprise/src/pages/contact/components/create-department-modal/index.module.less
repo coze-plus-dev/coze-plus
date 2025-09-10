@@ -1,0 +1,28 @@
+.form {
+  :global {
+    .semi-form-field {
+      margin-bottom: 20px;
+      
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+    
+    // 确保输入框和选择框宽度一致
+    .semi-input-wrapper,
+    .semi-treeselect,
+    .semi-treeselect-selection {
+      width: 100% !important;
+    }
+    
+    // TreeSelect 触发器样式
+    .semi-treeselect-trigger {
+      width: 100%;
+    }
+    
+    // 调整后缀样式
+    .semi-input-suffix {
+      padding-right: 8px;
+    }
+  }
+}

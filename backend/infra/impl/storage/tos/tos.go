@@ -286,6 +286,7 @@ func (t *tosClient) ListObjectsPaginated(ctx context.Context, input *storage.Lis
 			continue
 		}
 
+
 		files = append(files, &storage.FileInfo{
 			Key:          obj.Key,
 			LastModified: obj.LastModified,
