@@ -225,8 +225,11 @@ export const ENTERPRISE_I18N_KEYS = {
   // 创建部门相关
   ENTERPRISE_CREATE_DEPARTMENT: 'enterprise_create_department',
   ENTERPRISE_DEPARTMENT_NAME: 'enterprise_department_name',
+  ENTERPRISE_PARENT_DEPARTMENT: 'enterprise_parent_department',
   ENTERPRISE_PLEASE_INPUT_DEPARTMENT_NAME:
     'enterprise_please_input_department_name',
+  ENTERPRISE_PLEASE_SELECT_PARENT_DEPARTMENT:
+    'enterprise_please_select_parent_department',
   ENTERPRISE_DEPARTMENT_NAME_TOO_LONG: 'enterprise_department_name_too_long',
   ENTERPRISE_DEPARTMENT_CREATED_SUCCESS:
     'enterprise_department_created_success',
