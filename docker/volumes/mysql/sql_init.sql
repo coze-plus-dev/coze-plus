@@ -663,13 +663,7 @@ INSERT INTO workflow_draft (id, canvas, input_params, output_params, test_run_su
     ON DUPLICATE KEY UPDATE
     id = VALUES(id);
 
--- ============================================
--- Permission System Initialization Data
--- From 20250901130000_update.sql and 20250910000001_init_super_admin.sql
--- ============================================
-
--- Permission Templates
-INSERT INTO permission_template (`template_code`, `template_name`, `domain`, `resource`, `resource_name`, `action`, `action_name`, `description`, `is_default`, `sort_order`, `is_active`, `created_at`, `updated_at`) VALUES
+INSERT INTO `opencoze`.`permission_template` (`template_code`, `template_name`, `domain`, `resource`, `resource_name`, `action`, `action_name`, `description`, `is_default`, `sort_order`, `is_active`, `created_at`, `updated_at`) VALUES
 
 -- 1. 组织管理权限 (Organization Management)
 ('ORG_CREATE', '创建组织', 'global', 'organization', '组织管理', 'create', '创建组织', '可以创建新的组织架构', 0, 100, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
@@ -701,23 +695,335 @@ INSERT INTO permission_template (`template_code`, `template_name`, `domain`, `re
 ('ROLE_DELETE', '删除角色', 'global', 'role', '角色管理', 'delete', '删除角色', '删除自定义角色', 0, 303, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
 
 -- 6. 工作空间管理权限 (Workspace Management)
-('WS_CREATE', '新建工作空间', 'global', 'workspace', '工作空间管理', 'create', '新建工作空间', '创建新的工作空间，设置空间访问权限和协作范围', 0, 400, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('WS_CREATE', '新建工作空间', 'global', 'workspace', '工作空间管理', 'create', '新建工作空间', '创建新的工作空间，设置空间访问权限和协作范围', 0, 400, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000);
 
--- Space permission domain templates
+-- Initialize space permission domain template
+INSERT INTO `opencoze`.`permission_template` (`template_code`, `template_name`, `domain`, `resource`, `resource_name`, `action`, `action_name`, `description`, `is_default`, `sort_order`, `is_active`, `created_at`, `updated_at`) VALUES
+
+-- 1. 管理空间权限 (Space Management)
 ('SPACE_INVITE_MEMBER', '添加成员', 'space', 'member', '成员管理', 'invite', '添加成员', '将用户添加到空间中', 0, 100, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
 ('SPACE_REMOVE_MEMBER', '移除成员', 'space', 'member', '成员管理', 'remove', '移除成员', '从空间中移除某个用户', 0, 101, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
 ('SPACE_ADJUST_ROLE', '调整角色', 'space', 'member', '成员管理', 'adjust_role', '调整角色', '控制为空间中的用户设置空间角色，可以设置为成员或管理员', 0, 102, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
 ('SPACE_DELETE_SPACE', '删除空间、修改空间名称、转让空间所有权', 'space', 'config', '空间配置', 'delete_transfer', '删除空间、修改空间名称、转让空间所有权', '空间一旦删除无法恢复，空间内的所有资源和数据也会同步删除', 0, 110, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
 ('SPACE_LEAVE', '离开空间', 'space', 'config', '空间配置', 'leave', '离开空间', '普通成员和管理员可以随时离开空间，所有者转移空间所有权后才能离开空间。离开空间后，用户创建的资源会转移给空间所有者，这些资源的协作者权限不会变', 1, 111, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+
+-- 2. 管理资源权限 (Resource Management)
 ('SPACE_CREATE_RESOURCE', '创建、查看、复制', 'space', 'resource', '管理资源', 'create_view_copy', '创建、查看、复制', '在空间中创建、查看、复制智能体等资源', 1, 200, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
 ('SPACE_EDIT_PUBLISH', '修改、发布', 'space', 'resource', '管理资源', 'edit_publish', '修改、发布', '默认仅资源的所有者可修改、发布资源。创建者也可以将其他成员设置为智能体或工作流的协作者，协作者可以协同编辑、发布智能体或工作流。其他资源仅资源所有者或管理员可以修改、发布资源', 0, 201, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
 ('SPACE_IMPORT_EXPORT', '导入', 'space', 'workflow', '工作流', 'import', '导入', '目前仅工作流支持导入功能', 1, 210, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
 ('SPACE_EXPORT', '导出', 'space', 'workflow', '工作流', 'export', '导出', '目前仅工作流支持导出功能。工作流的所有者、空间所有者或管理员可以导出工作流。空间成员不可导出其他成员拥有的工作流', 0, 211, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
-('SPACE_DELETE_RESOURCE', '删除资源', 'space', 'resource', '管理资源', 'delete', '删除资源', '空间成员不可删除其他成员拥有的资源', 0, 220, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000)
-ON DUPLICATE KEY UPDATE template_code = VALUES(template_code);
+('SPACE_DELETE_RESOURCE', '删除资源', 'space', 'resource', '管理资源', 'delete', '删除资源', '空间成员不可删除其他成员拥有的资源', 0, 220, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000);
 
--- Super Admin User 
-INSERT INTO user (
+-- Step 5: Initialize builtin roles with list<PermissionTemplateGroup> structure
+-- 1. Super Admin Role (has all global permissions)
+INSERT INTO `opencoze`.`role` (`id`, `role_code`, `role_name`, `role_domain`, `super_admin`, `space_role_type`, `is_builtin`, `permissions`, `description`, `created_by`, `created_at`, `updated_at`)
+SELECT
+  1 as id,
+  'super_admin' as role_code,
+  '超级管理员' as role_name,
+  'global' as role_domain,
+  1 as super_admin,
+  NULL as space_role_type,
+  1 as is_builtin,
+  -- Generate list<PermissionTemplateGroup> format JSON - Super Admin has all permissions enabled (is_default=1)
+  JSON_ARRAY(
+    JSON_OBJECT(
+      'domain', 'global',
+      'domain_name', '全局权限域',
+      'resources', (
+        SELECT JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'resource', resource_group.resource,
+            'resource_name', resource_group.resource_name,
+            'actions', (
+              SELECT JSON_ARRAYAGG(
+                JSON_OBJECT(
+                  'id', CAST(pt2.id AS CHAR),
+                  'template_code', pt2.template_code,
+                  'template_name', pt2.template_name,
+                  'domain', pt2.domain,
+                  'resource', pt2.resource,
+                  'resource_name', pt2.resource_name,
+                  'action', pt2.action,
+                  'action_name', pt2.action_name,
+                  'description', pt2.description,
+                  'is_default', 1,  -- Super Admin: all permissions enabled
+                  'sort_order', pt2.sort_order,
+                  'is_active', pt2.is_active
+                )
+              )
+              FROM opencoze.permission_template pt2
+              WHERE pt2.domain = 'global'
+                AND pt2.resource = resource_group.resource
+                AND pt2.is_active = 1
+              ORDER BY pt2.sort_order
+            )
+          )
+        )
+        FROM (
+          SELECT DISTINCT resource,
+                 FIRST_VALUE(resource_name) OVER (PARTITION BY resource ORDER BY sort_order) as resource_name
+          FROM opencoze.permission_template
+          WHERE domain = 'global' AND is_active = 1
+        ) as resource_group
+        ORDER BY resource_group.resource
+      )
+    )
+  ) as permissions,
+  '系统超级管理员，拥有完整的功能级权限，可管理组织、权限、工作空间和系统配置' as description,
+  1 as created_by,
+  UNIX_TIMESTAMP(NOW()) * 1000 as created_at,
+  UNIX_TIMESTAMP(NOW()) * 1000 as updated_at;
+
+-- 2. Space Owner Role (ID=2, corresponds to space_user.role_type=1)
+INSERT INTO `opencoze`.`role` (`id`, `role_code`, `role_name`, `role_domain`, `super_admin`, `space_role_type`, `is_builtin`, `permissions`, `description`, `created_by`, `created_at`, `updated_at`)
+SELECT
+  2 as id,
+  'space_owner' as role_code,
+  '空间所有者' as role_name,
+  'space' as role_domain,
+  0 as super_admin,
+  1 as space_role_type,
+  1 as is_builtin,
+  -- Generate list<PermissionTemplateGroup> format JSON - Space Owner has all space permissions enabled (is_default=1)
+  JSON_ARRAY(
+    JSON_OBJECT(
+      'domain', 'space',
+      'domain_name', '工作空间',
+      'resources', (
+        SELECT JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'resource', resource_group.resource,
+            'resource_name', resource_group.resource_name,
+            'actions', (
+              SELECT JSON_ARRAYAGG(
+                JSON_OBJECT(
+                  'id', CAST(pt2.id AS CHAR),
+                  'template_code', pt2.template_code,
+                  'template_name', pt2.template_name,
+                  'domain', pt2.domain,
+                  'resource', pt2.resource,
+                  'resource_name', pt2.resource_name,
+                  'action', pt2.action,
+                  'action_name', pt2.action_name,
+                  'description', pt2.description,
+                  'is_default', 1,  -- Space Owner: all space permissions enabled
+                  'sort_order', pt2.sort_order,
+                  'is_active', pt2.is_active
+                )
+              )
+              FROM opencoze.permission_template pt2
+              WHERE pt2.domain = 'space'
+                AND pt2.resource = resource_group.resource
+                AND pt2.is_active = 1
+              ORDER BY pt2.sort_order
+            )
+          )
+        )
+        FROM (
+          SELECT DISTINCT resource,
+                 FIRST_VALUE(resource_name) OVER (PARTITION BY resource ORDER BY sort_order) as resource_name
+          FROM opencoze.permission_template
+          WHERE domain = 'space' AND is_active = 1
+        ) as resource_group
+        ORDER BY resource_group.resource
+      )
+    )
+  ) as permissions,
+  '空间所有者，拥有空间完全控制权，包括成员管理、空间配置、内容协作等所有权限' as description,
+  1 as created_by,
+  UNIX_TIMESTAMP(NOW()) * 1000 as created_at,
+  UNIX_TIMESTAMP(NOW()) * 1000 as updated_at;
+
+-- 3. Space Admin Role (ID=3, corresponds to space_user.role_type=2)
+-- Note: Space Admin includes all space permissions but some are disabled (is_default=0)
+INSERT INTO `opencoze`.`role` (`id`, `role_code`, `role_name`, `role_domain`, `super_admin`, `space_role_type`, `is_builtin`, `permissions`, `description`, `created_by`, `created_at`, `updated_at`)
+SELECT
+  3 as id,
+  'space_admin' as role_code,
+  '空间管理员' as role_name,
+  'space' as role_domain,
+  0 as super_admin,
+  2 as space_role_type,
+  1 as is_builtin,
+  -- Generate list<PermissionTemplateGroup> format JSON - Space Admin: include all permissions but set is_default based on access rights
+  JSON_ARRAY(
+    JSON_OBJECT(
+      'domain', 'space',
+      'domain_name', '工作空间',
+      'resources', (
+        SELECT JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'resource', resource_group.resource,
+            'resource_name', resource_group.resource_name,
+            'actions', (
+              SELECT JSON_ARRAYAGG(
+                JSON_OBJECT(
+                  'id', CAST(pt2.id AS CHAR),
+                  'template_code', pt2.template_code,
+                  'template_name', pt2.template_name,
+                  'domain', pt2.domain,
+                  'resource', pt2.resource,
+                  'resource_name', pt2.resource_name,
+                  'action', pt2.action,
+                  'action_name', pt2.action_name,
+                  'description', pt2.description,
+                  'is_default', CASE
+                    WHEN pt2.action IN ('delete_transfer', 'delete') THEN 0  -- Space Admin: disable delete/delete_transfer permissions
+                    ELSE 1  -- Space Admin: enable other permissions
+                  END,
+                  'sort_order', pt2.sort_order,
+                  'is_active', pt2.is_active
+                )
+              )
+              FROM opencoze.permission_template pt2
+              WHERE pt2.domain = 'space'
+                AND pt2.resource = resource_group.resource
+                AND pt2.is_active = 1
+              ORDER BY pt2.sort_order
+            )
+          )
+        )
+        FROM (
+          SELECT DISTINCT resource,
+                 FIRST_VALUE(resource_name) OVER (PARTITION BY resource ORDER BY sort_order) as resource_name
+          FROM opencoze.permission_template
+          WHERE domain = 'space' AND is_active = 1
+        ) as resource_group
+        ORDER BY resource_group.resource
+      )
+    )
+  ) as permissions,
+  '空间管理员，可管理成员、编辑内容，但不能管理空间配置' as description,
+  1 as created_by,
+  UNIX_TIMESTAMP(NOW()) * 1000 as created_at,
+  UNIX_TIMESTAMP(NOW()) * 1000 as updated_at;
+
+-- 4. Space Member Role (ID=4, corresponds to space_user.role_type=3)
+-- Note: Space Member includes all space permissions but only basic ones are enabled (is_default matches original template)
+INSERT INTO `opencoze`.`role` (`id`, `role_code`, `role_name`, `role_domain`, `super_admin`, `space_role_type`, `is_builtin`, `permissions`, `description`, `created_by`, `created_at`, `updated_at`)
+SELECT
+  4 as id,
+  'space_member' as role_code,
+  '空间成员' as role_name,
+  'space' as role_domain,
+  0 as super_admin,
+  3 as space_role_type,
+  1 as is_builtin,
+  -- Generate list<PermissionTemplateGroup> format JSON - Space Member: include all permissions, use original is_default values
+  JSON_ARRAY(
+    JSON_OBJECT(
+      'domain', 'space',
+      'domain_name', '工作空间',
+      'resources', (
+        SELECT JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'resource', resource_group.resource,
+            'resource_name', resource_group.resource_name,
+            'actions', (
+              SELECT JSON_ARRAYAGG(
+                JSON_OBJECT(
+                  'id', CAST(pt2.id AS CHAR),
+                  'template_code', pt2.template_code,
+                  'template_name', pt2.template_name,
+                  'domain', pt2.domain,
+                  'resource', pt2.resource,
+                  'resource_name', pt2.resource_name,
+                  'action', pt2.action,
+                  'action_name', pt2.action_name,
+                  'description', pt2.description,
+                  'is_default', pt2.is_default,  -- Space Member: use original template is_default values
+                  'sort_order', pt2.sort_order,
+                  'is_active', pt2.is_active
+                )
+              )
+              FROM opencoze.permission_template pt2
+              WHERE pt2.domain = 'space'
+                AND pt2.resource = resource_group.resource
+                AND pt2.is_active = 1
+              ORDER BY pt2.sort_order
+            )
+          )
+        )
+        FROM (
+          SELECT DISTINCT resource,
+                 FIRST_VALUE(resource_name) OVER (PARTITION BY resource ORDER BY sort_order) as resource_name
+          FROM opencoze.permission_template
+          WHERE domain = 'space' AND is_active = 1
+        ) as resource_group
+        ORDER BY resource_group.resource
+      )
+    )
+  ) as permissions,
+  '空间普通成员，可创建、查看资源和离开空间，权限固定' as description,
+  1 as created_by,
+  UNIX_TIMESTAMP(NOW()) * 1000 as created_at,
+  UNIX_TIMESTAMP(NOW()) * 1000 as updated_at;
+
+-- Step 6: Initialize Casbin policy rules for all builtin roles based on permission templates
+-- 1. Generate Super Admin policies (all global permissions)
+INSERT INTO `opencoze`.`casbin_rule` (`ptype`, `v0`, `v1`, `v2`, `v3`, `v4`, `created_at`, `updated_at`)
+SELECT
+  'p' as ptype,
+  'super_admin' as v0,
+  pt.domain as v1,
+  pt.resource as v2,
+  pt.action as v3,
+  'allow' as v4,
+  UNIX_TIMESTAMP(NOW()) * 1000 as created_at,
+  UNIX_TIMESTAMP(NOW()) * 1000 as updated_at
+FROM opencoze.permission_template pt
+WHERE pt.domain = 'global' AND pt.is_active = 1;
+
+-- 2. Generate Space Owner policies (all space permissions)
+INSERT INTO `opencoze`.`casbin_rule` (`ptype`, `v0`, `v1`, `v2`, `v3`, `v4`, `created_at`, `updated_at`)
+SELECT
+  'p' as ptype,
+  'space_owner' as v0,
+  pt.domain as v1,
+  pt.resource as v2,
+  pt.action as v3,
+  'allow' as v4,
+  UNIX_TIMESTAMP(NOW()) * 1000 as created_at,
+  UNIX_TIMESTAMP(NOW()) * 1000 as updated_at
+FROM opencoze.permission_template pt
+WHERE pt.domain = 'space' AND pt.is_active = 1;
+
+-- 3. Generate Space Admin policies (deny delete_transfer and delete actions, allow others)
+INSERT INTO `opencoze`.`casbin_rule` (`ptype`, `v0`, `v1`, `v2`, `v3`, `v4`, `created_at`, `updated_at`)
+SELECT
+  'p' as ptype,
+  'space_admin' as v0,
+  pt.domain as v1,
+  pt.resource as v2,
+  pt.action as v3,
+  CASE
+    WHEN pt.action IN ('delete_transfer', 'delete') THEN 'deny'  -- Space Admin: deny delete operations
+    ELSE 'allow'  -- Space Admin: allow other operations
+  END as v4,
+  UNIX_TIMESTAMP(NOW()) * 1000 as created_at,
+  UNIX_TIMESTAMP(NOW()) * 1000 as updated_at
+FROM opencoze.permission_template pt
+WHERE pt.domain = 'space' AND pt.is_active = 1;
+
+-- 4. Generate Space Member policies (allow if original template is_default=1, deny others)
+INSERT INTO `opencoze`.`casbin_rule` (`ptype`, `v0`, `v1`, `v2`, `v3`, `v4`, `created_at`, `updated_at`)
+SELECT
+  'p' as ptype,
+  'space_member' as v0,
+  pt.domain as v1,
+  pt.resource as v2,
+  pt.action as v3,
+  CASE
+    WHEN pt.is_default = 1 THEN 'allow'  -- Space Member: allow only basic permissions
+    ELSE 'deny'  -- Space Member: deny advanced permissions
+  END as v4,
+  UNIX_TIMESTAMP(NOW()) * 1000 as created_at,
+  UNIX_TIMESTAMP(NOW()) * 1000 as updated_at
+FROM opencoze.permission_template pt
+WHERE pt.domain = 'space' AND pt.is_active = 1;
+
+INSERT INTO `opencoze`.`user` (
   `id`,
   `name`,
   `unique_name`,
@@ -747,73 +1053,91 @@ SELECT
   UNIX_TIMESTAMP(NOW()) * 1000 as created_at,
   UNIX_TIMESTAMP(NOW()) * 1000 as updated_at
 WHERE NOT EXISTS (
-  SELECT 1 FROM user WHERE `email` = 'administrator@coze-plus.cn'
+  SELECT 1 FROM `opencoze`.`user` WHERE `email` = 'administrator@coze-plus.cn'
 );
 
--- Super Admin Default Personal Space
-INSERT INTO space (
+-- Step 2: Assign Super Admin Role
+INSERT INTO `opencoze`.`user_role` (
+  `user_id`,
+  `role_id`,
+  `assigned_by`,
+  `assigned_at`
+)
+SELECT
+  1 as user_id,
+  1 as role_id,  -- Super Admin role (already exists from 20250901130000_update.sql)
+  1 as assigned_by,
+  UNIX_TIMESTAMP(NOW()) * 1000 as assigned_at
+WHERE NOT EXISTS (
+  SELECT 1 FROM `opencoze`.`user_role` WHERE `user_id` = 1 AND `role_id` = 1
+);
+
+-- Step 3: Create Super Admin's Personal Space
+INSERT INTO `opencoze`.`space` (
   `id`,
+  `owner_id`,
   `name`,
   `description`,
-  `type`,
   `icon_uri`,
   `creator_id`,
   `created_at`,
   `updated_at`
 )
 SELECT
-  999999 as id,
-  '超级管理员个人空间' as name,
-  '系统默认个人工作空间，包含预设的示例资源' as description,
-  1 as type,
+  1 as id,
+  1 as owner_id,
+  '管理员工作空间' as name,
+  '超级管理员的默认工作空间，用于系统管理和初始配置' as description,
   'default_icon/team_default_icon.png' as icon_uri,
   1 as creator_id,
   UNIX_TIMESTAMP(NOW()) * 1000 as created_at,
   UNIX_TIMESTAMP(NOW()) * 1000 as updated_at
 WHERE NOT EXISTS (
-  SELECT 1 FROM space WHERE `id` = 999999
+  SELECT 1 FROM `opencoze`.`space` WHERE `id` = 1
 );
 
--- Assign Super Admin to Personal Space
-INSERT INTO space_user (
+-- Step 4: Add Super Admin to Personal Space as Owner
+INSERT INTO `opencoze`.`space_user` (
   `space_id`,
   `user_id`,
   `role_type`,
-  `creator_id`,
   `created_at`,
   `updated_at`
 )
 SELECT
-  999999 as space_id,
+  1 as space_id,
   1 as user_id,
-  1 as role_type,
-  1 as creator_id,
+  1 as role_type,  -- 1 = owner (from space_user.role_type definition)
   UNIX_TIMESTAMP(NOW()) * 1000 as created_at,
   UNIX_TIMESTAMP(NOW()) * 1000 as updated_at
 WHERE NOT EXISTS (
-  SELECT 1 FROM space_user WHERE `space_id` = 999999 AND `user_id` = 1
+  SELECT 1 FROM `opencoze`.`space_user` WHERE `space_id` = 1 AND `user_id` = 1
 );
 
--- Initialize Basic Roles (Simplified versions for Docker initialization)
--- Note: Complex JSON permissions will be handled by application code
-INSERT INTO role (`id`, `role_code`, `role_name`, `role_domain`, `super_admin`, `space_role_type`, `is_builtin`, `is_disabled`, `description`, `created_by`, `created_at`, `updated_at`) VALUES
-(1, 'super_admin', '超级管理员', 'global', 1, NULL, 1, 0, '系统超级管理员，拥有完整的功能级权限', 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
-(2, 'space_owner', '空间所有者', 'space', 0, 1, 1, 0, '空间所有者，拥有空间完全控制权', 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
-(3, 'space_admin', '空间管理员', 'space', 0, 2, 1, 0, '空间管理员，可管理成员、编辑内容', 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
-(4, 'space_member', '空间成员', 'space', 0, 3, 1, 0, '空间普通成员，可创建、查看资源', 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000)
-ON DUPLICATE KEY UPDATE role_code = VALUES(role_code);
-
--- Assign Super Admin Role to User
-INSERT INTO user_role (`user_id`, `role_id`, `assigned_by`, `assigned_at`)
-SELECT 1, 1, 1, UNIX_TIMESTAMP(NOW()) * 1000
+-- Step 5: Add Casbin group rule to link super admin user to super admin role
+-- Format: ptype='g', v0=user:{user_id}, v1=role_code, v2=domain ('global' for global roles)
+INSERT INTO `opencoze`.`casbin_rule` (
+  `ptype`,
+  `v0`,
+  `v1`,
+  `v2`,
+  `v3`,
+  `v4`,
+  `v5`,
+  `created_at`,
+  `updated_at`
+)
+SELECT
+  'g' as ptype,
+  'user:1' as v0,  -- user subject format: user:{user_id}
+  'super_admin' as v1,  -- role_code = super_admin
+  'global' as v2,  -- domain = global (for global roles)
+  '' as v3,  -- unused for group rules
+  '' as v4,  -- unused for group rules
+  '' as v5,  -- unused for group rules
+  UNIX_TIMESTAMP(NOW()) * 1000 as created_at,
+  UNIX_TIMESTAMP(NOW()) * 1000 as updated_at
 WHERE NOT EXISTS (
-  SELECT 1 FROM user_role WHERE `user_id` = 1 AND `role_id` = 1
+  SELECT 1 FROM `opencoze`.`casbin_rule`
+  WHERE `ptype` = 'g' AND `v0` = 'user:1' AND `v1` = 'super_admin' AND `v2` = 'global'
 );
-
--- Basic Casbin Rules for Super Admin
-INSERT INTO casbin_rule (`ptype`, `v0`, `v1`, `v2`, `v3`, `v4`, `created_at`, `updated_at`) VALUES
-('p', 'super_admin', 'global', '*', '*', 'allow', UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
-('g', '1', 'super_admin', '', '', '', UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000)
-ON DUPLICATE KEY UPDATE ptype = VALUES(ptype);
-
-
