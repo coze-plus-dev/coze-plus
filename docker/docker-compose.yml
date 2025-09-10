@@ -383,10 +383,10 @@ services:
       - coze-network
 
   coze-server:
-    # build:
-    #   context: ../
-    #   dockerfile: backend/Dockerfile
-    image: cozedev/coze-studio-server:latest
+    build:
+      context: ../
+      dockerfile: backend/Dockerfile
+    # image: cozedev/coze-studio-server:latest
     restart: always
     container_name: coze-server
     env_file: *env_file
@@ -415,10 +415,10 @@ services:
     command: ['/app/opencoze']
 
   coze-web:
-    # build:
-    #   context: ..
-    #   dockerfile: frontend/Dockerfile
-    image: cozedev/coze-studio-web:latest
+    build:
+      context: ..
+      dockerfile: frontend/Dockerfile
+    # image: cozedev/coze-studio-web:latest
     container_name: coze-web
     restart: always
     ports:
