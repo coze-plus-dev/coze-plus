@@ -213,6 +213,7 @@ func initBasicServices(ctx context.Context, infra *appinfra.AppDependencies, e *
 	permissionSVC, err := permission.InitService(&permission.ServiceComponents{
 		DB:       infra.DB,
 		IDGenSVC: infra.IDGenSVC,
+		Cache:    infra.CacheCli,
 	})
 	if err != nil {
 		return nil, err

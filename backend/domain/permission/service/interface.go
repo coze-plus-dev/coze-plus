@@ -79,7 +79,9 @@ type UserRoleService interface {
 type CasbinRuleService interface {
 	// Group rule operations (user-role relationships)
 	CreateGroupRule(ctx context.Context, request *CreateGroupRuleRequest) error
+	CreateGroupRuleWithDomain(ctx context.Context, request *CreateGroupRuleWithDomainRequest) error
 	DeleteGroupRule(ctx context.Context, request *DeleteGroupRuleRequest) error
+	DeleteGroupRuleWithDomain(ctx context.Context, request *DeleteGroupRuleWithDomainRequest) error
 	GetUserRoles(ctx context.Context, userID string) ([]string, error)
 	BatchCreateGroupRules(ctx context.Context, request *BatchCreateGroupRulesRequest) error
 }
@@ -358,9 +360,21 @@ type CreateGroupRuleRequest struct {
 	RoleCode string `json:"role_code"`
 }
 
+type CreateGroupRuleWithDomainRequest struct {
+	UserID   string `json:"user_id"`
+	RoleCode string `json:"role_code"`
+	Domain   string `json:"domain"`
+}
+
 type DeleteGroupRuleRequest struct {
 	UserID   string `json:"user_id"`
 	RoleCode string `json:"role_code"`
+}
+
+type DeleteGroupRuleWithDomainRequest struct {
+	UserID   string `json:"user_id"`
+	RoleCode string `json:"role_code"`
+	Domain   string `json:"domain"`
 }
 
 type BatchCreateGroupRulesRequest struct {

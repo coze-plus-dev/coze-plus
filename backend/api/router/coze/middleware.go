@@ -20,6 +20,9 @@ package coze
 
 import (
 	"github.com/cloudwego/hertz/pkg/app"
+
+	"github.com/coze-dev/coze-studio/backend/api/middleware"
+	"github.com/coze-dev/coze-studio/backend/infra/contract/permission"
 )
 
 func rootMw() []app.HandlerFunc {
@@ -1516,8 +1519,9 @@ func _conversation1Mw() []app.HandlerFunc {
 }
 
 func _createcorporationMw() []app.HandlerFunc {
-	// your code...
-	return nil
+	return []app.HandlerFunc{
+		middleware.NewRoutePermissionMW(permission.ResourceOrganization, permission.ActionCreate, false),
+	}
 }
 
 func _openapicreateconversationMw() []app.HandlerFunc {
@@ -1526,8 +1530,10 @@ func _openapicreateconversationMw() []app.HandlerFunc {
 }
 
 func _deletecorporationMw() []app.HandlerFunc {
-	// your code...
-	return nil
+	// 删除组织需要组织删除权限
+	return []app.HandlerFunc{
+		middleware.NewRoutePermissionMW(permission.ResourceOrganization, permission.ActionDelete, false),
+	}
 }
 
 func _coze_web_appMw() []app.HandlerFunc {
@@ -1546,8 +1552,9 @@ func _impersonatecozeuserMw() []app.HandlerFunc {
 }
 
 func _updatecorporationMw() []app.HandlerFunc {
-	// your code...
-	return nil
+	return []app.HandlerFunc{
+		middleware.NewRoutePermissionMW(permission.ResourceOrganization, permission.ActionEdit, false),
+	}
 }
 
 func _botsMw() []app.HandlerFunc {
@@ -1576,8 +1583,9 @@ func _deleteconversationapiMw() []app.HandlerFunc {
 }
 
 func _createdepartmentMw() []app.HandlerFunc {
-	// your code...
-	return nil
+	return []app.HandlerFunc{
+		middleware.NewRoutePermissionMW(permission.ResourceDepartment, permission.ActionCreate, false),
+	}
 }
 
 func _updateconversationapiMw() []app.HandlerFunc {
@@ -1586,8 +1594,9 @@ func _updateconversationapiMw() []app.HandlerFunc {
 }
 
 func _deletedepartmentMw() []app.HandlerFunc {
-	// your code...
-	return nil
+	return []app.HandlerFunc{
+		middleware.NewRoutePermissionMW(permission.ResourceDepartment, permission.ActionDelete, false),
+	}
 }
 
 func _conversations0Mw() []app.HandlerFunc {
@@ -1606,8 +1615,9 @@ func _chatMw() []app.HandlerFunc {
 }
 
 func _updatedepartmentMw() []app.HandlerFunc {
-	// your code...
-	return nil
+		return []app.HandlerFunc{
+		middleware.NewRoutePermissionMW(permission.ResourceDepartment, permission.ActionEdit, false),
+	}
 }
 
 func _cancelchatapiMw() []app.HandlerFunc {
@@ -1651,28 +1661,33 @@ func _assignemployeetodepartmentMw() []app.HandlerFunc {
 }
 
 func _createemployeeMw() []app.HandlerFunc {
-	// your code...
-	return nil
+	return []app.HandlerFunc{
+		middleware.NewRoutePermissionMW(permission.ResourceEmployee, permission.ActionCreate, false),
+	}
 }
 
 func _deleteemployeeMw() []app.HandlerFunc {
-	// your code...
-	return nil
+	return []app.HandlerFunc{
+		middleware.NewRoutePermissionMW(permission.ResourceEmployee, permission.ActionDelete, false),
+	}
 }
 
 func _getemployeeMw() []app.HandlerFunc {
-	// your code...
-	return nil
+	 return []app.HandlerFunc{
+		middleware.NewRoutePermissionMW(permission.ResourceEmployee, permission.ActionView, false),
+	}
 }
 
 func _updateemployeeMw() []app.HandlerFunc {
-	// your code...
-	return nil
+   return []app.HandlerFunc{
+		middleware.NewRoutePermissionMW(permission.ResourceEmployee, permission.ActionEdit, false),
+	}
 }
 
 func _listemployeesMw() []app.HandlerFunc {
-	// your code...
-	return nil
+	return []app.HandlerFunc{
+		middleware.NewRoutePermissionMW(permission.ResourceEmployee, permission.ActionView, false),
+	}
 }
 
 func _department0Mw() []app.HandlerFunc {
@@ -1726,18 +1741,21 @@ func _idMw() []app.HandlerFunc {
 }
 
 func _changeemployeedepartmentMw() []app.HandlerFunc {
-	// your code...
-	return nil
+	return []app.HandlerFunc{
+		middleware.NewRoutePermissionMW(permission.ResourceEmployee, permission.ActionChangeDpt, false),
+	}
 }
 
 func _resignemployeeMw() []app.HandlerFunc {
-	// your code...
-	return nil
+  return []app.HandlerFunc{
+		middleware.NewRoutePermissionMW(permission.ResourceEmployee, permission.ActionManageQuit, false),
+	}
 }
 
 func _restoreemployeeMw() []app.HandlerFunc {
-	// your code...
-	return nil
+	 return []app.HandlerFunc{
+		middleware.NewRoutePermissionMW(permission.ResourceEmployee, permission.ActionManageQuit, false),
+	}
 }
 
 func _roleMw() []app.HandlerFunc {
@@ -1746,28 +1764,33 @@ func _roleMw() []app.HandlerFunc {
 }
 
 func _createroleMw() []app.HandlerFunc {
-	// your code...
-	return nil
+	return []app.HandlerFunc{
+		middleware.NewRoutePermissionMW(permission.ResourceRole, permission.ActionCreate, false),
+	}
 }
 
 func _deleteroleMw() []app.HandlerFunc {
-	// your code...
-	return nil
+	return []app.HandlerFunc{
+		middleware.NewRoutePermissionMW(permission.ResourceRole, permission.ActionDelete, false),
+	}
 }
 
 func _getroleMw() []app.HandlerFunc {
-	// your code...
-	return nil
+	return []app.HandlerFunc{
+		middleware.NewRoutePermissionMW(permission.ResourceRole, permission.ActionView, false),
+	}
 }
 
 func _listrolesMw() []app.HandlerFunc {
-	// your code...
-	return nil
+	return []app.HandlerFunc{
+		middleware.NewRoutePermissionMW(permission.ResourceRole, permission.ActionView, false),
+	}
 }
 
 func _updateroleMw() []app.HandlerFunc {
-	// your code...
-	return nil
+	return []app.HandlerFunc{
+		middleware.NewRoutePermissionMW(permission.ResourceRole, permission.ActionEdit, false),
+	}
 }
 
 func _templateMw() []app.HandlerFunc {
@@ -1800,13 +1823,15 @@ func _statusMw() []app.HandlerFunc {
 }
 
 func _updateuserstatusMw() []app.HandlerFunc {
-	// your code...
-	return nil
+		return []app.HandlerFunc{
+		middleware.NewRoutePermissionMW(permission.ResourceUser, permission.ActionUpdateUserStutus, false),
+	}
 }
 
 func _assignusermultiplerolesMw() []app.HandlerFunc {
-	// your code...
-	return nil
+	return []app.HandlerFunc{
+		middleware.NewRoutePermissionMW(permission.ResourceUser, permission.ActionAssign, false),
+	}
 }
 
 func _getuserrolesMw() []app.HandlerFunc {
@@ -1815,11 +1840,13 @@ func _getuserrolesMw() []app.HandlerFunc {
 }
 
 func _unassignuserrolesMw() []app.HandlerFunc {
-	// your code...
-	return nil
+	return []app.HandlerFunc{
+		middleware.NewRoutePermissionMW(permission.ResourceUser, permission.ActionUnbind, false),
+	}
 }
 
 func _resetuserpasswordMw() []app.HandlerFunc {
-	// your code...
-	return nil
+	return []app.HandlerFunc{
+		middleware.NewRoutePermissionMW(permission.ResourceUser, permission.ActionResetPwd, false),
+	}
 }

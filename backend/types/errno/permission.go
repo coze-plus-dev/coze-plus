@@ -26,6 +26,8 @@ const (
 	ErrPermissionRoleBuiltinCode = 108000003
 	ErrPermissionRoleInUseCode = 108000004
 	ErrPermissionInvalidJSONCode = 108000005
+	ErrPermissionDeniedCode = 108000006
+	ErrPermissionCheckFailedCode = 108000007
 )
 
 func init() {
@@ -57,6 +59,16 @@ func init() {
 	code.Register(
 		ErrPermissionInvalidJSONCode,
 		"invalid permissions JSON format: {msg}",
+		code.WithAffectStability(false),
+	)
+	code.Register(
+		ErrPermissionDeniedCode,
+		"permission denied: {reason}",
+		code.WithAffectStability(false),
+	)
+	code.Register(
+		ErrPermissionCheckFailedCode,
+		"permission check failed: {reason}",
 		code.WithAffectStability(false),
 	)
 }
