@@ -96,7 +96,7 @@ ADD COLUMN `expired_at` bigint unsigned NULL COMMENT 'Permission expiration time
 ADD INDEX `idx_role_id` (`role_id`);
 
 -- Step 3: Add user_id field to corporation_employee table
-ALTER TABLE `opencoze`.`corporation_employee` 
+ALTER TABLE `opencoze`.`corporation_employee`
 ADD COLUMN `user_id` bigint unsigned NULL COMMENT "Associated User ID (NULL if no user account)" AFTER `mobile`;
 
 ALTER TABLE `opencoze`.`corporation_employee`
@@ -119,25 +119,23 @@ INSERT INTO `permission_template` (`template_code`, `template_name`, `domain`, `
 ('DEPT_DELETE', '删除部门', 'global', 'department', '部门管理', 'delete', '删除部门', '删除空部门或不需要的部门', 0, 112, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
 
 -- 3. 人员管理权限 (Employee Management)
-('EMP_INVITE', '添加人员', 'global', 'employee', '人员管理', 'invite', '添加人员', '添加新成员入组织，设置成员的基本信息和所属部门', 0, 120, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
-('EMP_EDIT', '变更人员部门', 'global', 'employee', '人员管理', 'edit', '变更人员部门', '调整组织成员的部门归属，处理人员调动和组织架构变更', 0, 121, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('EMP_INVITE', '添加人员', 'global', 'employee', '人员管理', 'create', '添加人员', '添加新成员入组织，设置成员的基本信息和所属部门', 0, 120, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('EMP_EDIT', '编辑人员', 'global', 'employee', '人员管理', 'edit', '修改人员基本信息', '修改人员基本信息', 0, 121, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
 ('EMP_MANAGE_POS', '操作离职', 'global', 'employee', '人员管理', 'manage_quit', '操作离职', '处理员工离职，包括账号禁用、权限回收', 0, 122, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
-('EMP_VIEW', '查看组织人员', 'global', 'employee', '人员管理', 'view', '查看组织人员', '查看组织内所有成员的基本信息、部门归属和联系方式', 0, 123, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('EMP_CHANGE_DEPT', '变更人员部门', 'global', 'employee', '人员管理', 'change_department', '变更人员部门', '调整组织成员的部门归属，处理人员调动和组织架构变更', 0, 123, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('EMP_VIEW', '查看组织人员', 'global', 'employee', '人员管理', 'view', '查看组织人员', '查看组织内所有成员的基本信息、部门归属和联系方式', 0, 124, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
 
 -- 4. 用户管理权限 (User Management)
-('USER_CREATE', '创建用户', 'global', 'user', '用户管理', 'create', '创建用户', '在系统中创建新的用户账号，设置登录凭证和基础权限', 0, 200, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
-('USER_EDIT', '编辑用户', 'global', 'user', '用户管理', 'edit', '编辑用户', '修改用户基本信息、联系方式等', 0, 201, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
-('USER_DELETE', '删除用户', 'global', 'user', '用户管理', 'delete', '删除用户', '删除用户账号（软删除）', 0, 202, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
-('USER_DISABLE', '禁用用户', 'global', 'user', '用户管理', 'disable', '禁用用户', '暂时禁用用户账号', 0, 203, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
-('USER_ENABLE', '启用用户', 'global', 'user', '用户管理', 'enable', '启用用户', '重新启用被禁用的用户账号', 0, 204, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
-('USER_RESET_PWD', '重置密码', 'global', 'user', '用户管理', 'reset_password', '重置密码', '为用户重置登录密码', 0, 205, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('USER_DISABLE_ENABLE', '启用/禁用用户', 'global', 'user', '用户管理', 'disable_enable', '启用/禁用用户', '控制用户账号的启用和禁用状态', 0, 200, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('USER_RESET_PWD', '重置密码', 'global', 'user', '用户管理', 'reset_password', '重置密码', '为用户重置登录密码', 0, 201, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('USER_ROLE_ASSIGN', '分配用户角色', 'global', 'user', '用户管理', 'assign', '分配用户角色', '分配和调整用户的角色，如管理员、成员等级别权限', 0, 202, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('USER_ROLE_UNBIND', '解绑用户角色', 'global', 'user', '用户管理', 'unbind', '解绑用户角色', '移除用户的特定角色绑定关系，回收对应权限', 0, 203, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
 
 -- 5. 角色管理权限 (Role Management)
 ('ROLE_VIEW', '查看角色', 'global', 'role', '角色管理', 'view', '查看角色', '查看系统中的所有角色定义', 0, 300, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
 ('ROLE_CREATE', '创建角色', 'global', 'role', '角色管理', 'create', '创建角色', '创建新的自定义角色', 0, 301, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
 ('ROLE_EDIT', '编辑角色', 'global', 'role', '角色管理', 'edit', '编辑角色', '修改角色信息和权限配置', 0, 302, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
 ('ROLE_DELETE', '删除角色', 'global', 'role', '角色管理', 'delete', '删除角色', '删除自定义角色', 0, 303, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
-('ROLE_ASSIGN', '分配用户角色', 'global', 'role', '角色管理', 'assign', '分配用户角色', '分配和调整用户的角色，如管理员、成员等级别权限', 0, 304, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
 
 -- 6. 工作空间管理权限 (Workspace Management)
 ('WS_CREATE', '新建工作空间', 'global', 'workspace', '工作空间管理', 'create', '新建工作空间', '创建新的工作空间，设置空间访问权限和协作范围', 0, 400, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000);
@@ -162,7 +160,7 @@ INSERT INTO `permission_template` (`template_code`, `template_name`, `domain`, `
 -- Step 5: Initialize builtin roles with list<PermissionTemplateGroup> structure
 -- 1. Super Admin Role (has all global permissions)
 INSERT INTO `role` (`id`, `role_code`, `role_name`, `role_domain`, `super_admin`, `space_role_type`, `is_builtin`, `permissions`, `description`, `created_by`, `created_at`, `updated_at`)
-SELECT 
+SELECT
   1 as id,
   'super_admin' as role_code,
   '超级管理员' as role_name,
@@ -198,15 +196,15 @@ SELECT
                 )
               )
               FROM permission_template pt2
-              WHERE pt2.domain = 'global' 
-                AND pt2.resource = resource_group.resource 
+              WHERE pt2.domain = 'global'
+                AND pt2.resource = resource_group.resource
                 AND pt2.is_active = 1
               ORDER BY pt2.sort_order
             )
           )
         )
         FROM (
-          SELECT DISTINCT resource, 
+          SELECT DISTINCT resource,
                  FIRST_VALUE(resource_name) OVER (PARTITION BY resource ORDER BY sort_order) as resource_name
           FROM permission_template
           WHERE domain = 'global' AND is_active = 1
@@ -222,7 +220,7 @@ SELECT
 
 -- 2. Space Owner Role (ID=2, corresponds to space_user.role_type=1)
 INSERT INTO `role` (`id`, `role_code`, `role_name`, `role_domain`, `super_admin`, `space_role_type`, `is_builtin`, `permissions`, `description`, `created_by`, `created_at`, `updated_at`)
-SELECT 
+SELECT
   2 as id,
   'space_owner' as role_code,
   '空间所有者' as role_name,
@@ -258,15 +256,15 @@ SELECT
                 )
               )
               FROM permission_template pt2
-              WHERE pt2.domain = 'space' 
-                AND pt2.resource = resource_group.resource 
+              WHERE pt2.domain = 'space'
+                AND pt2.resource = resource_group.resource
                 AND pt2.is_active = 1
               ORDER BY pt2.sort_order
             )
           )
         )
         FROM (
-          SELECT DISTINCT resource, 
+          SELECT DISTINCT resource,
                  FIRST_VALUE(resource_name) OVER (PARTITION BY resource ORDER BY sort_order) as resource_name
           FROM permission_template
           WHERE domain = 'space' AND is_active = 1
@@ -283,7 +281,7 @@ SELECT
 -- 3. Space Admin Role (ID=3, corresponds to space_user.role_type=2)
 -- Note: Space Admin includes all space permissions but some are disabled (is_default=0)
 INSERT INTO `role` (`id`, `role_code`, `role_name`, `role_domain`, `super_admin`, `space_role_type`, `is_builtin`, `permissions`, `description`, `created_by`, `created_at`, `updated_at`)
-SELECT 
+SELECT
   3 as id,
   'space_admin' as role_code,
   '空间管理员' as role_name,
@@ -313,7 +311,7 @@ SELECT
                   'action', pt2.action,
                   'action_name', pt2.action_name,
                   'description', pt2.description,
-                  'is_default', CASE 
+                  'is_default', CASE
                     WHEN pt2.action IN ('delete_transfer', 'delete') THEN 0  -- Space Admin: disable delete/delete_transfer permissions
                     ELSE 1  -- Space Admin: enable other permissions
                   END,
@@ -322,15 +320,15 @@ SELECT
                 )
               )
               FROM permission_template pt2
-              WHERE pt2.domain = 'space' 
-                AND pt2.resource = resource_group.resource 
+              WHERE pt2.domain = 'space'
+                AND pt2.resource = resource_group.resource
                 AND pt2.is_active = 1
               ORDER BY pt2.sort_order
             )
           )
         )
         FROM (
-          SELECT DISTINCT resource, 
+          SELECT DISTINCT resource,
                  FIRST_VALUE(resource_name) OVER (PARTITION BY resource ORDER BY sort_order) as resource_name
           FROM permission_template
           WHERE domain = 'space' AND is_active = 1
@@ -347,7 +345,7 @@ SELECT
 -- 4. Space Member Role (ID=4, corresponds to space_user.role_type=3)
 -- Note: Space Member includes all space permissions but only basic ones are enabled (is_default matches original template)
 INSERT INTO `role` (`id`, `role_code`, `role_name`, `role_domain`, `super_admin`, `space_role_type`, `is_builtin`, `permissions`, `description`, `created_by`, `created_at`, `updated_at`)
-SELECT 
+SELECT
   4 as id,
   'space_member' as role_code,
   '空间成员' as role_name,
@@ -383,15 +381,15 @@ SELECT
                 )
               )
               FROM permission_template pt2
-              WHERE pt2.domain = 'space' 
-                AND pt2.resource = resource_group.resource 
+              WHERE pt2.domain = 'space'
+                AND pt2.resource = resource_group.resource
                 AND pt2.is_active = 1
               ORDER BY pt2.sort_order
             )
           )
         )
         FROM (
-          SELECT DISTINCT resource, 
+          SELECT DISTINCT resource,
                  FIRST_VALUE(resource_name) OVER (PARTITION BY resource ORDER BY sort_order) as resource_name
           FROM permission_template
           WHERE domain = 'space' AND is_active = 1
@@ -408,7 +406,7 @@ SELECT
 -- Step 6: Initialize Casbin policy rules for all builtin roles based on permission templates
 -- 1. Generate Super Admin policies (all global permissions)
 INSERT INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`, `v3`, `v4`, `created_at`, `updated_at`)
-SELECT 
+SELECT
   'p' as ptype,
   'super_admin' as v0,
   pt.domain as v1,
@@ -422,7 +420,7 @@ WHERE pt.domain = 'global' AND pt.is_active = 1;
 
 -- 2. Generate Space Owner policies (all space permissions)
 INSERT INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`, `v3`, `v4`, `created_at`, `updated_at`)
-SELECT 
+SELECT
   'p' as ptype,
   'space_owner' as v0,
   pt.domain as v1,
@@ -436,13 +434,13 @@ WHERE pt.domain = 'space' AND pt.is_active = 1;
 
 -- 3. Generate Space Admin policies (deny delete_transfer and delete actions, allow others)
 INSERT INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`, `v3`, `v4`, `created_at`, `updated_at`)
-SELECT 
+SELECT
   'p' as ptype,
   'space_admin' as v0,
   pt.domain as v1,
   pt.resource as v2,
   pt.action as v3,
-  CASE 
+  CASE
     WHEN pt.action IN ('delete_transfer', 'delete') THEN 'deny'  -- Space Admin: deny delete operations
     ELSE 'allow'  -- Space Admin: allow other operations
   END as v4,
@@ -453,13 +451,13 @@ WHERE pt.domain = 'space' AND pt.is_active = 1;
 
 -- 4. Generate Space Member policies (allow if original template is_default=1, deny others)
 INSERT INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`, `v3`, `v4`, `created_at`, `updated_at`)
-SELECT 
+SELECT
   'p' as ptype,
   'space_member' as v0,
   pt.domain as v1,
   pt.resource as v2,
   pt.action as v3,
-  CASE 
+  CASE
     WHEN pt.is_default = 1 THEN 'allow'  -- Space Member: allow only basic permissions
     ELSE 'deny'  -- Space Member: deny advanced permissions
   END as v4,

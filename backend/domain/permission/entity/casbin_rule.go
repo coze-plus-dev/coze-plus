@@ -76,6 +76,19 @@ func NewGroupRule(userID, roleCode string) *CasbinRule {
 	}
 }
 
+// NewGroupRuleWithDomain creates a new casbin rule for group type with domain (user-role-domain relationship)
+func NewGroupRuleWithDomain(userID, roleCode, domain string) *CasbinRule {
+	now := time.Now().UnixMilli()
+	return &CasbinRule{
+		Ptype:     "g",
+		V0:        userID,
+		V1:        roleCode,
+		V2:        domain,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+}
+
 // IsPolicy returns true if this rule is a policy rule (ptype="p")
 func (c *CasbinRule) IsPolicy() bool {
 	return c.Ptype == "p"

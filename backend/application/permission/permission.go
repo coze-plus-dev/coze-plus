@@ -19,6 +19,7 @@ package permission
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -441,14 +442,12 @@ func (p *PermissionApplicationService) AssignUserMultipleRoles(ctx context.Conte
 	if userID <= 0 {
 		return nil, errorx.New(errno.ErrPermissionInvalidParamCode, errorx.KV("msg", "invalid user_id format"))
 	}
-
 	// Convert string role IDs to int64
 	roleIDs := make([]int64, 0, len(req.RoleIds))
 	for _, roleIDStr := range req.RoleIds {
 		// Parse role ID from string to int64
 		roleID := parseInt64FromString(roleIDStr)
 		if roleID <= 0 {
-			logs.CtxErrorf(ctx, "invalid role_id: %s", roleIDStr)
 			return nil, errorx.New(errno.ErrPermissionInvalidParamCode, errorx.KV("msg", "invalid role_id format"))
 		}
 		roleIDs = append(roleIDs, roleID)
@@ -479,19 +478,18 @@ func (p *PermissionApplicationService) AssignUserMultipleRoles(ctx context.Conte
 	}
 
 	// Validate target roles and build target role set
+
 	targetRoleIDs := make(map[int64]string) // roleID -> roleCode
 	for _, roleID := range roleIDs {
+
 		// Validate role exists and get role information
 		getRoleReq := &service.GetRoleByIDRequest{ID: roleID}
 		roleResp, err := p.DomainSVC.RoleService.GetRoleByID(ctx, getRoleReq)
 		if err != nil {
-			logs.CtxErrorf(ctx, "get role failed for roleID %d, err: %v", roleID, err)
 			return nil, err
 		}
-
 		// Ensure it's a global role
 		if roleResp.Role.RoleDomain != entity.RoleDomainGlobal {
-			logs.CtxErrorf(ctx, "only global roles can be assigned, roleID %d is not global", roleID)
 			return nil, errorx.New(errno.ErrPermissionInvalidParamCode, errorx.KV("msg", "only global roles can be assigned"))
 		}
 
@@ -506,6 +504,8 @@ func (p *PermissionApplicationService) AssignUserMultipleRoles(ctx context.Conte
 	for roleID := range targetRoleIDs {
 		if _, exists := currentRoleIDs[roleID]; !exists {
 			rolesToAdd = append(rolesToAdd, roleID)
+		} else {
+			logs.CtxInfof(ctx, "[DEBUG] Role already assigned: %d (%s)", roleID, targetRoleIDs[roleID])
 		}
 	}
 
@@ -517,9 +517,9 @@ func (p *PermissionApplicationService) AssignUserMultipleRoles(ctx context.Conte
 			rolesToRemoveWithCodes[roleID] = roleCode
 		}
 	}
-
 	// Process role additions
 	for _, roleID := range rolesToAdd {
+
 		assignReq := &service.AssignUserToRoleRequest{
 			UserID:     userID,
 			RoleID:     roleID,
@@ -527,11 +527,8 @@ func (p *PermissionApplicationService) AssignUserMultipleRoles(ctx context.Conte
 		}
 
 		if err := p.DomainSVC.UserRoleService.AssignUserToRole(ctx, assignReq); err != nil {
-			logs.CtxErrorf(ctx, "assign user %s to role %d failed, err: %v", req.UserID, roleID, err)
 			return nil, err
 		}
-
-		logs.CtxInfof(ctx, "successfully assigned user %s to role %d (code: %s)", req.UserID, roleID, targetRoleIDs[roleID])
 	}
 
 	// Process role removals
@@ -553,68 +550,90 @@ func (p *PermissionApplicationService) AssignUserMultipleRoles(ctx context.Conte
 
 	// Sync casbin group rules for role changes
 	userIDStr := req.UserID
-	
+
 	// Add casbin group rules for newly assigned roles
 	for _, roleID := range rolesToAdd {
 		roleCode := targetRoleIDs[roleID]
-		if err := p.syncUserRoleGroupPolicy(ctx, userIDStr, roleCode); err != nil {
-			logs.CtxWarnf(ctx, "create casbin group policy failed for user %s, role %s, err: %v", req.UserID, roleCode, err)
-		} else {
-			logs.CtxInfof(ctx, "created casbin group policy: user %s -> role %s", req.UserID, roleCode)
+
+		// Get role domain to create domain-specific group rules
+		getRoleReq := &service.GetRoleByIDRequest{ID: roleID}
+		roleResp, err := p.DomainSVC.RoleService.GetRoleByID(ctx, getRoleReq)
+		if err != nil {
+			logs.CtxWarnf(ctx, "[DEBUG] WARNING: get role domain failed for roleID %d, err: %v", roleID, err)
+			continue
+		}
+
+		roleDomain := string(roleResp.Role.RoleDomain)
+
+		if err := p.syncUserRoleGroupPolicyWithDomain(ctx, userIDStr, roleCode, roleDomain); err != nil {
+			logs.CtxErrorf(ctx, "create casbin group policy failed for user %s, role %s, domain %s, err: %v", req.UserID, roleCode, roleDomain, err)
+			return nil, fmt.Errorf("failed to create casbin group policy for user %s, role %s: %w", req.UserID, roleCode, err)
 		}
 	}
-	
+
 	// Remove casbin group rules for unassigned roles
 	for _, roleID := range rolesToRemove {
 		if roleCode, exists := rolesToRemoveWithCodes[roleID]; exists {
 			if err := p.removeUserRoleGroupPolicy(ctx, userIDStr, roleCode); err != nil {
-				logs.CtxWarnf(ctx, "delete casbin group policy failed for user %s, role %s, err: %v", req.UserID, roleCode, err)
-			} else {
-				logs.CtxInfof(ctx, "deleted casbin group policy: user %s -> role %s", req.UserID, roleCode)
+				logs.CtxErrorf(ctx, "delete casbin group policy failed for user %s, role %s, err: %v", req.UserID, roleCode, err)
+				return nil, fmt.Errorf("failed to delete casbin group policy for user %s, role %s: %w", req.UserID, roleCode, err)
 			}
 		}
 	}
-
-	logs.CtxInfof(ctx, "successfully assigned %d roles to user %s", len(roleIDs), req.UserID)
-
 	return &permission1.AssignUserMultipleRolesResponse{
 		Code: 0,
 		Msg:  "success",
 	}, nil
 }
 
-// syncUserRoleGroupPolicy synchronizes casbin group policy for user-role relationship
-func (p *PermissionApplicationService) syncUserRoleGroupPolicy(ctx context.Context, userID, roleCode string) error {
-	// Create casbin group rule: g, user_id, role_code
-	createReq := &service.CreateGroupRuleRequest{
-		UserID:   userID,
+// syncUserRoleGroupPolicyWithDomain synchronizes casbin group policy for user-role relationship with domain
+func (p *PermissionApplicationService) syncUserRoleGroupPolicyWithDomain(ctx context.Context, userID, roleCode, domain string) error {
+	// Create casbin group rule: g, user:{user_id}, role_code, domain
+	userSubject := fmt.Sprintf("user:%s", userID)
+	createReq := &service.CreateGroupRuleWithDomainRequest{
+		UserID:   userSubject,
 		RoleCode: roleCode,
+		Domain:   domain,
 	}
-	
-	err := p.DomainSVC.CasbinRuleService.CreateGroupRule(ctx, createReq)
+
+	err := p.DomainSVC.CasbinRuleService.CreateGroupRuleWithDomain(ctx, createReq)
 	if err != nil {
 		return err
 	}
-	
-	logs.CtxInfof(ctx, "Created casbin group rule: g, %s, %s", userID, roleCode)
+
+	logs.CtxInfof(ctx, "Created casbin group rule with domain: g, %s, %s, %s", userSubject, roleCode, domain)
 	return nil
 }
 
-// removeUserRoleGroupPolicy removes casbin group policy for user-role relationship
-func (p *PermissionApplicationService) removeUserRoleGroupPolicy(ctx context.Context, userID, roleCode string) error {
-	// Delete casbin group rule: g, user_id, role_code
-	deleteReq := &service.DeleteGroupRuleRequest{
-		UserID:   userID,
+// syncUserRoleGroupPolicy synchronizes casbin group policy for user-role relationship (legacy method)
+func (p *PermissionApplicationService) syncUserRoleGroupPolicy(ctx context.Context, userID, roleCode string) error {
+	// For backward compatibility, default to global domain
+	return p.syncUserRoleGroupPolicyWithDomain(ctx, userID, roleCode, "global")
+}
+
+// removeUserRoleGroupPolicyWithDomain removes casbin group policy for user-role relationship with domain
+func (p *PermissionApplicationService) removeUserRoleGroupPolicyWithDomain(ctx context.Context, userID, roleCode, domain string) error {
+	// Delete casbin group rule: g, user:{user_id}, role_code, domain
+	userSubject := fmt.Sprintf("user:%s", userID)
+	deleteReq := &service.DeleteGroupRuleWithDomainRequest{
+		UserID:   userSubject,
 		RoleCode: roleCode,
+		Domain:   domain,
 	}
-	
-	err := p.DomainSVC.CasbinRuleService.DeleteGroupRule(ctx, deleteReq)
+
+	err := p.DomainSVC.CasbinRuleService.DeleteGroupRuleWithDomain(ctx, deleteReq)
 	if err != nil {
 		return err
 	}
-	
-	logs.CtxInfof(ctx, "Deleted casbin group rule: g, %s, %s", userID, roleCode)
+
+	logs.CtxInfof(ctx, "Deleted casbin group rule with domain: g, %s, %s, %s", userSubject, roleCode, domain)
 	return nil
+}
+
+// removeUserRoleGroupPolicy removes casbin group policy for user-role relationship (legacy method)
+func (p *PermissionApplicationService) removeUserRoleGroupPolicy(ctx context.Context, userID, roleCode string) error {
+	// For backward compatibility, default to global domain
+	return p.removeUserRoleGroupPolicyWithDomain(ctx, userID, roleCode, "global")
 }
 
 // GetUserRoles gets roles assigned to a user
@@ -714,7 +733,7 @@ func (p *PermissionApplicationService) UnassignUserRoles(ctx context.Context, re
 	// Validate that all roles to unassign are currently assigned to the user
 	var rolesToRemove []int64
 	roleCodesToRemove := make(map[int64]string) // roleID -> roleCode
-	
+
 	for _, roleID := range roleIDs {
 		if roleCode, exists := currentRoleIDs[roleID]; exists {
 			rolesToRemove = append(rolesToRemove, roleID)

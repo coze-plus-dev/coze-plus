@@ -22,6 +22,7 @@ import (
 
 	"github.com/coze-dev/coze-studio/backend/domain/permission/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/permission/repository"
+	"github.com/coze-dev/coze-studio/backend/pkg/logs"
 )
 
 // CasbinRuleServiceImpl implements CasbinRuleService interface
@@ -92,6 +93,80 @@ func (c *CasbinRuleServiceImpl) DeleteGroupRule(ctx context.Context, request *De
 	err = c.casbinRuleRepo.Delete(ctx, existingRules[0].ID)
 	if err != nil {
 		return fmt.Errorf("failed to delete group rule: %w", err)
+	}
+
+	return nil
+}
+
+// CreateGroupRuleWithDomain creates a group rule with domain (user-role-domain relationship)
+func (c *CasbinRuleServiceImpl) CreateGroupRuleWithDomain(ctx context.Context, request *CreateGroupRuleWithDomainRequest) error {
+	logs.CtxInfof(ctx, "[CASBIN DEBUG] Starting to create group rule: user=%s, role=%s, domain=%s", request.UserID, request.RoleCode, request.Domain)
+	
+	// Check if group rule already exists
+	filter := &entity.CasbinRuleListFilter{
+		Ptype: strPtr("g"),
+		V0:    &request.UserID,
+		V1:    &request.RoleCode,
+		V2:    &request.Domain,
+		Page:  1,
+		Limit: 1,
+	}
+	
+	logs.CtxInfof(ctx, "[CASBIN DEBUG] Checking for existing rule with filter: ptype=g, v0=%s, v1=%s, v2=%s", request.UserID, request.RoleCode, request.Domain)
+	
+	existingRules, _, err := c.casbinRuleRepo.List(ctx, filter)
+	if err != nil {
+		logs.CtxErrorf(ctx, "[CASBIN DEBUG] Failed to check existing rule: %v", err)
+		return fmt.Errorf("failed to check existing group rule with domain: %w", err)
+	}
+	
+	logs.CtxInfof(ctx, "[CASBIN DEBUG] Found %d existing rules", len(existingRules))
+	
+	if len(existingRules) > 0 {
+		logs.CtxInfof(ctx, "[CASBIN DEBUG] Rule already exists, skipping creation for user=%s, role=%s, domain=%s", request.UserID, request.RoleCode, request.Domain)
+		// Rule already exists, no need to create
+		return nil
+	}
+
+	logs.CtxInfof(ctx, "[CASBIN DEBUG] Creating new group rule with domain")
+	// Create new group rule with domain
+	groupRule := entity.NewGroupRuleWithDomain(request.UserID, request.RoleCode, request.Domain)
+	createdRule, err := c.casbinRuleRepo.Create(ctx, groupRule)
+	if err != nil {
+		logs.CtxErrorf(ctx, "[CASBIN DEBUG] Failed to create group rule: %v", err)
+		return fmt.Errorf("failed to create group rule with domain: %w", err)
+	}
+
+	logs.CtxInfof(ctx, "[CASBIN DEBUG] Successfully created group rule with ID=%d for user=%s, role=%s, domain=%s", createdRule.ID, request.UserID, request.RoleCode, request.Domain)
+	return nil
+}
+
+// DeleteGroupRuleWithDomain deletes a group rule with domain (user-role-domain relationship)
+func (c *CasbinRuleServiceImpl) DeleteGroupRuleWithDomain(ctx context.Context, request *DeleteGroupRuleWithDomainRequest) error {
+	// Find the rule to delete
+	filter := &entity.CasbinRuleListFilter{
+		Ptype: strPtr("g"),
+		V0:    &request.UserID,
+		V1:    &request.RoleCode,
+		V2:    &request.Domain,
+		Page:  1,
+		Limit: 1,
+	}
+	
+	existingRules, _, err := c.casbinRuleRepo.List(ctx, filter)
+	if err != nil {
+		return fmt.Errorf("failed to find group rule with domain to delete: %w", err)
+	}
+	
+	if len(existingRules) == 0 {
+		// Rule doesn't exist, nothing to delete
+		return nil
+	}
+
+	// Delete the rule
+	err = c.casbinRuleRepo.Delete(ctx, existingRules[0].ID)
+	if err != nil {
+		return fmt.Errorf("failed to delete group rule with domain: %w", err)
 	}
 
 	return nil
