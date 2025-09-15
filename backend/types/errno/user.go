@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 coze-dev Authors
+ * Copyright 2025 coze-plus Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ const (
 	ErrUserInvalidParamCode           = 700000006
 	ErrUserPermissionCode             = 700000007
 	ErrNotAllowedRegisterCode         = 700000008
+	ErrUserDisabledCode               = 700000009
 )
 
 func init() {
@@ -80,6 +81,12 @@ func init() {
 	code.Register(
 		ErrUserAuthenticationFailed,
 		"authentication failed: {reason}",
+		code.WithAffectStability(false),
+	)
+
+	code.Register(
+		ErrUserDisabledCode,
+		"user account has been disabled, please contact the administrator.",
 		code.WithAffectStability(false),
 	)
 }

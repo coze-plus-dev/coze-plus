@@ -1,0 +1,65 @@
+.rolePage {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f5f7fa;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e8e8e8;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #262626;
+  margin: 0;
+  line-height: 28px;
+}
+
+.content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  height: calc(100vh - 69px);
+}
+
+.leftPanel {
+  width: 300px;
+  min-width: 300px;
+  background-color: #fafbfc;
+  border-right: 1px solid #e8e8e8;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 16px;
+}
+
+.siderHeader {
+  padding: 0 8px 16px 8px;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.siderTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #262626;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rightPanel {
+  flex: 1;
+  background-color: #ffffff;
+  overflow: hidden;
+  padding: 0;
+}

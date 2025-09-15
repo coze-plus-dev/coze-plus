@@ -19,7 +19,6 @@ package vo
 import (
 	"errors"
 	"fmt"
-
 	"github.com/cloudwego/eino/compose"
 	"github.com/cloudwego/eino/schema"
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 coze-dev Authors
+ * Copyright 2025 coze-plus Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 /* eslint-disable */
 /* prettier-ignore */
-// Automatically generated based on src/index.ts, do not modify manually 
+// Automatically generated based on src/index.ts, do not modify manually
 declare const APP_ID: number;
 declare const APP_KEY: string;
 declare const AWEME_ORIGIN: string;
@@ -108,4 +108,3 @@ declare const VOLCANO_PLATFORM_APP_KEY: string | null;
 declare const VOLCANO_PLATFORM_ID: number | null;
 declare const VOLC_PRIVATE_POLICY: string;
 declare const VOLC_TERMS_OF_SERVICE: string;
- 

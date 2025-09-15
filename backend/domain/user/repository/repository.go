@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 coze-dev Authors
+ * Copyright 2025 coze-plus Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ type UserRepository interface {
 	CreateUser(ctx context.Context, user *model.User) error
 	GetUserBySessionKey(ctx context.Context, sessionKey string) (*model.User, bool, error)
 	GetUsersByIDs(ctx context.Context, userIDs []int64) ([]*model.User, error)
+	ListUsers(ctx context.Context, keyword *string, isDisabled *int32, offset, limit int) ([]*model.User, int64, error)
 }
 
 type SpaceRepository interface {
