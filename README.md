@@ -90,7 +90,7 @@ Coze Plus 采用现代化技术架构，后端基于 Golang + Hertz 框架，前
    ```
 
 4. 访问系统
-   * 打开浏览器访问 `http://localhost:8888/`
+   * 打开浏览器访问 `http://localhost:80/`
    * 使用超级管理员账号登录：
      - 邮箱：`administrator@coze-plus.cn`
      - 密码：`coze-plus123456`
