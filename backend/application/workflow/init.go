@@ -109,5 +109,10 @@ func InitService(_ context.Context, components *ServiceComponents) (*Application
 	SVC.TosClient = components.Tos
 	SVC.IDGenerator = components.IDGen
 
+	err = SVC.InitNodeIconURLCache(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
 	return SVC, nil
 }

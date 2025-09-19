@@ -17,13 +17,19 @@
 package schema
 
 import (
+	"context"
 	"fmt"
 	"maps"
+	"net/url"
+	"path/filepath"
 	"reflect"
+	"strings"
 	"sync"
 
+	workflowModel "github.com/coze-dev/coze-studio/backend/api/model/crossdomain/workflow"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/entity/vo"
+	"github.com/coze-dev/coze-studio/backend/pkg/logs"
 )
 
 type WorkflowSchema struct {
@@ -38,6 +44,7 @@ type WorkflowSchema struct {
 	compositeNodes    []*CompositeNode           // won't serialize this
 	requireCheckPoint bool                       // won't serialize this
 	requireStreaming  bool
+	historyRounds     int64
 
 	once sync.Once
 }
@@ -69,13 +76,20 @@ func (w *WorkflowSchema) Init() {
 
 		w.doGetCompositeNodes()
 
+		historyRounds := int64(0)
 		for _, node := range w.Nodes {
 			if node.Type == entity.NodeTypeSubWorkflow {
 				node.SubWorkflowSchema.Init()
+				historyRounds = max(historyRounds, node.SubWorkflowSchema.HistoryRounds())
 				if node.SubWorkflowSchema.requireCheckPoint {
 					w.requireCheckPoint = true
 					break
 				}
+			}
+
+			chatHistoryAware, ok := node.Configs.(ChatHistoryAware)
+			if ok && chatHistoryAware.ChatHistoryEnabled() {
+				historyRounds = max(historyRounds, chatHistoryAware.ChatHistoryRounds())
 			}
 
 			if rc, ok := node.Configs.(RequireCheckpoint); ok {
@@ -86,6 +100,7 @@ func (w *WorkflowSchema) Init() {
 			}
 		}
 
+		w.historyRounds = historyRounds
 		w.requireStreaming = w.doRequireStreaming()
 	})
 }
@@ -120,6 +135,12 @@ func (w *WorkflowSchema) RequireCheckpoint() bool {
 
 func (w *WorkflowSchema) RequireStreaming() bool {
 	return w.requireStreaming
+}
+
+func (w *WorkflowSchema) HistoryRounds() int64 { return w.historyRounds }
+
+func (w *WorkflowSchema) SetHistoryRounds(historyRounds int64) {
+	w.historyRounds = historyRounds
 }
 
 func (w *WorkflowSchema) doGetCompositeNodes() (cNodes []*CompositeNode) {
@@ -306,4 +327,66 @@ func (w *WorkflowSchema) doRequireStreaming() bool {
 	}
 
 	return false
+}
+
+func (w *WorkflowSchema) GetAllNodesInputFileFields(ctx context.Context) []*workflowModel.FileInfo {
+
+	adaptorURL := func(s string) (string, error) {
+		u, err := url.Parse(s)
+		if err != nil {
+			return "", err
+		}
+		query := u.Query()
+		query.Del("x-wf-file_name")
+		u.RawQuery = query.Encode()
+		return u.String(), nil
+	}
+
+	result := make([]*workflowModel.FileInfo, 0)
+	for _, node := range w.Nodes {
+		for _, source := range node.InputSources {
+			if source.Source.Val != nil && source.Source.FileExtra != nil {
+				fileExtra := source.Source.FileExtra
+				if fileExtra.FileName != nil {
+					fileURL, err := adaptorURL(source.Source.Val.(string))
+					if err != nil {
+						logs.CtxWarnf(ctx, "failed to parse adaptorURL for node %v: %v", node.Key, err)
+						continue
+					}
+					result = append(result, &workflowModel.FileInfo{
+						FileName:      *fileExtra.FileName,
+						FileURL:       fileURL,
+						FileExtension: filepath.Ext(strings.TrimSpace(*fileExtra.FileName)),
+					})
+					source.Source.Val = fileURL
+
+				}
+				if fileExtra.FileNames != nil {
+					vals := source.Source.Val.([]any)
+					for idx, fileName := range fileExtra.FileNames {
+						fileURL := vals[idx].(string)
+						fileURL, err := adaptorURL(fileURL)
+						if err != nil {
+							logs.CtxWarnf(ctx, "failed to parse adaptorURL for node %v: %v", node.Key, err)
+							continue
+						}
+						result = append(result, &workflowModel.FileInfo{
+							FileName:      fileName,
+							FileURL:       fileURL,
+							FileExtension: filepath.Ext(strings.TrimSpace(fileName)),
+						})
+						vals[idx] = fileURL
+					}
+					source.Source.Val = vals
+				}
+
+			}
+		}
+		if node.SubWorkflowSchema != nil {
+			result = append(result, node.SubWorkflowSchema.GetAllNodesInputFileFields(ctx)...)
+		}
+
+	}
+
+	return result
 }

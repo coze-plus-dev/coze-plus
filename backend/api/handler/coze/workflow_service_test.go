@@ -228,6 +228,7 @@ func newWfTestRunner(t *testing.T) *wfTestRunner {
 	h.POST("/api/workflow_api/chat_flow_role/delete", DeleteChatFlowRole)
 	h.POST("/api/workflow_api/chat_flow_role/create", CreateChatFlowRole)
 	h.GET("/api/workflow_api/chat_flow_role/get", GetChatFlowRole)
+	h.POST("/v1/workflows/chat", OpenAPIChatFlowRun)
 
 	ctrl := gomock.NewController(t, gomock.WithOverridableExpectations())
 	mockIDGen := mock.NewMockIDGenerator(ctrl)
@@ -1065,6 +1066,46 @@ func (r *wfTestRunner) openapiResume(id string, eventID string, resumeData strin
 	c, _ := client.NewClient()
 	hReq, hResp := protocol.AcquireRequest(), protocol.AcquireResponse()
 	hReq.SetRequestURI("http://localhost:8888" + "/v1/workflow/stream_resume")
+	hReq.SetMethod("POST")
+	hReq.SetBody(m)
+	hReq.SetHeader("Content-Type", "application/json")
+	err = c.Do(context.Background(), hReq, hResp)
+	assert.NoError(r.t, err)
+
+	if hResp.StatusCode() != http.StatusOK {
+		r.t.Errorf("unexpected status code: %d, body: %s", hResp.StatusCode(), string(hResp.Body()))
+	}
+
+	re, err := sse.NewReader(hResp)
+	assert.NoError(r.t, err)
+
+	return re
+}
+
+func (r *wfTestRunner) openapiChatFlowRun(wfID string, cID, appID, botID *string, input any, additionalMessage []*workflow.EnterMessage) *sse.Reader {
+	inputStr, _ := sonic.MarshalString(input)
+
+	req := &workflow.ChatFlowRunRequest{
+		WorkflowID:         wfID,
+		Parameters:         ptr.Of(inputStr),
+		AdditionalMessages: additionalMessage,
+	}
+	if cID != nil {
+		req.ConversationID = cID
+	}
+	if appID != nil {
+		req.AppID = appID
+	}
+	if botID != nil {
+		req.BotID = botID
+	}
+
+	m, err := sonic.Marshal(req)
+	assert.NoError(r.t, err)
+
+	c, _ := client.NewClient()
+	hReq, hResp := protocol.AcquireRequest(), protocol.AcquireResponse()
+	hReq.SetRequestURI("http://localhost:8888" + "/v1/workflows/chat")
 	hReq.SetMethod("POST")
 	hReq.SetBody(m)
 	hReq.SetHeader("Content-Type", "application/json")
@@ -2453,7 +2494,7 @@ func TestStartNodeDefaultValues(t *testing.T) {
 			result, _ := r.openapiSyncRun(idStr, input)
 			assert.Equal(t, result, map[string]any{
 				"ts":    "2025-07-09 21:43:34",
-				"files": "http://imagex.fanlv.fun/tos-cn-i-1heqlfnr21/e81acc11277f421390770618e24e01ce.jpeg~tplv-1heqlfnr21-image.image?x-wf-file_name=20250317-154742.jpeg",
+				"files": "http://imagex.fanlv.fun/tos-cn-i-1heqlfnr21/e81acc11277f421390770618e24e01ce.jpeg~tplv-1heqlfnr21-image.image",
 				"str":   "str",
 				"object": map[string]any{
 					"a": "1",
@@ -2477,7 +2518,7 @@ func TestStartNodeDefaultValues(t *testing.T) {
 			result, _ := r.openapiSyncRun(idStr, input)
 			assert.Equal(t, result, map[string]any{
 				"ts":    "2025-07-09 21:43:34",
-				"files": "http://imagex.fanlv.fun/tos-cn-i-1heqlfnr21/e81acc11277f421390770618e24e01ce.jpeg~tplv-1heqlfnr21-image.image?x-wf-file_name=20250317-154742.jpeg",
+				"files": "http://imagex.fanlv.fun/tos-cn-i-1heqlfnr21/e81acc11277f421390770618e24e01ce.jpeg~tplv-1heqlfnr21-image.image",
 				"str":   "str",
 				"object": map[string]any{
 					"a": "1",
@@ -2502,7 +2543,7 @@ func TestStartNodeDefaultValues(t *testing.T) {
 			result, _ := r.openapiSyncRun(idStr, input)
 			assert.Equal(t, result, map[string]any{
 				"ts":    "2025-07-09 21:43:34",
-				"files": "http://imagex.fanlv.fun/tos-cn-i-1heqlfnr21/e81acc11277f421390770618e24e01ce.jpeg~tplv-1heqlfnr21-image.image?x-wf-file_name=20250317-154742.jpeg",
+				"files": "http://imagex.fanlv.fun/tos-cn-i-1heqlfnr21/e81acc11277f421390770618e24e01ce.jpeg~tplv-1heqlfnr21-image.image",
 				"str":   "value",
 				"object": map[string]any{
 					"a": "1",
@@ -5490,7 +5531,7 @@ func TestConversationOfChatFlow(t *testing.T) {
 					if err != nil {
 						return err
 					}
-					if v.Name == "CONVERSATION_NAME" {
+					if v.Name == vo.ConversationNameKey {
 						v.DefaultValue = cName
 					}
 					startNode.Data.Outputs[idx] = v
@@ -5521,7 +5562,7 @@ func TestConversationOfChatFlow(t *testing.T) {
 					for _, vAny := range node.Data.Outputs {
 						v, err := vo.ParseVariable(vAny)
 						assert.NoError(t, err)
-						if v.Name == "CONVERSATION_NAME" {
+						if v.Name == vo.ConversationNameKey {
 							assert.Equal(t, v.DefaultValue, updateName)
 						}
 					}
@@ -5568,7 +5609,7 @@ func TestConversationOfChatFlow(t *testing.T) {
 					for _, vAny := range node.Data.Outputs {
 						v, err := vo.ParseVariable(vAny)
 						assert.NoError(t, err)
-						if v.Name == "CONVERSATION_NAME" {
+						if v.Name == vo.ConversationNameKey {
 							assert.Equal(t, v.DefaultValue, cName+"copy")
 						}
 					}
@@ -5985,5 +6026,268 @@ func TestConversationHistoryNodes(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, true, outputMap["isSuccess"])
 		assert.Equal(t, []any{}, outputMap["history_list"])
+	})
+}
+
+func TestWorkflowRunWithFiles(t *testing.T) {
+	mockey.PatchConvey("workflow run with files", t, func() {
+		r := newWfTestRunner(t)
+		defer r.closeFn()
+
+		r.knowledge.EXPECT().Store(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, document *knowledge.CreateDocumentRequest) (*knowledge.CreateDocumentResponse, error) {
+
+			assert.Equal(t, "北京旅游景点.txt", document.FileName)
+			return &knowledge.CreateDocumentResponse{
+				DocumentID: 1,
+				FileURL:    document.FileURL,
+				FileName:   document.FileName,
+			}, nil
+		}).AnyTimes()
+
+		runner := mockcode.NewMockRunner(r.ctrl)
+		runner.EXPECT().Run(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, request *coderunner.RunRequest) (*coderunner.RunResponse, error) {
+
+			return &coderunner.RunResponse{
+				Result: request.Params,
+			}, nil
+		}).AnyTimes()
+
+		mockey.Mock(code.GetCodeRunner).Return(runner).Build()
+
+		idStr := r.load("workflow_wf_file_name.json")
+		r.publish(idStr, "v0.1.1", true)
+		m, execID := r.openapiSyncRun(idStr, map[string]string{
+			"f":  "http://coze.fanlv.fun:8889/opencoze/tos-cn-i-v4nquku3lp/27b01dd5-b0f5-4dbd-a075-a48c14162d23.txt?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20250910%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250910T074412Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=2f3051a0645c9ed260f7cb6c93954147ceb347a61366c9f70b98d43c299a7732&x-wf-file_name=%E5%8C%97%E4%BA%AC%E6%97%85%E6%B8%B8%E6%99%AF%E7%82%B9.txt",
+			"fs": "[\"http://coze.fanlv.fun:8889/opencoze/tos-cn-i-v4nquku3lp/85056c12-ea40-4588-a2a2-5eab56b94e4c.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20250910%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250910T074404Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=59f3a7b6774a33de127e42878e4821635ce74e1fc29237ba03b13d67a068fedf&x-wf-file_name=%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_2025-07-02_154139_105.jpg\",\"http://coze.fanlv.fun:8889/opencoze/tos-cn-i-v4nquku3lp/5ec9856d-0db0-44a1-9b82-43628221a928.jpeg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20250910%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250910T074410Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=3887b0583084b0294b91e93e307c61ce3b910531d0e33a08e7c7d57de24c71ec&x-wf-file_name=20250317-154742.jpeg\"]",
+		})
+		assert.NotNil(t, execID)
+
+		assert.Equal(t, m["output"], []any{
+			"http://coze.fanlv.fun:8889/opencoze/tos-cn-i-v4nquku3lp/85056c12-ea40-4588-a2a2-5eab56b94e4c.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20250910%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250910T074404Z&X-Amz-Expires=604800&X-Amz-Signature=59f3a7b6774a33de127e42878e4821635ce74e1fc29237ba03b13d67a068fedf&X-Amz-SignedHeaders=host",
+			"http://coze.fanlv.fun:8889/opencoze/tos-cn-i-v4nquku3lp/5ec9856d-0db0-44a1-9b82-43628221a928.jpeg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20250910%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250910T074410Z&X-Amz-Expires=604800&X-Amz-Signature=3887b0583084b0294b91e93e307c61ce3b910531d0e33a08e7c7d57de24c71ec&X-Amz-SignedHeaders=host"})
+		assert.Equal(t, m["filename"], "北京旅游景点.txt")
+		fmt.Println(m, execID)
+
+	})
+
+}
+
+func TestChatFlowRun(t *testing.T) {
+	mockey.PatchConvey("chat flow run", t, func() {
+		r := newWfTestRunner(t)
+		appworkflow.SVC.IDGenerator = r.idGen
+		defer r.closeFn()
+		defer r.runServer()()
+
+		chatModel1 := &testutil.UTChatModel{
+			StreamResultProvider: func(_ int, in []*schema.Message) (*schema.StreamReader[*schema.Message], error) {
+				sr := schema.StreamReaderFromArray([]*schema.Message{
+					{
+						Role:    schema.Assistant,
+						Content: "I ",
+					},
+					{
+						Role:    schema.Assistant,
+						Content: "don't know.",
+					},
+				})
+				return sr, nil
+			},
+		}
+		r.modelManage.EXPECT().GetModel(gomock.Any(), gomock.Any()).Return(chatModel1, nil, nil).AnyTimes()
+
+		id := r.load("chatflow/llm_chat.json", withMode(workflow.WorkflowMode_ChatFlow))
+		r.publish(id, "v0.0.1", true)
+		cID := time.Now().UnixNano()
+		cIDStr := strconv.FormatInt(cID, 10)
+		appID := time.Now().UnixNano()
+		appIDStr := strconv.FormatInt(appID, 10)
+
+		// Create conversation first
+		r.conversation.EXPECT().CreateConversation(gomock.Any(), gomock.Any()).Return(&conventity.Conversation{
+			ID: cID,
+		}, nil).AnyTimes()
+		idStr := r.load("conversation_manager/update_dynamic_conversation.json")
+		r.publish(idStr, "v0.0.1", true)
+		ret, _ := r.openapiSyncRun(idStr, map[string]string{
+			"input":    "v1",
+			"new_name": "v2",
+		}, withRunProjectID(appID))
+		assert.Equal(t, map[string]any{"conversationId": strconv.FormatInt(cID, 10), "isExisted": false, "isSuccess": true}, ret["obj"])
+
+		msg := []*workflow.EnterMessage{
+			{
+				Role:        "user",
+				ContentType: "text",
+				Content:     "你好",
+			},
+		}
+		sID := time.Now().UnixNano()
+		r.conversation.EXPECT().GetByID(gomock.Any(), gomock.Any()).Return(&conventity.Conversation{
+			ID:        cID,
+			SectionID: sID,
+		}, nil).AnyTimes()
+		rID := time.Now().UnixNano()
+		r.agentRun.EXPECT().Create(gomock.Any(), gomock.Any()).Return(&agententity.RunRecordMeta{
+			ID: rID,
+		}, nil).AnyTimes()
+		mID := time.Now().Unix()
+		r.message.EXPECT().Create(gomock.Any(), gomock.Any()).Return(&message.Message{
+			ID: mID,
+		}, nil).AnyTimes()
+
+		t.Run("chat flow run in app", func(t *testing.T) {
+			sseReader := r.openapiChatFlowRun(id, ptr.Of(cIDStr), ptr.Of(appIDStr), nil, map[string]any{
+				vo.ConversationNameKey: "Default",
+			}, msg)
+			err := sseReader.ForEach(t.Context(), func(e *sse.Event) error {
+				t.Logf("sse id: %s, type: %s, data: %s", e.ID, e.Type, string(e.Data))
+				return nil
+			})
+			assert.NoError(t, err)
+		})
+
+		t.Run("chat flow run in bot", func(t *testing.T) {
+			botID := time.Now().UnixNano()
+			botIDStr := strconv.FormatInt(botID, 10)
+			sseReader := r.openapiChatFlowRun(id, ptr.Of(cIDStr), nil, ptr.Of(botIDStr), map[string]any{
+				vo.ConversationNameKey: "Default",
+			}, msg)
+			err := sseReader.ForEach(t.Context(), func(e *sse.Event) error {
+				t.Logf("sse id: %s, type: %s, data: %s", e.ID, e.Type, string(e.Data))
+				return nil
+			})
+			assert.NoError(t, err)
+		})
+
+		t.Run("chat flow run without cID", func(t *testing.T) {
+			sseReader := r.openapiChatFlowRun(id, nil, ptr.Of(appIDStr), nil, map[string]any{
+				vo.ConversationNameKey: "Default",
+			}, msg)
+			err := sseReader.ForEach(t.Context(), func(e *sse.Event) error {
+				t.Logf("sse id: %s, type: %s, data: %s", e.ID, e.Type, string(e.Data))
+				return nil
+			})
+			assert.NoError(t, err)
+		})
+
+		t.Run("chat flow run with additional messages", func(t *testing.T) {
+			additionalMsg := []*workflow.EnterMessage{
+				{
+					Role:        "user",
+					ContentType: "text",
+					Content:     "你好, 我叫小明",
+				},
+				{
+					Role:        "assistant",
+					ContentType: "text",
+					Content:     "你好小明, 很高兴认识你",
+				},
+				{
+					Role:        "user",
+					ContentType: "text",
+					Content:     "你好",
+				},
+			}
+			sseReader := r.openapiChatFlowRun(id, ptr.Of(cIDStr), ptr.Of(appIDStr), nil, map[string]any{
+				vo.ConversationNameKey: "Default",
+			}, additionalMsg)
+			err := sseReader.ForEach(t.Context(), func(e *sse.Event) error {
+				t.Logf("sse id: %s, type: %s, data: %s", e.ID, e.Type, string(e.Data))
+				return nil
+			})
+			assert.NoError(t, err)
+		})
+
+		t.Run("chat flow run with history messages", func(t *testing.T) {
+			id := r.load("chatflow/llm_chat_with_history.json", withMode(workflow.WorkflowMode_ChatFlow))
+			r.publish(id, "v0.0.1", true)
+			r.message.EXPECT().GetLatestRunIDs(gomock.Any(), gomock.Any()).Return([]int64{rID}, nil).AnyTimes()
+			r.message.EXPECT().GetMessagesByRunIDs(gomock.Any(), gomock.Any()).Return(&message0.GetMessagesByRunIDsResponse{
+				Messages: []*message0.WfMessage{
+					{
+						ID:   mID,
+						Role: schema.User,
+						Text: ptr.Of("你好"),
+					},
+				},
+			}, nil).AnyTimes()
+			sseReader := r.openapiChatFlowRun(id, ptr.Of(cIDStr), ptr.Of(appIDStr), nil, map[string]any{
+				vo.ConversationNameKey: "Default",
+			}, msg)
+			err := sseReader.ForEach(t.Context(), func(e *sse.Event) error {
+				t.Logf("sse id: %s, type: %s, data: %s", e.ID, e.Type, string(e.Data))
+				return nil
+			})
+			assert.NoError(t, err)
+		})
+
+		t.Run("chat flow run with interrupt nodes ", func(t *testing.T) {
+			// 生成一个携带 input, 问答文本 问答选项的三个中断节点 做测试
+			id := r.load("chatflow/chat_run_with_interrupt.json", withMode(workflow.WorkflowMode_ChatFlow))
+			r.publish(id, "v0.0.1", true)
+			sseReader := r.openapiChatFlowRun(id, ptr.Of(cIDStr), ptr.Of(appIDStr), nil, map[string]any{
+				vo.ConversationNameKey: "Default",
+			}, msg)
+
+			err := sseReader.ForEach(t.Context(), func(e *sse.Event) error {
+				t.Logf("sse id: %s, type: %s, data: %s", e.ID, e.Type, string(e.Data))
+				if e.ID == "3" {
+					assert.Equal(t, e.Type, "conversation.message.completed")
+					assert.Contains(t, string(e.Data), "7383997384420262000")
+				}
+				return nil
+			})
+			assert.NoError(t, err)
+
+			sseReader = r.openapiChatFlowRun(id, ptr.Of(cIDStr), ptr.Of(appIDStr), nil, map[string]any{
+				vo.ConversationNameKey: "Default",
+			}, []*workflow.EnterMessage{
+				{Role: string(schema.User), Content: "input:1", ContentType: "text"},
+			})
+
+			err = sseReader.ForEach(t.Context(), func(e *sse.Event) error {
+				t.Logf("sse id: %s, type: %s, data: %s", e.ID, e.Type, string(e.Data))
+				if e.ID == "4" {
+					assert.Equal(t, e.Type, "conversation.message.completed")
+					assert.Contains(t, string(e.Data), "你好")
+				}
+				return nil
+			})
+			assert.NoError(t, err)
+
+			sseReader = r.openapiChatFlowRun(id, ptr.Of(cIDStr), ptr.Of(appIDStr), nil, map[string]any{
+				vo.ConversationNameKey: "Default",
+			}, []*workflow.EnterMessage{
+				{Role: string(schema.User), Content: "hello", ContentType: "text"},
+			})
+
+			err = sseReader.ForEach(t.Context(), func(e *sse.Event) error {
+				if e.ID == "3" {
+					assert.Equal(t, e.Type, "conversation.message.completed")
+					assert.Contains(t, string(e.Data), "question_card_data", "请选择")
+				}
+				return nil
+			})
+			assert.NoError(t, err)
+
+			sseReader = r.openapiChatFlowRun(id, ptr.Of(cIDStr), ptr.Of(appIDStr), nil, map[string]any{
+				vo.ConversationNameKey: "Default",
+			}, []*workflow.EnterMessage{
+				{Role: string(schema.User), Content: "A", ContentType: "text"},
+			})
+			err = sseReader.ForEach(t.Context(), func(e *sse.Event) error {
+				t.Logf("sse id: %s, type: %s, data: %s", e.ID, e.Type, string(e.Data))
+
+				if e.ID == "4" {
+					assert.Equal(t, e.Type, "conversation.message.completed")
+					assert.Contains(t, string(e.Data), "answer", "A")
+				}
+				return nil
+			})
+			assert.NoError(t, err)
+
+		})
+
 	})
 }

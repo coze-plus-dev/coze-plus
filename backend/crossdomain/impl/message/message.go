@@ -54,7 +54,7 @@ func (c *impl) MessageList(ctx context.Context, req *crossmessage.MessageListReq
 		ConversationID: req.ConversationID,
 		Limit:          int(req.Limit), // Since the value of limit is checked inside the node, the type cast here is safe
 		UserID:         strconv.FormatInt(req.UserID, 10),
-		AgentID:        req.AppID,
+		AgentID:        req.BizID,
 		OrderBy:        req.OrderBy,
 	}
 	if req.BeforeID != nil {
@@ -96,7 +96,7 @@ func (c *impl) MessageList(ctx context.Context, req *crossmessage.MessageListReq
 func (c *impl) GetLatestRunIDs(ctx context.Context, req *crossmessage.GetLatestRunIDsRequest) ([]int64, error) {
 	listMeta := &agententity.ListRunRecordMeta{
 		ConversationID: req.ConversationID,
-		AgentID:        req.AppID,
+		AgentID:        req.BizID,
 		Limit:          int32(req.Rounds),
 		SectionID:      req.SectionID,
 	}
@@ -169,6 +169,9 @@ func (c *impl) GetMessageByID(ctx context.Context, id int64) (*entity.Message, e
 
 func (c *impl) ListWithoutPair(ctx context.Context, req *entity.ListMeta) (*entity.ListResult, error) {
 	return c.DomainSVC.ListWithoutPair(ctx, req)
+}
+func (c *impl) BatchCreate(ctx context.Context, msgs []*entity.Message) ([]*entity.Message, error) {
+	return c.DomainSVC.BatchCreate(ctx, msgs)
 }
 
 func convertToConvAndSchemaMessage(ctx context.Context, msgs []*entity.Message) ([]*crossmessage.WfMessage, []*schema.Message, error) {

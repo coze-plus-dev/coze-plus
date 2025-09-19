@@ -494,3 +494,55 @@ func TestListWithoutPair(t *testing.T) {
 		assert.Equal(t, "Answer message", resp.Messages[0].Content)
 	})
 }
+
+func TestBatchCreate(t *testing.T) {
+	ctx := context.Background()
+	mockDBGen := orm.NewMockDB()
+	mockDBGen.AddTable(&model.Message{})
+	mockDB, err := mockDBGen.DB()
+	assert.NoError(t, err)
+
+	components := &Components{
+			MessageRepo: repository.NewMessageRepo(mockDB, nil),
+		}
+
+
+	t.Run("success_single_message", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		// 准备测试数据
+		inputMsgs := []*entity.Message{
+			{
+				ID:             1,
+				ConversationID: 100,
+				RunID:          200,
+				AgentID:        300,
+				UserID:         "user123",
+				Content:        "Hello World",
+				Role:           schema.User,
+				ContentType:    message.ContentTypeText,
+				MessageType:    message.MessageTypeQuestion,
+				Status:         message.MessageStatusAvailable,
+			},
+			{
+				ID:             2,
+				ConversationID: 100,
+				RunID:          200,
+				AgentID:        300,
+				UserID:         "user123",
+				Content:        "Hello World",
+				Role:           schema.Assistant,
+				ContentType:    message.ContentTypeText,
+				MessageType:    message.MessageTypeQuestion,
+				Status:         message.MessageStatusAvailable,
+			},
+		}
+
+		result, err := NewService(components).BatchCreate(ctx, inputMsgs)
+
+		assert.NoError(t, err)
+		assert.Len(t, result, 2)
+		assert.Equal(t, inputMsgs[1].ID, result[1].ID)
+	})
+}
