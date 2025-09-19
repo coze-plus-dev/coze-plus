@@ -20,9 +20,10 @@ import (
 	"context"
 	"path/filepath"
 
-	"os"
 
+	"os"
 	"gopkg.in/yaml.v3"
+
 
 	"github.com/cloudwego/eino/callbacks"
 	"github.com/cloudwego/eino/compose"
@@ -87,7 +88,7 @@ func InitService(_ context.Context, components *ServiceComponents) (*Application
 	if err != nil {
 		return nil, err
 	}
-
+ 
 	workflowRepo, err := service.NewWorkflowRepository(components.IDGen, components.DB, components.Cache,
 		components.Tos, components.CPStore, components.WorkflowBuildInChatModel, cfg)
 	if err != nil {

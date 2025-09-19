@@ -1033,6 +1033,11 @@
       "tags": ["level-3"]
     },
     {
+      "packageName": "@coze-community/enterprise",
+      "projectFolder": "frontend/packages/community/enterprise",
+      "tags": ["level-3"]
+    },
+    {
       "packageName": "@coze-studio/entity-adapter",
       "projectFolder": "frontend/packages/studio/entity-adapter",
       "tags": ["level-3"]

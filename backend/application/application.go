@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 coze-dev Authors
+ * Copyright 2025 coze-plus Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/coze-dev/coze-studio/backend/application/corporation"
 	"github.com/coze-dev/coze-studio/backend/application/openauth"
+	"github.com/coze-dev/coze-studio/backend/application/permission"
 	"github.com/coze-dev/coze-studio/backend/application/template"
 	crosssearch "github.com/coze-dev/coze-studio/backend/crossdomain/contract/search"
 
@@ -80,14 +82,16 @@ type eventbusImpl struct {
 }
 
 type basicServices struct {
-	infra        *appinfra.AppDependencies
-	eventbus     *eventbusImpl
-	modelMgrSVC  *modelmgr.ModelmgrApplicationService
-	connectorSVC *connector.ConnectorApplicationService
-	userSVC      *user.UserApplicationService
-	promptSVC    *prompt.PromptApplicationService
-	templateSVC  *template.ApplicationService
-	openAuthSVC  *openauth.OpenAuthApplicationService
+	infra           *appinfra.AppDependencies
+	eventbus        *eventbusImpl
+	modelMgrSVC     *modelmgr.ModelmgrApplicationService
+	connectorSVC    *connector.ConnectorApplicationService
+	userSVC         *user.UserApplicationService
+	promptSVC       *prompt.PromptApplicationService
+	templateSVC     *template.ApplicationService
+	openAuthSVC     *openauth.OpenAuthApplicationService
+	corporationSVC  *corporation.CorporationApplicationService
+	permissionSVC   *permission.PermissionApplicationService
 	uploadSVC    *upload.UploadService
 }
 
@@ -174,16 +178,35 @@ func initBasicServices(ctx context.Context, infra *appinfra.AppDependencies, e *
 		IDGen:   infra.IDGenSVC,
 		Storage: infra.TOSClient,
 	})
+	corporationSVC, err := corporation.InitService(&corporation.ServiceComponents{
+		DB:      infra.DB,
+		IDGen:   infra.IDGenSVC,
+		Storage: infra.TOSClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	permissionSVC, err := permission.InitService(&permission.ServiceComponents{
+		DB:       infra.DB,
+		IDGenSVC: infra.IDGenSVC,
+		Cache:    infra.CacheCli,
+	})
+	if err != nil {
+		return nil, err
+	}
 
 	return &basicServices{
-		infra:        infra,
-		eventbus:     e,
-		modelMgrSVC:  modelMgrSVC,
-		connectorSVC: connectorSVC,
-		userSVC:      userSVC,
-		promptSVC:    promptSVC,
-		templateSVC:  templateSVC,
-		openAuthSVC:  openAuthSVC,
+		infra:          infra,
+		eventbus:       e,
+		modelMgrSVC:    modelMgrSVC,
+		connectorSVC:   connectorSVC,
+		userSVC:        userSVC,
+		promptSVC:      promptSVC,
+		templateSVC:    templateSVC,
+		openAuthSVC:    openAuthSVC,
+		corporationSVC: corporationSVC,
+		permissionSVC:  permissionSVC,
 		uploadSVC:    uploadSVC,
 	}, nil
 }

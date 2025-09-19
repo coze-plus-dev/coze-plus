@@ -48,7 +48,7 @@ RUN apk add --no-cache bash
 # Copy build artifacts to nginx static directory
 COPY --from=builder /app/frontend/apps/coze-studio/dist /usr/share/nginx/html
 
-EXPOSE 8888
+EXPOSE 80
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]
