@@ -25,7 +25,7 @@ import (
 	"github.com/coze-dev/coze-studio/backend/domain/permission/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/permission/internal/dal/model"
 	"github.com/coze-dev/coze-studio/backend/domain/permission/internal/dal/query"
-	"github.com/coze-dev/coze-studio/backend/infra/contract/idgen"
+	"github.com/coze-dev/coze-studio/backend/infra/idgen"
 )
 
 // CasbinRuleDAO implements casbin rule data access operations

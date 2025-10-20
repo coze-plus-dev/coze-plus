@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package permission
+package impl
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/coze-dev/coze-studio/backend/api/middleware"
-	"github.com/coze-dev/coze-studio/backend/infra/contract/cache"
-	"github.com/coze-dev/coze-studio/backend/infra/contract/permission"
-	casbinImpl "github.com/coze-dev/coze-studio/backend/infra/impl/permission/casbin"
+	"github.com/coze-dev/coze-studio/backend/infra/cache"
+	"github.com/coze-dev/coze-studio/backend/infra/permission"
+	"github.com/coze-dev/coze-studio/backend/infra/permission/impl/casbin"
 )
 
 // PermissionFactory creates permission system components
@@ -43,7 +43,7 @@ func NewPermissionFactory(db any, redisClient cache.Cmdable) *PermissionFactory 
 // CreateChecker creates a permission checker
 func (f *PermissionFactory) CreateChecker(ctx context.Context) (permission.Checker, error) {
 	// Create Casbin checker with direct cache client
-	checker, err := casbinImpl.NewCasbinChecker(f.db, f.redisClient)
+	checker, err := casbin.NewCasbinChecker(f.db, f.redisClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create casbin checker: %w", err)
 	}
@@ -60,7 +60,6 @@ func (f *PermissionFactory) CreateGlobalMiddleware(ctx context.Context) (*middle
 
 	return middleware.NewGlobalPermissionMiddleware(checker), nil
 }
-
 
 // Global factory instance
 var globalFactory *PermissionFactory

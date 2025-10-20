@@ -20,8 +20,8 @@ import (
 	"gorm.io/gorm"
 
 	corporationImpl "github.com/coze-dev/coze-studio/backend/domain/corporation/service"
-	"github.com/coze-dev/coze-studio/backend/infra/contract/idgen"
-	"github.com/coze-dev/coze-studio/backend/infra/contract/storage"
+	"github.com/coze-dev/coze-studio/backend/infra/idgen"
+	"github.com/coze-dev/coze-studio/backend/infra/storage"
 )
 
 type ServiceComponents struct {

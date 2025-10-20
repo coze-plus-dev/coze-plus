@@ -18,51 +18,7 @@ services:
       - '127.0.0.1:3306:3306'
     volumes:
       - ./data/mysql:/var/lib/mysql
-      - ./volumes/mysql/schema.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./atlas/opencoze_latest_schema.hcl:/opencoze_latest_schema.hcl:ro
-    entrypoint:
-      - bash
-      - -c
-      - |
-        /usr/local/bin/docker-entrypoint.sh mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci &
-        MYSQL_PID=$$!
-
-        echo 'Waiting for MySQL to start...'
-        until mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD} --silent 2>/dev/null; do
-          echo 'MySQL is starting...'
-          sleep 2
-        done
-
-        echo 'Waiting for workflow_version table to exist...'
-        while true; do
-          if mysql -h localhost -u root -p$${MYSQL_ROOT_PASSWORD} $${MYSQL_DATABASE} -e "SHOW TABLES LIKE 'workflow_version';" 2>/dev/null | grep -q "workflow_version"; then
-            echo 'Found workflow_version table, continuing...'
-            break
-          else
-            echo 'workflow_version table not found, retrying in 2 seconds...'
-            sleep 2
-          fi
-        done
-
-        echo 'MySQL is ready, installing Atlas CLI...'
-
-        if ! command -v atlas >/dev/null 2>&1; then
-          echo 'Installing Atlas CLI...'
-          curl -sSf https://atlasgo.sh | sh -s -- -y --community
-          export PATH=$$PATH:/root/.local/bin
-        else
-          echo 'Atlas CLI already installed'
-        fi
-
-        if [ -f '/opencoze_latest_schema.hcl' ]; then
-          echo 'Running Atlas migrations...'
-          ATLAS_URL="mysql://$${MYSQL_USER}:$${MYSQL_PASSWORD}@localhost:3306/$${MYSQL_DATABASE}"
-          atlas schema apply -u "$ATLAS_URL" --to "file:///opencoze_latest_schema.hcl" --exclude "atlas_schema_revisions,table_*" --auto-approve
-          echo 'Atlas migrations completed successfully'
-        else
-          echo 'No migrations found'
-        fi
-        wait $$MYSQL_PID
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
 
     healthcheck:
       test:
@@ -513,7 +469,7 @@ services:
         TMP_ATLAS_URL="${ATLAS_URL}"
         if [ "${MYSQL_HOST}" = "localhost" ] || [ "${MYSQL_HOST}" = "127.0.0.1" ]; then
             echo "MYSQL_HOST is localhost or 127.0.0.1, replacing with docker network address"
-            TMP_ATLAS_URL="mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:${MYSQL_PORT}/${MYSQL_DATABASE}?charset=utf8mb4&parseTime=True"
+            TMP_ATLAS_URL="mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:${MYSQL_PORT}/?charset=utf8mb4&parseTime=True"
         fi
 
         echo "final atlas url: $${TMP_ATLAS_URL}"
@@ -523,13 +479,13 @@ services:
                  --to file:///opencoze_latest_schema.hcl \
                  --exclude "atlas_schema_revisions,table_*" \
                  --auto-approve; then
-                 echo "MySQL setup complete."
+                 echo "MySQL schema setup complete (DDL only)."
                  exit 0
              fi
              echo "atlas schema apply failed, retrying...($$i/60)"
              sleep 1
          done
-         echo "MySQL setup failed after 60 retries."
+         echo "MySQL schema setup failed after 60 retries."
          exit 1
     networks:
       - coze-network
@@ -539,8 +495,8 @@ services:
     profiles: ['middleware', 'mysql-setup', 'run-server', 'volcano-setup']
     env_file: *env_file
     depends_on:
-      mysql:
-        condition: service_healthy
+      mysql-setup-schema:
+        condition: service_completed_successfully
     command:
       - /bin/sh
       - -c
@@ -551,9 +507,8 @@ services:
           if [ "$${MYSQL_HOST}" = "localhost" ] || [ "$${MYSQL_HOST}" = "127.0.0.1" ]; then
             DB_HOST="mysql"
           fi
-          if mysql -h "$${DB_HOST}" -P"$${MYSQL_PORT}" -u"$${MYSQL_USER}" -p"$${MYSQL_PASSWORD}" "$${MYSQL_DATABASE}" < /schema.sql && \
-             mysql -h "$${DB_HOST}" -P"$${MYSQL_PORT}" -u"$${MYSQL_USER}" -p"$${MYSQL_PASSWORD}" "$${MYSQL_DATABASE}" < /sql_init.sql; then
-            echo 'MySQL init success.'
+          if mysql -h "$${DB_HOST}" -P"$${MYSQL_PORT}" -u"$${MYSQL_USER}" -p"$${MYSQL_PASSWORD}" "$${MYSQL_DATABASE}" < /sql_init.sql; then
+            echo 'MySQL init data inserted successfully (DML only).'
             exit 0
           fi
           echo "Retrying to connect to mysql... ($$i/60)"
@@ -563,7 +518,6 @@ services:
         exit 1
     volumes:
       - ./volumes/mysql/sql_init.sql:/sql_init.sql
-      - ./volumes/mysql/schema.sql:/schema.sql
     networks:
       - coze-network
     restart: 'no'

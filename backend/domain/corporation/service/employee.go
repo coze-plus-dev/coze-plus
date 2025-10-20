@@ -26,8 +26,8 @@ import (
 	"github.com/coze-dev/coze-studio/backend/domain/corporation/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/corporation/internal/consts"
 	"github.com/coze-dev/coze-studio/backend/domain/corporation/repository"
-	"github.com/coze-dev/coze-studio/backend/infra/contract/idgen"
-	"github.com/coze-dev/coze-studio/backend/infra/contract/storage"
+	"github.com/coze-dev/coze-studio/backend/infra/idgen"
+	"github.com/coze-dev/coze-studio/backend/infra/storage"
 	"github.com/coze-dev/coze-studio/backend/pkg/errorx"
 	"github.com/coze-dev/coze-studio/backend/types/errno"
 )
@@ -97,7 +97,7 @@ func (s *employeeSVC) CreateEmployee(ctx context.Context, req *CreateEmployeeReq
 	}
 
 	var userID *int64
-	
+
 	// NOTE: User account creation is handled at Application layer within transaction
 	// to ensure transactional consistency. This Domain service only handles employee creation.
 	if req.UserID != nil {

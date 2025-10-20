@@ -26,8 +26,8 @@ import (
 	gormadapter "github.com/casbin/gorm-adapter/v3"
 	"gorm.io/gorm"
 
-	"github.com/coze-dev/coze-studio/backend/infra/contract/cache"
-	"github.com/coze-dev/coze-studio/backend/infra/contract/permission"
+	"github.com/coze-dev/coze-studio/backend/infra/cache"
+	"github.com/coze-dev/coze-studio/backend/infra/permission"
 )
 
 // Casbin dependencies added to go.mod
@@ -35,25 +35,25 @@ import (
 // CasbinChecker implements permission.Checker using Casbin
 type CasbinChecker struct {
 	enforcer *casbin.Enforcer // Casbin enforcer for permission checks
-	db       *gorm.DB // Direct database access for casbin_rule queries
+	db       *gorm.DB         // Direct database access for casbin_rule queries
 }
 
 // CasbinConfig holds configuration options for CasbinChecker
 type CasbinConfig struct {
-	ModelPath  string
-	EnableLog  bool
-	AutoSave   bool
-	AutoBuild  bool
+	ModelPath string
+	EnableLog bool
+	AutoSave  bool
+	AutoBuild bool
 }
 
 // DefaultCasbinConfig returns default configuration for CasbinChecker
 // Reads configuration from environment variables with fallback to defaults
 func DefaultCasbinConfig() *CasbinConfig {
 	config := &CasbinConfig{
-		ModelPath:  "resources/conf/permission/casbin_model.conf",
-		EnableLog:  false,
-		AutoSave:   true,
-		AutoBuild:  true,
+		ModelPath: "resources/conf/permission/casbin_model.conf",
+		EnableLog: false,
+		AutoSave:  true,
+		AutoBuild: true,
 	}
 
 	// Read configuration from environment variables
@@ -208,7 +208,7 @@ func (c *CasbinChecker) checkPermissionLogic(_ context.Context, req *permission.
 	if !allowed {
 		return &permission.CheckResponse{
 			Allowed: false,
-			Reason:  fmt.Sprintf("access denied: user %d lacks %s permission on %s in domain %s",
+			Reason: fmt.Sprintf("access denied: user %d lacks %s permission on %s in domain %s",
 				req.UserID, req.Action, object, req.Domain),
 		}
 	}
@@ -228,4 +228,3 @@ func (c *CasbinChecker) isSuperAdmin(userID int64) bool {
 
 	return hasRole
 }
-

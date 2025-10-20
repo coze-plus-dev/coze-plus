@@ -24,7 +24,7 @@ import (
 	"github.com/coze-dev/coze-studio/backend/domain/permission/entity"
 	dal "github.com/coze-dev/coze-studio/backend/domain/permission/internal/dal/dao"
 	"github.com/coze-dev/coze-studio/backend/domain/permission/internal/dal/query"
-	"github.com/coze-dev/coze-studio/backend/infra/contract/idgen"
+	"github.com/coze-dev/coze-studio/backend/infra/idgen"
 )
 
 // NewRoleRepo creates a new role repository

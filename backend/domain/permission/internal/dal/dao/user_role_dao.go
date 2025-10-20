@@ -26,7 +26,7 @@ import (
 	"github.com/coze-dev/coze-studio/backend/domain/permission/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/permission/internal/dal/model"
 	"github.com/coze-dev/coze-studio/backend/domain/permission/internal/dal/query"
-	"github.com/coze-dev/coze-studio/backend/infra/contract/idgen"
+	"github.com/coze-dev/coze-studio/backend/infra/idgen"
 )
 
 type UserRoleDAO struct {
@@ -149,7 +149,7 @@ func (u *UserRoleDAO) List(ctx context.Context, filter *entity.UserRoleListFilte
 func (u *UserRoleDAO) GetUserRoles(ctx context.Context, userID int64) ([]*entity.UserRole, error) {
 	dbUserRoles, err := u.Query.UserRole.WithContext(ctx).
 		Where(u.Query.UserRole.UserID.Eq(userID)).
-		Where(u.Query.UserRole.DeletedAt.IsNull()).  // Only active assignments
+		Where(u.Query.UserRole.DeletedAt.IsNull()). // Only active assignments
 		Find()
 	if err != nil {
 		return nil, err
@@ -167,7 +167,7 @@ func (u *UserRoleDAO) GetUserRoles(ctx context.Context, userID int64) ([]*entity
 func (u *UserRoleDAO) GetRoleUsers(ctx context.Context, roleID int64) ([]*entity.UserRole, error) {
 	dbUserRoles, err := u.Query.UserRole.WithContext(ctx).
 		Where(u.Query.UserRole.RoleID.Eq(roleID)).
-		Where(u.Query.UserRole.DeletedAt.IsNull()).  // Only active assignments
+		Where(u.Query.UserRole.DeletedAt.IsNull()). // Only active assignments
 		Find()
 	if err != nil {
 		return nil, err
@@ -186,7 +186,7 @@ func (u *UserRoleDAO) CheckUserHasRole(ctx context.Context, userID, roleID int64
 	count, err := u.Query.UserRole.WithContext(ctx).
 		Where(u.Query.UserRole.UserID.Eq(userID)).
 		Where(u.Query.UserRole.RoleID.Eq(roleID)).
-		Where(u.Query.UserRole.DeletedAt.IsNull()).  // Only active (not soft deleted) assignments
+		Where(u.Query.UserRole.DeletedAt.IsNull()). // Only active (not soft deleted) assignments
 		Count()
 	if err != nil {
 		return false, err
@@ -281,7 +281,7 @@ func (u *UserRoleDAO) BatchRemoveUsersFromRole(ctx context.Context, userIDs []in
 func (u *UserRoleDAO) CountRoleUsers(ctx context.Context, roleID int64) (int64, error) {
 	return u.Query.UserRole.WithContext(ctx).
 		Where(u.Query.UserRole.RoleID.Eq(roleID)).
-		Where(u.Query.UserRole.DeletedAt.IsNull()).  // Only count active assignments
+		Where(u.Query.UserRole.DeletedAt.IsNull()). // Only count active assignments
 		Count()
 }
 
@@ -305,7 +305,7 @@ func (u *UserRoleDAO) GetUsersByRoleCode(ctx context.Context, roleCode string) (
 	// Get active user roles
 	dbUserRoles, err := u.Query.UserRole.WithContext(ctx).
 		Where(u.Query.UserRole.RoleID.In(roleIDs...)).
-		Where(u.Query.UserRole.DeletedAt.IsNull()).  // Only active assignments
+		Where(u.Query.UserRole.DeletedAt.IsNull()). // Only active assignments
 		Find()
 	if err != nil {
 		return nil, err

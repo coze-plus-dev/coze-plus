@@ -25,7 +25,7 @@ import (
 	"github.com/coze-dev/coze-studio/backend/domain/corporation/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/corporation/internal/consts"
 	"github.com/coze-dev/coze-studio/backend/domain/corporation/repository"
-	"github.com/coze-dev/coze-studio/backend/infra/contract/idgen"
+	"github.com/coze-dev/coze-studio/backend/infra/idgen"
 	"github.com/coze-dev/coze-studio/backend/pkg/errorx"
 	"github.com/coze-dev/coze-studio/backend/types/errno"
 )

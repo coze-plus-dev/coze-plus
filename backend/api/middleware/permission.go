@@ -25,7 +25,7 @@ import (
 
 	"github.com/coze-dev/coze-studio/backend/api/internal/httputil"
 	"github.com/coze-dev/coze-studio/backend/application/base/ctxutil"
-	"github.com/coze-dev/coze-studio/backend/infra/contract/permission"
+	"github.com/coze-dev/coze-studio/backend/infra/permission"
 	"github.com/coze-dev/coze-studio/backend/pkg/errorx"
 	"github.com/coze-dev/coze-studio/backend/pkg/logs"
 	"github.com/coze-dev/coze-studio/backend/types/errno"

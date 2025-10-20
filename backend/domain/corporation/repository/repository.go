@@ -24,7 +24,7 @@ import (
 	"github.com/coze-dev/coze-studio/backend/domain/corporation/entity"
 	dal "github.com/coze-dev/coze-studio/backend/domain/corporation/internal/dal/dao"
 	"github.com/coze-dev/coze-studio/backend/domain/corporation/internal/dal/query"
-	"github.com/coze-dev/coze-studio/backend/infra/contract/idgen"
+	"github.com/coze-dev/coze-studio/backend/infra/idgen"
 )
 
 // NewCorporationRepo creates a new corporation repository

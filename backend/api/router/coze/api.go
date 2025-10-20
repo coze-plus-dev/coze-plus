@@ -490,8 +490,6 @@ func Register(r *server.Hertz) {
 			_apps := _v10.Group("/apps", _appsMw()...)
 			_apps.GET("/:app_id", append(_getonlineappdataMw(), coze.GetOnlineAppData)...)
 		}
-		_v10 := root.Group("/v1", _v10Mw()...)
-		_v10.GET("/conversations", append(_listconversationsapiMw(), coze.ListConversationsApi)...)
 		{
 			_bot0 := _v10.Group("/bot", _bot0Mw()...)
 			_bot0.GET("/get_online_info", append(_getbotonlineinfoMw(), coze.GetBotOnlineInfo)...)
@@ -512,10 +510,6 @@ func Register(r *server.Hertz) {
 			_conversations0 := _v10.Group("/conversations", _conversations0Mw()...)
 			{
 				_conversation_id := _conversations0.Group("/:conversation_id", _conversation_idMw()...)
-			_conversations := _v1.Group("/conversations", _conversationsMw()...)
-			_conversations := _v10.Group("/conversations", _conversationsMw()...)
-			{
-				_conversation_id := _conversations.Group("/:conversation_id", _conversation_idMw()...)
 				_conversation_id.POST("/clear", append(_clearconversationapiMw(), coze.ClearConversationApi)...)
 			}
 		}

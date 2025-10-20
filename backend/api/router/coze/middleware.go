@@ -22,7 +22,7 @@ import (
 	"github.com/cloudwego/hertz/pkg/app"
 
 	"github.com/coze-dev/coze-studio/backend/api/middleware"
-	"github.com/coze-dev/coze-studio/backend/infra/contract/permission"
+	"github.com/coze-dev/coze-studio/backend/infra/permission"
 )
 
 func rootMw() []app.HandlerFunc {
@@ -1615,17 +1615,12 @@ func _chatMw() []app.HandlerFunc {
 }
 
 func _updatedepartmentMw() []app.HandlerFunc {
-		return []app.HandlerFunc{
+	return []app.HandlerFunc{
 		middleware.NewRoutePermissionMW(permission.ResourceDepartment, permission.ActionEdit, false),
 	}
 }
 
 func _cancelchatapiMw() []app.HandlerFunc {
-	// your code...
-	return nil
-}
-
-func _listdepartmentsMw() []app.HandlerFunc {
 	// your code...
 	return nil
 }
@@ -1636,11 +1631,6 @@ func _appsMw() []app.HandlerFunc {
 }
 
 func _listdepartmentsMw() []app.HandlerFunc {
-	// your code...
-	return nil
-}
-
-func _getonlineappdataMw() []app.HandlerFunc {
 	// your code...
 	return nil
 }
@@ -1673,13 +1663,13 @@ func _deleteemployeeMw() []app.HandlerFunc {
 }
 
 func _getemployeeMw() []app.HandlerFunc {
-	 return []app.HandlerFunc{
+	return []app.HandlerFunc{
 		middleware.NewRoutePermissionMW(permission.ResourceEmployee, permission.ActionView, false),
 	}
 }
 
 func _updateemployeeMw() []app.HandlerFunc {
-   return []app.HandlerFunc{
+	return []app.HandlerFunc{
 		middleware.NewRoutePermissionMW(permission.ResourceEmployee, permission.ActionEdit, false),
 	}
 }
@@ -1747,13 +1737,13 @@ func _changeemployeedepartmentMw() []app.HandlerFunc {
 }
 
 func _resignemployeeMw() []app.HandlerFunc {
-  return []app.HandlerFunc{
+	return []app.HandlerFunc{
 		middleware.NewRoutePermissionMW(permission.ResourceEmployee, permission.ActionManageQuit, false),
 	}
 }
 
 func _restoreemployeeMw() []app.HandlerFunc {
-	 return []app.HandlerFunc{
+	return []app.HandlerFunc{
 		middleware.NewRoutePermissionMW(permission.ResourceEmployee, permission.ActionManageQuit, false),
 	}
 }
@@ -1823,7 +1813,7 @@ func _statusMw() []app.HandlerFunc {
 }
 
 func _updateuserstatusMw() []app.HandlerFunc {
-		return []app.HandlerFunc{
+	return []app.HandlerFunc{
 		middleware.NewRoutePermissionMW(permission.ResourceUser, permission.ActionUpdateUserStutus, false),
 	}
 }
