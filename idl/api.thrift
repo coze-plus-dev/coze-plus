@@ -19,6 +19,8 @@ include "./corporation/corporation_service.thrift"
 include "./corporation/department_service.thrift"
 include "./corporation/employee_service.thrift"
 include "./permission/permission_service.thrift"
+include "./admin/config.thrift"
+
 
 
 namespace go coze
@@ -44,3 +46,4 @@ service CorporationService extends corporation_service.CorporationService {}
 service DepartmentService extends department_service.DepartmentService {}
 service EmployeeService extends employee_service.EmployeeService {}
 service PermissionService extends permission_service.PermissionService {}
+service ConfigService extends config.ConfigService {}

@@ -83,6 +83,7 @@ type UpdateUserStatusRequest struct {
 }
 
 type User interface {
+	SaasUserProvider
 	// Create creates or registers a new user.
 	Create(ctx context.Context, req *CreateUserRequest) (user *entity.User, err error)
 	Login(ctx context.Context, email, password string) (user *entity.User, err error)
@@ -98,4 +99,9 @@ type User interface {
 	GetUserSpaceList(ctx context.Context, userID int64) (spaces []*entity.Space, err error)
 	ListUsers(ctx context.Context, req *ListUsersRequest) (*ListUsersResponse, error)
 	UpdateUserStatus(ctx context.Context, req *UpdateUserStatusRequest) (err error)
+}
+
+type SaasUserProvider interface {
+	GetSaasUserInfo(ctx context.Context) (user *entity.SaasUserData, err error)
+	GetUserBenefit(ctx context.Context) (benefit *entity.UserBenefit, err error)
 }

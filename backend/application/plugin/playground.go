@@ -19,8 +19,11 @@ package plugin
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strconv"
 
+	"github.com/coze-dev/coze-studio/backend/api/model/app/bot_common"
+	"github.com/coze-dev/coze-studio/backend/api/model/marketplace/product_common"
 	pluginAPI "github.com/coze-dev/coze-studio/backend/api/model/plugin_develop"
 	common "github.com/coze-dev/coze-studio/backend/api/model/plugin_develop/common"
 	"github.com/coze-dev/coze-studio/backend/crossdomain/contract/plugin/convert"
@@ -36,8 +39,17 @@ func (p *PluginApplicationService) GetPlaygroundPluginList(ctx context.Context, 
 		plugins []*entity.PluginInfo
 		total   int64
 	)
+
+	var isSaasPlugin bool
+	if slices.Contains(req.PluginTypes, int32(product_common.ProductEntityType_SaasPlugin)) {
+		isSaasPlugin = true
+	}
 	if len(req.PluginIds) > 0 {
-		plugins, total, err = p.getPlaygroundPluginListByIDs(ctx, req.PluginIds)
+		if isSaasPlugin {
+			plugins, total, err = p.getSaasPluginListByIDs(ctx, req.PluginIds)
+		} else {
+			plugins, total, err = p.getPlaygroundPluginListByIDs(ctx, req.PluginIds)
+		}
 	} else {
 		plugins, total, err = p.getPlaygroundPluginList(ctx, req)
 	}
@@ -47,18 +59,37 @@ func (p *PluginApplicationService) GetPlaygroundPluginList(ctx context.Context, 
 	}
 
 	pluginList := make([]*common.PluginInfoForPlayground, 0, len(plugins))
-	for _, pl := range plugins {
-		tools, err := p.toolRepo.GetPluginAllOnlineTools(ctx, pl.ID)
-		if err != nil {
-			return nil, errorx.Wrapf(err, "GetPluginAllOnlineTools failed, pluginID=%d", pl.ID)
+
+	if isSaasPlugin {
+		pluginIDs := make([]int64, 0, len(plugins))
+		for _, product := range plugins {
+			pluginIDs = append(pluginIDs, product.ID)
 		}
 
-		pluginInfo, err := p.toPluginInfoForPlayground(ctx, pl, tools)
+		tools, err := p.getSaasPluginToolsList(ctx, pluginIDs)
+		if err != nil {
+			logs.CtxErrorf(ctx, "BatchGetSaasPluginToolsInfo failed: %v", err)
+			return nil, err
+		}
+		pluginList, err = p.convertSaasPluginListToPlayground(ctx, plugins, tools)
 		if err != nil {
 			return nil, err
 		}
 
-		pluginList = append(pluginList, pluginInfo)
+	} else {
+		for _, pl := range plugins {
+			tools, err := p.toolRepo.GetPluginAllOnlineTools(ctx, pl.ID)
+			if err != nil {
+				return nil, errorx.Wrapf(err, "GetPluginAllOnlineTools failed, pluginID=%d", pl.ID)
+			}
+
+			pluginInfo, err := p.toPluginInfoForPlayground(ctx, pl, tools)
+			if err != nil {
+				return nil, err
+			}
+
+			pluginList = append(pluginList, pluginInfo)
+		}
 	}
 
 	resp = &pluginAPI.GetPlaygroundPluginListResponse{
@@ -69,6 +100,38 @@ func (p *PluginApplicationService) GetPlaygroundPluginList(ctx context.Context, 
 	}
 
 	return resp, nil
+}
+
+func (p *PluginApplicationService) convertSaasPluginListToPlayground(ctx context.Context, plugins []*entity.PluginInfo, tools map[int64][]*entity.ToolInfo) ([]*common.PluginInfoForPlayground, error) {
+	products := make([]*common.PluginInfoForPlayground, 0, len(plugins))
+	for _, pl := range plugins {
+		tools := tools[pl.ID]
+		pluginInfo, err := p.toPluginInfoForPlayground(ctx, pl, tools)
+		if err != nil {
+			return nil, err
+		}
+		products = append(products, pluginInfo)
+	}
+	return products, nil
+}
+
+func (p *PluginApplicationService) getSaasPluginListByIDs(ctx context.Context, pluginIDs []string) ([]*entity.PluginInfo, int64, error) {
+	ids := make([]int64, 0, len(pluginIDs))
+
+	for _, pluginIDStr := range pluginIDs {
+		pluginID, err := strconv.ParseInt(pluginIDStr, 10, 64)
+		if err != nil {
+			return nil, 0, fmt.Errorf("invalid pluginID '%s': %w", pluginIDStr, err)
+		}
+		ids = append(ids, pluginID)
+	}
+
+	plugins, err := p.DomainSVC.GetSaasPluginInfo(ctx, ids)
+	if err != nil {
+		return nil, 0, errorx.Wrapf(err, "GetSaasPluginInfo failed, pluginIDs=%v", pluginIDs)
+	}
+
+	return plugins, int64(len(plugins)), nil
 }
 
 func (p *PluginApplicationService) getPlaygroundPluginListByIDs(ctx context.Context, pluginIDs []string) (plugins []*entity.PluginInfo, total int64, err error) {
@@ -132,16 +195,18 @@ func (p *PluginApplicationService) toPluginInfoForPlayground(ctx context.Context
 	}
 
 	var creator *common.Creator
-	userInfo, err := p.userSVC.GetUserInfo(ctx, pl.DeveloperID)
-	if err != nil {
-		logs.CtxErrorf(ctx, "get user info failed, err=%v", err)
-		creator = common.NewCreator()
-	} else {
-		creator = &common.Creator{
-			ID:             strconv.FormatInt(pl.DeveloperID, 10),
-			Name:           userInfo.Name,
-			AvatarURL:      userInfo.IconURL,
-			UserUniqueName: userInfo.UniqueName,
+	if pl.Source != ptr.Of(bot_common.PluginFrom_FromSaas) {
+		userInfo, err := p.userSVC.GetUserInfo(ctx, pl.DeveloperID)
+		if err != nil {
+			logs.CtxErrorf(ctx, "get user info failed, err=%v", err)
+			creator = common.NewCreator()
+		} else {
+			creator = &common.Creator{
+				ID:             strconv.FormatInt(pl.DeveloperID, 10),
+				Name:           userInfo.Name,
+				AvatarURL:      userInfo.IconURL,
+				UserUniqueName: userInfo.UniqueName,
+			}
 		}
 	}
 

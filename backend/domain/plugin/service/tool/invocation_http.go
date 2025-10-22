@@ -38,6 +38,7 @@ import (
 	"github.com/coze-dev/coze-studio/backend/pkg/i18n"
 	"github.com/coze-dev/coze-studio/backend/pkg/lang/conv"
 	"github.com/coze-dev/coze-studio/backend/pkg/logs"
+	"github.com/coze-dev/coze-studio/backend/pkg/saasapi"
 	"github.com/coze-dev/coze-studio/backend/types/consts"
 
 	"github.com/coze-dev/coze-studio/backend/types/errno"
@@ -277,6 +278,16 @@ func (h *httpCallImpl) buildRequestBody(ctx context.Context, op *model.Openapi3O
 	}
 
 	return body, contentType, nil
+}
+
+func (h *httpCallImpl) injectCozeSaasAPIToken(ctx context.Context, httpReq *http.Request) (errMsg string, err error) {
+
+	saasapiClient := saasapi.NewCozeAPIClient()
+	if saasapiClient.APIKey == "" {
+		return "", fmt.Errorf("coze saas api token is empty")
+	}
+	httpReq.Header.Set("Authorization", "Bearer "+saasapiClient.APIKey)
+	return "", nil
 }
 
 func (h *httpCallImpl) injectServiceAPIToken(ctx context.Context, httpReq *http.Request, authInfo *model.AuthV2) (errMsg string, err error) {
