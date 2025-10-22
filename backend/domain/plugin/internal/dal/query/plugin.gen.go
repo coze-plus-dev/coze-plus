@@ -1,4 +1,20 @@
 /*
+ * Copyright 2025 coze-plus Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * Copyright 2025 coze-dev Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -56,8 +72,6 @@ func newPlugin(db *gorm.DB, opts ...gen.DOOption) plugin {
 	_plugin.VersionDesc = field.NewString(tableName, "version_desc")
 	_plugin.Manifest = field.NewField(tableName, "manifest")
 	_plugin.OpenapiDoc = field.NewField(tableName, "openapi_doc")
-	_plugin.Source = field.NewInt32(tableName, "source")
-	_plugin.Ext = field.NewField(tableName, "ext")
 
 	_plugin.fillFieldMap()
 
@@ -82,8 +96,6 @@ type plugin struct {
 	VersionDesc field.String // Plugin Version Description
 	Manifest    field.Field  // Plugin Manifest
 	OpenapiDoc  field.Field  // OpenAPI Document, only stores the root
-	Source      field.Int32  // plugin source 1 from saas 0 default
-	Ext         field.Field  // extra
 
 	fieldMap map[string]field.Expr
 }
@@ -113,8 +125,6 @@ func (p *plugin) updateTableName(table string) *plugin {
 	p.VersionDesc = field.NewString(table, "version_desc")
 	p.Manifest = field.NewField(table, "manifest")
 	p.OpenapiDoc = field.NewField(table, "openapi_doc")
-	p.Source = field.NewInt32(table, "source")
-	p.Ext = field.NewField(table, "ext")
 
 	p.fillFieldMap()
 
@@ -131,7 +141,7 @@ func (p *plugin) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (p *plugin) fillFieldMap() {
-	p.fieldMap = make(map[string]field.Expr, 15)
+	p.fieldMap = make(map[string]field.Expr, 13)
 	p.fieldMap["id"] = p.ID
 	p.fieldMap["space_id"] = p.SpaceID
 	p.fieldMap["developer_id"] = p.DeveloperID
@@ -145,8 +155,6 @@ func (p *plugin) fillFieldMap() {
 	p.fieldMap["version_desc"] = p.VersionDesc
 	p.fieldMap["manifest"] = p.Manifest
 	p.fieldMap["openapi_doc"] = p.OpenapiDoc
-	p.fieldMap["source"] = p.Source
-	p.fieldMap["ext"] = p.Ext
 }
 
 func (p plugin) clone(db *gorm.DB) plugin {

@@ -1,4 +1,20 @@
 /*
+ * Copyright 2025 coze-plus Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * Copyright 2025 coze-dev Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -38,8 +54,6 @@ type ToolVersion struct {
 	Operation *model.Openapi3Operation `gorm:"column:operation;comment:Tool Openapi Operation Schema;serializer:json" json:"operation"`               // Tool Openapi Operation Schema
 	CreatedAt int64                    `gorm:"column:created_at;not null;autoCreateTime:milli;comment:Create Time in Milliseconds" json:"created_at"` // Create Time in Milliseconds
 	DeletedAt gorm.DeletedAt           `gorm:"column:deleted_at;comment:Delete Time" json:"deleted_at"`                                               // Delete Time
-	Source    int32                    `gorm:"column:source;not null;comment:tool source 1 coze saas 0 default" json:"source"`                        // tool source 1 coze saas 0 default
-	Ext       map[string]interface{}   `gorm:"column:ext;comment:extra;serializer:json" json:"ext"`                                                   // extra
 }
 
 // TableName ToolVersion's table name

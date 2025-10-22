@@ -1,4 +1,20 @@
 /*
+ * Copyright 2025 coze-plus Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * Copyright 2025 coze-dev Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -52,8 +68,6 @@ func newTool(db *gorm.DB, opts ...gen.DOOption) tool {
 	_tool.Method = field.NewString(tableName, "method")
 	_tool.Operation = field.NewField(tableName, "operation")
 	_tool.ActivatedStatus = field.NewInt32(tableName, "activated_status")
-	_tool.Source = field.NewInt32(tableName, "source")
-	_tool.Ext = field.NewField(tableName, "ext")
 
 	_tool.fillFieldMap()
 
@@ -74,8 +88,6 @@ type tool struct {
 	Method          field.String // HTTP Request Method
 	Operation       field.Field  // Tool Openapi Operation Schema
 	ActivatedStatus field.Int32  // 0:activated; 1:deactivated
-	Source          field.Int32  // tool source 1 coze saas 0 default
-	Ext             field.Field  // extra
 
 	fieldMap map[string]field.Expr
 }
@@ -101,8 +113,6 @@ func (t *tool) updateTableName(table string) *tool {
 	t.Method = field.NewString(table, "method")
 	t.Operation = field.NewField(table, "operation")
 	t.ActivatedStatus = field.NewInt32(table, "activated_status")
-	t.Source = field.NewInt32(table, "source")
-	t.Ext = field.NewField(table, "ext")
 
 	t.fillFieldMap()
 
@@ -119,7 +129,7 @@ func (t *tool) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (t *tool) fillFieldMap() {
-	t.fieldMap = make(map[string]field.Expr, 11)
+	t.fieldMap = make(map[string]field.Expr, 9)
 	t.fieldMap["id"] = t.ID
 	t.fieldMap["plugin_id"] = t.PluginID
 	t.fieldMap["created_at"] = t.CreatedAt
@@ -129,8 +139,6 @@ func (t *tool) fillFieldMap() {
 	t.fieldMap["method"] = t.Method
 	t.fieldMap["operation"] = t.Operation
 	t.fieldMap["activated_status"] = t.ActivatedStatus
-	t.fieldMap["source"] = t.Source
-	t.fieldMap["ext"] = t.Ext
 }
 
 func (t tool) clone(db *gorm.DB) tool {
