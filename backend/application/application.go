@@ -14,38 +14,22 @@
  * limitations under the License.
  */
 
-/*
- * Copyright 2025 coze-dev Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package application
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/coze-dev/coze-studio/backend/application/corporation"
-	"github.com/coze-dev/coze-studio/backend/application/permission"
 	"github.com/coze-dev/coze-studio/backend/application/app"
 	"github.com/coze-dev/coze-studio/backend/application/base/appinfra"
 	"github.com/coze-dev/coze-studio/backend/application/connector"
 	"github.com/coze-dev/coze-studio/backend/application/conversation"
+	"github.com/coze-dev/coze-studio/backend/application/corporation"
 	"github.com/coze-dev/coze-studio/backend/application/knowledge"
 	"github.com/coze-dev/coze-studio/backend/application/memory"
 	"github.com/coze-dev/coze-studio/backend/application/modelmgr"
 	"github.com/coze-dev/coze-studio/backend/application/openauth"
+	"github.com/coze-dev/coze-studio/backend/application/permission"
 	"github.com/coze-dev/coze-studio/backend/application/plugin"
 	"github.com/coze-dev/coze-studio/backend/application/prompt"
 	"github.com/coze-dev/coze-studio/backend/application/search"
@@ -201,7 +185,7 @@ func initBasicServices(ctx context.Context, infra *appinfra.AppDependencies, e *
 	corporationSVC, err := corporation.InitService(&corporation.ServiceComponents{
 		DB:      infra.DB,
 		IDGen:   infra.IDGenSVC,
-		Storage: infra.TOSClient,
+		Storage: infra.OSS,
 	})
 	if err != nil {
 		return nil, err
