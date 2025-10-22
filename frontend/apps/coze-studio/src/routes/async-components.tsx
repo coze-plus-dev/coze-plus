@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 coze-dev Authors
+ * Copyright 2025 coze-plus Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -148,5 +148,12 @@ export const ExploreTemplatePage = lazy(() =>
 export const ExplorePluginPage = lazy(() =>
   import('@coze-community/explore').then(exps => ({
     default: exps.PluginPage,
+  })),
+);
+
+// Enterprise Module Components
+export const EnterpriseLayout = lazy(() =>
+  import('@coze-community/enterprise').then(exps => ({
+    default: exps.EnterpriseSubMenu,
   })),
 );

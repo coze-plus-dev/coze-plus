@@ -1,4 +1,20 @@
 /*
+ * Copyright 2025 coze-plus Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * Copyright 2025 coze-dev Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,6 +50,7 @@ import (
 	"github.com/coze-dev/coze-studio/backend/api/middleware"
 	"github.com/coze-dev/coze-studio/backend/api/router"
 	"github.com/coze-dev/coze-studio/backend/application"
+	"github.com/coze-dev/coze-studio/backend/application/permission"
 	"github.com/coze-dev/coze-studio/backend/pkg/lang/conv"
 	"github.com/coze-dev/coze-studio/backend/pkg/lang/ternary"
 	"github.com/coze-dev/coze-studio/backend/pkg/logs"
@@ -98,6 +115,15 @@ func startHttpServer() {
 	s.Use(middleware.AccessLogMW())
 	s.Use(middleware.OpenapiAuthMW())
 	s.Use(middleware.SessionAuthMW())
+
+	// Add global permission middleware after authentication
+	if permissionMW, err := permission.GetGlobalPermissionMiddleware(context.Background()); err == nil {
+		s.Use(permissionMW.GlobalPermissionMW())
+		logs.Infof("Global permission middleware enabled")
+	} else {
+		logs.Warnf("Failed to create permission middleware: %v", err)
+	}
+
 	s.Use(middleware.I18nMW()) // must after SessionAuthMW
 
 	router.GeneratedRegister(s)

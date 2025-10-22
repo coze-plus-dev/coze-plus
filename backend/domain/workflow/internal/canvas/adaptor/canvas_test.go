@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 coze-dev Authors
+ * Copyright 2025 coze-plus Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,8 @@ import (
 	"time"
 
 	"github.com/coze-dev/coze-studio/backend/bizpkg/llm/modelbuilder"
+	"github.com/coze-dev/coze-studio/backend/domain/workflow/config"
+
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/config"
 
 	"github.com/bytedance/mockey"

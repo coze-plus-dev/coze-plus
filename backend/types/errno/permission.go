@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 coze-dev Authors
+ * Copyright 2025 coze-plus Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,12 +21,54 @@ import "github.com/coze-dev/coze-studio/backend/pkg/errorx/code"
 // Permission: 108 000 000 ~ 108 999 999
 const (
 	ErrPermissionInvalidParamCode = 108000000
+	ErrPermissionRoleCodeExistsCode = 108000001
+	ErrPermissionRoleNotFoundCode = 108000002
+	ErrPermissionRoleBuiltinCode = 108000003
+	ErrPermissionRoleInUseCode = 108000004
+	ErrPermissionInvalidJSONCode = 108000005
+	ErrPermissionDeniedCode = 108000006
+	ErrPermissionCheckFailedCode = 108000007
 )
 
 func init() {
 	code.Register(
 		ErrPermissionInvalidParamCode,
 		"invalid parameter : {msg}",
+		code.WithAffectStability(false),
+	)
+	code.Register(
+		ErrPermissionRoleCodeExistsCode,
+		"role code '{role_code}' already exists",
+		code.WithAffectStability(false),
+	)
+	code.Register(
+		ErrPermissionRoleNotFoundCode,
+		"role with ID {role_id} not found",
+		code.WithAffectStability(false),
+	)
+	code.Register(
+		ErrPermissionRoleBuiltinCode,
+		"builtin roles cannot be modified or deleted",
+		code.WithAffectStability(false),
+	)
+	code.Register(
+		ErrPermissionRoleInUseCode,
+		"role is assigned to {user_count} users and cannot be deleted",
+		code.WithAffectStability(false),
+	)
+	code.Register(
+		ErrPermissionInvalidJSONCode,
+		"invalid permissions JSON format: {msg}",
+		code.WithAffectStability(false),
+	)
+	code.Register(
+		ErrPermissionDeniedCode,
+		"permission denied: {reason}",
+		code.WithAffectStability(false),
+	)
+	code.Register(
+		ErrPermissionCheckFailedCode,
+		"permission check failed: {reason}",
 		code.WithAffectStability(false),
 	)
 }

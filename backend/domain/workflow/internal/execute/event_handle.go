@@ -768,6 +768,7 @@ func HandleExecuteEvent(ctx context.Context,
 			logs.CtxInfof(ctx, "[handleExecuteEvent] cancellable wait until tool finished done, workflow id: %d",
 				event.Context.RootWorkflowBasic.ID)
 			cancelTicker.Stop() // Clean up timer
+			waitUntilToolFinish(ctx)
 			if timeoutFn != nil {
 				timeoutFn()
 			}

@@ -1,0 +1,184 @@
+.panel {
+  position: fixed;
+  top: 0;
+  right: -480px;
+  width: 480px;
+  height: 100vh;
+  background: var(--semi-color-bg-0);
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  transition: right 0.3s ease-in-out;
+  display: flex;
+  flex-direction: column;
+
+  &.visible {
+    right: 0;
+  }
+
+  .loadingContainer {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+  }
+
+  .header {
+    padding: 24px;
+    border-bottom: 1px solid var(--semi-color-border);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-shrink: 0;
+
+    .headerLeft {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      flex: 1;
+
+      .avatar {
+        background: var(--semi-color-primary-light-default);
+        color: var(--semi-color-primary);
+        font-weight: 500;
+        font-size: 20px;
+        flex-shrink: 0;
+      }
+
+      .basicInfo {
+        flex: 1;
+        min-width: 0;
+
+        .employeeName {
+          font-size: 18px;
+          font-weight: 500;
+          color: var(--semi-color-text-0);
+          margin-bottom: 8px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+
+        .userId {
+          font-size: 14px;
+          color: var(--semi-color-text-1);
+        }
+      }
+    }
+
+    .headerActions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+
+      .editButton, .closeButton {
+        padding: 8px;
+        background: transparent !important;
+        border: none !important;
+        color: var(--semi-color-text-2);
+
+        &:hover {
+          background-color: var(--semi-color-fill-0) !important;
+          color: var(--semi-color-text-0);
+        }
+        
+        &:active, &:focus {
+          background: transparent !important;
+          box-shadow: none !important;
+        }
+      }
+    }
+  }
+
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+
+    .section {
+      margin-bottom: 32px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      .sectionTitle {
+        font-size: 16px;
+        font-weight: 500;
+        color: var(--semi-color-text-0);
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--semi-color-border);
+      }
+
+      .infoGrid {
+        display: grid;
+        gap: 16px;
+
+        .infoItem {
+          .label {
+            font-size: 14px;
+            color: var(--semi-color-text-1);
+            margin-bottom: 4px;
+          }
+
+          .value {
+            font-size: 14px;
+            color: var(--semi-color-text-0);
+            word-break: break-all;
+          }
+        }
+      }
+
+      .departmentSection {
+        .emptyValue {
+          color: var(--semi-color-text-2);
+          font-style: italic;
+        }
+
+        .departmentList {
+          .departmentItem {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            padding: 8px 12px;
+            background: var(--semi-color-fill-0);
+            border-radius: 6px;
+
+            &:last-child {
+              margin-bottom: 0;
+            }
+
+            .departmentPath {
+              color: var(--semi-color-text-2);
+              font-size: 12px;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .footer {
+    padding: 24px;
+    border-top: 1px solid var(--semi-color-border);
+    flex-shrink: 0;
+  }
+}
+
+// 当面板显示时，为body添加遮罩
+body.member-detail-panel-open {
+  &::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 999;
+  }
+}

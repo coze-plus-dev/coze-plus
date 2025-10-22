@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 coze-dev Authors
+ * Copyright 2025 coze-plus Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -92,20 +92,11 @@ export interface UserUpdateProfileResponse {
   code: number,
   msg: string,
 }
-/** Email password registration */
-export const PassportWebEmailRegisterV2Post = /*#__PURE__*/createAPI<PassportWebEmailRegisterV2PostRequest, PassportWebEmailRegisterV2PostResponse>({
-  "url": "/api/passport/web/email/register/v2/",
-  "method": "POST",
-  "name": "PassportWebEmailRegisterV2Post",
-  "reqType": "PassportWebEmailRegisterV2PostRequest",
-  "reqMapping": {
-    "body": ["password", "email"]
-  },
-  "resType": "PassportWebEmailRegisterV2PostResponse",
-  "schemaRoot": "api://schemas/idl_passport_passport",
-  "service": "passport"
-});
-/** log out */
+/**
+ * Email password registration
+ * PassportWebEmailRegisterV2PostResponse PassportWebEmailRegisterV2Post(1: PassportWebEmailRegisterV2PostRequest req) (api.post="/api/passport/web/email/register/v2/")
+ * log out
+*/
 export const PassportWebLogoutGet = /*#__PURE__*/createAPI<PassportWebLogoutGetRequest, PassportWebLogoutGetResponse>({
   "url": "/api/passport/web/logout/",
   "method": "GET",

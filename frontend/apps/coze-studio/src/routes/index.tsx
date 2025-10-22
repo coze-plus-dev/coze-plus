@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 coze-dev Authors
+ * Copyright 2025 coze-plus Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 
 import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { lazy } from 'react';
 
 import { SpaceSubModuleEnum } from '@coze-foundation/space-ui-adapter';
 import { GlobalError } from '@coze-foundation/layout';
@@ -45,6 +46,7 @@ import {
   DatabaseDetail,
   ExplorePluginPage,
   ExploreTemplatePage,
+  EnterpriseLayout,
 } from './async-components';
 
 export const router: ReturnType<typeof createBrowserRouter> =
@@ -288,6 +290,57 @@ export const router: ReturnType<typeof createBrowserRouter> =
               element: <ExploreTemplatePage />,
               loader: () => ({
                 type: 'template',
+              }),
+            },
+          ],
+        },
+
+        // enterprise management
+        {
+          path: 'enterprise',
+          Component: null,
+          loader: () => ({
+            hasSider: true,
+            requireAuth: true,
+            subMenu: EnterpriseLayout,
+            menuKey: 'enterprise',
+          }),
+          children: [
+            {
+              index: true,
+              element: <Navigate to="contact" replace />,
+            },
+            {
+              path: 'contact',
+              Component: lazy(() =>
+                import('@coze-community/enterprise').then(exps => ({
+                  default: exps.ContactPage,
+                })),
+              ),
+              loader: () => ({
+                subMenuKey: 'contact',
+              }),
+            },
+            {
+              path: 'role',
+              Component: lazy(() =>
+                import('@coze-community/enterprise').then(exps => ({
+                  default: exps.RolePage,
+                })),
+              ),
+              loader: () => ({
+                subMenuKey: 'role',
+              }),
+            },
+            {
+              path: 'account',
+              Component: lazy(() =>
+                import('@coze-community/enterprise').then(exps => ({
+                  default: exps.AccountPage,
+                })),
+              ),
+              loader: () => ({
+                subMenuKey: 'account',
               }),
             },
           ],

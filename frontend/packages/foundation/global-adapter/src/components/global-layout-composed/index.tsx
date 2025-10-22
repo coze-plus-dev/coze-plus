@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 coze-dev Authors
+ * Copyright 2025 coze-plus Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import { GlobalLayout } from '@coze-foundation/layout';
 import { useCreateBotAction } from '@coze-foundation/global';
 import { RequireAuthContainer } from '@coze-foundation/account-ui-adapter';
 import { I18n } from '@coze-arch/i18n';
-import { useRouteConfig } from '@coze-arch/bot-hooks';
 import {
   IconCozPlusCircle,
   IconCozWorkspace,
@@ -29,10 +28,12 @@ import {
   IconCozCompass,
   IconCozCompassFill,
   IconCozDocument,
+  IconCozUserPermission,
 } from '@coze-arch/coze-design/icons';
+import { useRouteConfig } from '@coze-arch/bot-hooks';
 
-import { AccountDropdown } from '../account-dropdown';
 import { useHasSider } from './hooks/use-has-sider';
+import { AccountDropdown } from '../account-dropdown';
 
 export const GlobalLayoutComposed: FC<PropsWithChildren> = ({ children }) => {
   const config = useRouteConfig();
@@ -73,6 +74,13 @@ export const GlobalLayoutComposed: FC<PropsWithChildren> = ({ children }) => {
             activeIcon: <IconCozCompassFill />,
             path: '/explore',
             dataTestId: 'layout_explore-button',
+          },
+          {
+            title: I18n.t('navigation_organization_management'),
+            icon: <IconCozUserPermission />,
+            activeIcon: <IconCozUserPermission />,
+            path: '/enterprise',
+            dataTestId: 'layout_enterprise-button',
           },
         ]}
         extras={[

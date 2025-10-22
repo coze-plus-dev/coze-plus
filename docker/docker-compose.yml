@@ -383,10 +383,10 @@ services:
       - coze-network
 
   coze-server:
-    # build:
-    #   context: ../
-    #   dockerfile: backend/Dockerfile
-    image: cozedev/coze-studio-server:latest
+    build:
+      context: ../
+      dockerfile: backend/Dockerfile
+    # image: cozedev/coze-studio-server:latest
     restart: always
     container_name: coze-server
     env_file: *env_file
@@ -394,9 +394,9 @@ services:
     #   LISTEN_ADDR: 0.0.0.0:8888
     networks:
       - coze-network
-    # ports:
-    #   - '8888'
-    #   - '8889'
+    ports:
+      - '8888:8888'
+      - '8889:8889'
     volumes:
       - .env:/app/.env
       - ../backend/conf:/app/resources/conf
@@ -415,15 +415,15 @@ services:
     command: ['/app/opencoze']
 
   coze-web:
-    # build:
-    #   context: ..
-    #   dockerfile: frontend/Dockerfile
-    image: cozedev/coze-studio-web:latest
+    build:
+      context: ..
+      dockerfile: frontend/Dockerfile
+    # image: cozedev/coze-studio-web:latest
     container_name: coze-web
     restart: always
     ports:
       - "${WEB_LISTEN_ADDR:-8888}:80"
-      # - "443:443"  # SSL port (uncomment if using SSL)
+      - "443:443"  # SSL port (uncomment if using SSL)
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro  # Main nginx config
       - ./nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf:ro  # Proxy config

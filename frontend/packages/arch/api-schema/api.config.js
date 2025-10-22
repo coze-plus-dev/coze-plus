@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 coze-dev Authors
+ * Copyright 2025 coze-plus Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,12 @@ const config = [
     entries: {
       passport: './idl/passport/passport.thrift', // Entry service name and path
       explore: './idl/marketplace/public_api.thrift',
+      // 企业组织管理模块
+      corporation: './idl/corporation/corporation_service.thrift',
+      department: './idl/corporation/department_service.thrift',
+      employee: './idl/corporation/employee_service.thrift',
+      // 权限管理模块
+      permission: './idl/permission/permission_service.thrift',
     },
     commonCodePath: path.resolve(__dirname, './src/api/config.ts'), // custom profile
     output: './src', // Product location

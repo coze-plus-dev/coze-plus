@@ -83,7 +83,20 @@ CREATE TABLE IF NOT EXISTS `single_agent_version` (`id` bigint unsigned NOT NULL
 -- Create 'space' table
 CREATE TABLE IF NOT EXISTS `space` (`id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Primary Key ID, Space ID', `owner_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Owner ID', `name` varchar(200) NOT NULL DEFAULT '' COMMENT 'Space Name', `description` varchar(2000) NOT NULL DEFAULT '' COMMENT 'Space Description', `icon_uri` varchar(200) NOT NULL DEFAULT '' COMMENT 'Icon URI', `creator_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Creator ID', `created_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Creation Time (Milliseconds)', `updated_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Update Time (Milliseconds)', `deleted_at` bigint unsigned NULL COMMENT 'Deletion Time (Milliseconds)', PRIMARY KEY (`id`), INDEX `idx_creator_id` (`creator_id`), INDEX `idx_owner_id` (`owner_id`)) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Space Table';
 -- Create 'space_user' table
-CREATE TABLE IF NOT EXISTS `space_user` (`id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Primary Key ID, Auto Increment', `space_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Space ID', `user_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'User ID', `role_type` int NOT NULL DEFAULT 3 COMMENT 'Role Type: 1.owner 2.admin 3.member', `created_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Creation Time (Milliseconds)', `updated_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Update Time (Milliseconds)', PRIMARY KEY (`id`), INDEX `idx_user_id` (`user_id`), UNIQUE INDEX `uniq_space_user` (`space_id`, `user_id`)) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Space Member Table';
+CREATE TABLE IF NOT EXISTS `space_user` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Primary Key ID, Auto Increment',
+  `space_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Space ID',
+  `user_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'User ID',
+  `role_type` int NOT NULL DEFAULT 3 COMMENT 'Role Type: 1.owner 2.admin 3.member',
+  `role_id` bigint unsigned NULL COMMENT 'Custom role ID (NULL uses role_type)',
+  `created_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Creation Time (Milliseconds)',
+  `updated_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Update Time (Milliseconds)',
+  `expired_at` bigint unsigned NULL COMMENT 'Permission expiration time (NULL means permanent)',
+  PRIMARY KEY (`id`),
+  INDEX `idx_role_id` (`role_id`),
+  INDEX `idx_user_id` (`user_id`),
+  UNIQUE INDEX `uniq_space_user` (`space_id`, `user_id`)
+) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Space Member Table';
 -- Create 'template' table
 CREATE TABLE IF NOT EXISTS `template` (`id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Primary Key ID', `agent_id` bigint NOT NULL DEFAULT 0 COMMENT 'Agent ID', `workflow_id` bigint NOT NULL DEFAULT 0 COMMENT 'Workflow ID', `space_id` bigint NOT NULL DEFAULT 0 COMMENT 'Space ID', `created_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Create Time in Milliseconds', `heat` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Heat', `product_entity_type` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Product Entity Type', `meta_info` json NULL COMMENT 'Meta Info', `agent_extra` json NULL COMMENT 'Agent Extra Info', `workflow_extra` json NULL COMMENT 'Workflow Extra Info', `project_extra` json NULL COMMENT 'Project Extra Info', PRIMARY KEY (`id`), UNIQUE INDEX `uniq_agent_id` (`agent_id`)) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Template Info Table';
 -- Create 'tool' table
@@ -93,7 +106,47 @@ CREATE TABLE IF NOT EXISTS `tool_draft` (`id` bigint unsigned NOT NULL DEFAULT 0
 -- Create 'tool_version' table
 CREATE TABLE IF NOT EXISTS `tool_version` (`id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Primary Key ID', `tool_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Tool ID', `plugin_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Plugin ID', `version` varchar(255) NOT NULL DEFAULT '' COMMENT 'Tool Version, e.g. v1.0.0', `sub_url` varchar(512) NOT NULL DEFAULT '' COMMENT 'Sub URL Path', `method` varchar(64) NOT NULL DEFAULT '' COMMENT 'HTTP Request Method', `operation` json NULL COMMENT 'Tool Openapi Operation Schema', `created_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Create Time in Milliseconds', `deleted_at` datetime NULL COMMENT 'Delete Time', PRIMARY KEY (`id`), UNIQUE INDEX `uniq_idx_tool_version` (`tool_id`, `version`)) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Tool Version';
 -- Create 'user' table
-CREATE TABLE IF NOT EXISTS `user` (`id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Primary Key ID', `name` varchar(128) NOT NULL DEFAULT '' COMMENT 'User Nickname', `unique_name` varchar(128) NOT NULL DEFAULT '' COMMENT 'User Unique Name', `email` varchar(128) NOT NULL DEFAULT '' COMMENT 'Email', `password` varchar(128) NOT NULL DEFAULT '' COMMENT 'Password (Encrypted)', `description` varchar(512) NOT NULL DEFAULT '' COMMENT 'User Description', `icon_uri` varchar(512) NOT NULL DEFAULT '' COMMENT 'Avatar URI', `user_verified` bool NOT NULL DEFAULT 0 COMMENT 'User Verification Status', `locale` varchar(128) NOT NULL DEFAULT '' COMMENT 'Locale', `session_key` varchar(256) NOT NULL DEFAULT '' COMMENT 'Session Key', `created_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Creation Time (Milliseconds)', `updated_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Update Time (Milliseconds)', `deleted_at` bigint unsigned NULL COMMENT 'Deletion Time (Milliseconds)', PRIMARY KEY (`id`), INDEX `idx_session_key` (`session_key`), UNIQUE INDEX `uniq_email` (`email`), UNIQUE INDEX `uniq_unique_name` (`unique_name`)) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'User Table';
+CREATE TABLE IF NOT EXISTS `user` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Primary Key ID',
+  `name` varchar(128) NOT NULL DEFAULT '' COMMENT 'User Nickname',
+  `unique_name` varchar(128) NOT NULL DEFAULT '' COMMENT 'User Unique Name',
+  `email` varchar(128) NOT NULL DEFAULT '' COMMENT 'Email',
+  `password` varchar(128) NOT NULL DEFAULT '' COMMENT 'Password (Encrypted)',
+  `description` varchar(512) NOT NULL DEFAULT '' COMMENT 'User Description',
+  `icon_uri` varchar(512) NOT NULL DEFAULT '' COMMENT 'Avatar URI',
+  `user_verified` bool NOT NULL DEFAULT 0 COMMENT 'User Verification Status',
+  `is_disabled` tinyint NOT NULL DEFAULT 0 COMMENT 'User status: 0-enabled, 1-disabled',
+  `locale` varchar(128) NOT NULL DEFAULT '' COMMENT 'Locale',
+  `created_by` bigint unsigned NULL COMMENT 'Creator user ID',
+  `session_key` varchar(256) NOT NULL DEFAULT '' COMMENT 'Session Key',
+  `created_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Creation Time (Milliseconds)',
+  `updated_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Update Time (Milliseconds)',
+  `deleted_at` bigint unsigned NULL COMMENT 'Deletion Time (Milliseconds)',
+  `deleted_by` bigint unsigned NULL COMMENT 'Deleter user ID',
+  PRIMARY KEY (`id`),
+  INDEX `idx_created_by` (`created_by`),
+  INDEX `idx_deleted_by` (`deleted_by`),
+  INDEX `idx_is_disabled` (`is_disabled`),
+  INDEX `idx_session_key` (`session_key`),
+  UNIQUE INDEX `uniq_email` (`email`),
+  UNIQUE INDEX `uniq_unique_name` (`unique_name`)
+) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'User Table';
+-- Create 'user_role' table
+CREATE TABLE IF NOT EXISTS `user_role` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint unsigned NOT NULL COMMENT 'User ID',
+  `role_id` bigint unsigned NOT NULL COMMENT 'Role ID',
+  `assigned_by` bigint unsigned NOT NULL COMMENT 'Assigner ID',
+  `assigned_at` bigint unsigned NOT NULL COMMENT 'Assignment time',
+  `expired_at` bigint unsigned NULL COMMENT 'Expiration time (NULL means permanent)',
+  `deleted_at` datetime(3) NULL COMMENT 'Soft delete timestamp (NULL means not deleted)',
+  PRIMARY KEY (`id`),
+  INDEX `idx_deleted_at` (`deleted_at`),
+  INDEX `idx_expired_at` (`expired_at`),
+  INDEX `idx_role_id` (`role_id`),
+  INDEX `idx_user_id` (`user_id`),
+  UNIQUE INDEX `uniq_user_role_active` (`user_id`, `role_id`, `deleted_at`)
+) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'User role relationship table';
 -- Create 'variable_instance' table
 CREATE TABLE IF NOT EXISTS `variable_instance` (`id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'id', `biz_type` tinyint unsigned NOT NULL COMMENT '1 for agent，2 for app', `biz_id` varchar(128) NOT NULL DEFAULT '' COMMENT '1 for agent_id，2 for app_id' COLLATE utf8mb4_0900_ai_ci, `version` varchar(255) NOT NULL COMMENT 'agent or project version empty represents draft status' COLLATE utf8mb4_0900_ai_ci, `keyword` varchar(255) NOT NULL COMMENT 'Keyword to Memory' COLLATE utf8mb4_0900_ai_ci, `type` tinyint NOT NULL COMMENT 'Memory type 1 KV 2 list', `content` text NULL COMMENT 'content' COLLATE utf8mb4_0900_ai_ci, `connector_uid` varchar(255) NOT NULL COMMENT 'connector_uid' COLLATE utf8mb4_0900_ai_ci, `connector_id` bigint NOT NULL COMMENT 'connector_id, e.g. coze = 10000010', `created_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Create Time in Milliseconds', `updated_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Update Time in Milliseconds', PRIMARY KEY (`id`), INDEX `idx_connector_key` (`biz_id`, `biz_type`, `version`, `connector_uid`, `connector_id`)) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'KV Memory';
 -- Create 'variables_meta' table
@@ -110,6 +163,184 @@ CREATE TABLE IF NOT EXISTS `workflow_reference` (`id` bigint unsigned NOT NULL C
 CREATE TABLE IF NOT EXISTS `workflow_snapshot` (`workflow_id` bigint unsigned NOT NULL COMMENT 'workflow id this snapshot belongs to', `commit_id` varchar(255) NOT NULL COMMENT 'the commit id of the workflow draft', `canvas` mediumtext NULL COMMENT 'frontend schema for this snapshot', `input_params` mediumtext NULL COMMENT 'input parameter info', `output_params` mediumtext NULL COMMENT 'output parameter info', `created_at` bigint unsigned NOT NULL COMMENT 'Create Time in Milliseconds', `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'ID', PRIMARY KEY (`id`), UNIQUE INDEX `uniq_workflow_id_commit_id` (`workflow_id`, `commit_id`)) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'snapshot for executed workflow draft';
 -- Create 'workflow_version' table
 CREATE TABLE IF NOT EXISTS `workflow_version` (`id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'ID', `workflow_id` bigint unsigned NOT NULL COMMENT 'workflow id', `version` varchar(50) NOT NULL COMMENT 'Published version', `version_description` varchar(2000) NOT NULL COMMENT 'Version Description', `canvas` mediumtext NULL COMMENT 'Front end schema', `input_params` mediumtext NULL COMMENT 'input params', `output_params` mediumtext NULL COMMENT 'output params', `creator_id` bigint unsigned NOT NULL COMMENT 'creator id', `created_at` bigint unsigned NOT NULL COMMENT 'Create Time in Milliseconds', `deleted_at` datetime(3) NULL COMMENT 'Delete Time', `commit_id` varchar(255) NOT NULL COMMENT 'the commit id corresponding to this version', PRIMARY KEY (`id`), INDEX `idx_id_created_at` (`workflow_id`, `created_at`), UNIQUE INDEX `uniq_workflow_id_version` (`workflow_id`, `version`)) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Workflow Canvas Version Information Table, used to record canvas information for different versions';
+
+-- Create 'casbin_rule' table
+CREATE TABLE IF NOT EXISTS `casbin_rule` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `ptype` varchar(100) NULL,
+  `v0` varchar(100) NULL,
+  `v1` varchar(100) NULL,
+  `v2` varchar(100) NULL,
+  `v3` varchar(100) NULL,
+  `v4` varchar(100) NULL,
+  `v5` varchar(100) NULL,
+  `created_at` bigint unsigned NOT NULL DEFAULT 0,
+  `updated_at` bigint unsigned NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `idx_casbin_rule` (`ptype`, `v0`, `v1`, `v2`, `v3`, `v4`, `v5`),
+  INDEX `idx_ptype_v0_v1` (`ptype`, `v0`, `v1`),
+  UNIQUE INDEX `uniq_rule` (`ptype`, `v0`, `v1`, `v2`, `v3`, `v4`)
+) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Casbin permission policy table';
+-- Create 'corporation' table
+CREATE TABLE IF NOT EXISTS `corporation` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Corporation ID',
+  `parent_id` bigint unsigned NULL COMMENT 'Parent Corporation ID (NULL for root corporation)',
+  `name` varchar(150) NOT NULL COMMENT 'Corporation Name',
+  `corp_type` varchar(50) NOT NULL DEFAULT 'company' COMMENT 'Corporation Type: group,company,branch',
+  `sort` int NOT NULL DEFAULT 0 COMMENT 'Sort Order',
+  `out_corp_id` varchar(100) NULL COMMENT 'External Corporation ID',
+  `corp_source` tinyint unsigned NULL COMMENT 'Data Source: 1-Enterprise WeChat,2-DingTalk,3-Feishu,4-Manual',
+  `creator_id` bigint unsigned NOT NULL COMMENT 'Creator ID',
+  `created_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Create Time in Milliseconds',
+  `updated_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Update Time in Milliseconds',
+  `deleted_at` datetime(3) NULL COMMENT 'Deletion timestamp',
+  PRIMARY KEY (`id`),
+  INDEX `idx_corp_source` (`corp_source`),
+  INDEX `idx_corp_type` (`corp_type`),
+  INDEX `idx_creator_id` (`creator_id`),
+  INDEX `idx_deleted_at` (`deleted_at`),
+  INDEX `idx_parent_id` (`parent_id`),
+  INDEX `idx_sort` (`sort`),
+  UNIQUE INDEX `uk_out_corp_source` (`out_corp_id`, `corp_source`),
+  UNIQUE INDEX `uk_parent_name` (`parent_id`, `name`)
+) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Corporation Info Table';
+-- Create 'corporation_department' table
+CREATE TABLE IF NOT EXISTS `corporation_department` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Department ID',
+  `corp_id` bigint unsigned NOT NULL COMMENT 'Corporation ID',
+  `parent_id` bigint unsigned NULL COMMENT 'Parent Department ID (NULL for root department)',
+  `name` varchar(150) NOT NULL COMMENT 'Department Name',
+  `code` varchar(32) NULL COMMENT 'Department Code',
+  `level` int NOT NULL DEFAULT 1 COMMENT 'Department Level',
+  `full_path` varchar(500) NULL COMMENT 'Department Full Path',
+  `leader_id` bigint unsigned NULL COMMENT 'Department Leader ID',
+  `sort` int NOT NULL DEFAULT 0 COMMENT 'Sort Order',
+  `status` tinyint NOT NULL DEFAULT 1 COMMENT 'Status: 1-Active, 2-Inactive',
+  `out_department_id` varchar(100) NULL COMMENT 'External Department ID',
+  `department_source` tinyint unsigned NULL COMMENT 'Data Source: 1-Enterprise WeChat,2-DingTalk,3-Feishu,4-Manual',
+  `creator_id` bigint unsigned NOT NULL COMMENT 'Creator ID',
+  `created_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Create Time in Milliseconds',
+  `updated_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Update Time in Milliseconds',
+  `deleted_at` datetime(3) NULL COMMENT 'Deletion timestamp',
+  PRIMARY KEY (`id`),
+  INDEX `idx_corp_id` (`corp_id`),
+  INDEX `idx_corp_parent_level` (`corp_id`, `parent_id`, `level`),
+  INDEX `idx_corp_status` (`corp_id`, `status`),
+  INDEX `idx_deleted_at` (`deleted_at`),
+  INDEX `idx_department_source` (`department_source`),
+  INDEX `idx_leader_id` (`leader_id`),
+  INDEX `idx_level` (`level`),
+  INDEX `idx_parent_id` (`parent_id`),
+  INDEX `idx_status` (`status`),
+  UNIQUE INDEX `uk_corp_code` (`corp_id`, `code`),
+  UNIQUE INDEX `uk_corp_parent_dept_name` (`corp_id`, `parent_id`, `name`),
+  UNIQUE INDEX `uk_out_dept_source` (`out_department_id`, `department_source`, `corp_id`)
+) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Department Info Table';
+-- Create 'corporation_employee' table
+CREATE TABLE IF NOT EXISTS `corporation_employee` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Employee ID',
+  `employee_no` varchar(32) NULL COMMENT 'Employee Number (unique in corporation)',
+  `name` varchar(50) NOT NULL COMMENT 'Employee Name',
+  `en_name` varchar(50) NULL COMMENT 'English Name',
+  `nickname` varchar(50) NULL COMMENT 'Nickname',
+  `avatar` varchar(255) NULL COMMENT 'Avatar URL',
+  `email` varchar(100) NULL COMMENT 'Email Address',
+  `mobile` varchar(20) NOT NULL COMMENT 'Mobile Phone',
+  `user_id` bigint unsigned NULL COMMENT 'Associated User ID (NULL if no user account)',
+  `status` tinyint NOT NULL DEFAULT 1 COMMENT 'Employee Status: 1-Active, 2-Resigned',
+  `out_employee_id` varchar(100) NULL COMMENT 'External Employee ID',
+  `employee_source` tinyint unsigned NULL COMMENT 'Data Source: 1-Enterprise WeChat,2-DingTalk,3-Feishu,4-Manual',
+  `creator_id` bigint unsigned NOT NULL COMMENT 'Creator ID',
+  `created_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Create Time in Milliseconds',
+  `updated_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Update Time in Milliseconds',
+  `deleted_at` datetime(3) NULL COMMENT 'Deletion timestamp',
+  PRIMARY KEY (`id`),
+  INDEX `idx_creator_id` (`creator_id`),
+  INDEX `idx_deleted_at` (`deleted_at`),
+  INDEX `idx_employee_source` (`employee_source`),
+  INDEX `idx_status` (`status`),
+  INDEX `idx_user_id` (`user_id`),
+  UNIQUE INDEX `uk_email` (`email`),
+  UNIQUE INDEX `uk_employee_no` (`employee_no`),
+  UNIQUE INDEX `uk_mobile` (`mobile`),
+  UNIQUE INDEX `uk_out_emp_source` (`out_employee_id`, `employee_source`),
+  UNIQUE INDEX `uk_user_id` (`user_id`)
+) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Employee Info Table';
+-- Create 'corporation_employee_department' table
+CREATE TABLE IF NOT EXISTS `corporation_employee_department` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Relationship ID',
+  `employee_id` bigint unsigned NOT NULL COMMENT 'Employee ID',
+  `department_id` bigint unsigned NOT NULL COMMENT 'Department ID',
+  `corp_id` bigint unsigned NOT NULL COMMENT 'Corporation ID (departments corporation)',
+  `job_title` varchar(100) NULL COMMENT 'Job Title',
+  `is_primary` tinyint NOT NULL DEFAULT 0 COMMENT 'Is Primary Department: 0-No, 1-Yes',
+  `status` tinyint NOT NULL DEFAULT 1 COMMENT 'Status: 1-Active, 2-Transferred',
+  `creator_id` bigint unsigned NOT NULL COMMENT 'Creator ID',
+  `created_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Create Time in Milliseconds',
+  `updated_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Update Time in Milliseconds',
+  `deleted_at` datetime(3) NULL COMMENT 'Deletion timestamp',
+  PRIMARY KEY (`id`),
+  INDEX `idx_corp_id` (`corp_id`),
+  INDEX `idx_creator_id` (`creator_id`),
+  INDEX `idx_deleted_at` (`deleted_at`),
+  INDEX `idx_department_id` (`department_id`),
+  INDEX `idx_dept_status` (`department_id`, `status`),
+  INDEX `idx_employee_corp` (`employee_id`, `corp_id`),
+  INDEX `idx_employee_id` (`employee_id`),
+  INDEX `idx_is_primary` (`is_primary`),
+  INDEX `idx_status` (`status`),
+  UNIQUE INDEX `uk_employee_department` (`employee_id`, `department_id`)
+) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Employee Department Relationship Table';
+-- Create 'permission_template' table
+CREATE TABLE IF NOT EXISTS `permission_template` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Template ID',
+  `template_code` varchar(50) NOT NULL COMMENT 'Template code',
+  `template_name` varchar(100) NOT NULL COMMENT 'Template name',
+  `domain` varchar(50) NOT NULL COMMENT 'Permission domain: global-Global permissions, space-Space permissions',
+  `resource` varchar(50) NOT NULL COMMENT 'Resource type: agent, workflow, knowledge etc',
+  `resource_name` varchar(100) NOT NULL COMMENT 'Resource Chinese name',
+  `action` varchar(50) NOT NULL COMMENT 'Action type: create, read, update, delete etc',
+  `action_name` varchar(100) NOT NULL COMMENT 'Action Chinese name',
+  `description` text NULL COMMENT 'Permission description',
+  `is_default` tinyint NOT NULL DEFAULT 0 COMMENT 'Is default enabled: 0-No, 1-Yes',
+  `sort_order` int NOT NULL DEFAULT 0 COMMENT 'Sort weight',
+  `is_active` tinyint NOT NULL DEFAULT 1 COMMENT 'Is active: 0-Disabled, 1-Enabled',
+  `created_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Creation time',
+  `updated_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Update time',
+  PRIMARY KEY (`id`),
+  INDEX `idx_domain` (`domain`),
+  INDEX `idx_is_active` (`is_active`),
+  INDEX `idx_resource` (`resource`),
+  INDEX `idx_sort_order` (`sort_order`),
+  INDEX `idx_template_code` (`template_code`),
+  UNIQUE INDEX `uniq_template_domain_resource_action` (`template_code`, `domain`, `resource`, `action`)
+) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Permission template table';
+-- Create 'role' table
+CREATE TABLE IF NOT EXISTS `role` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Role ID',
+  `role_code` varchar(50) NOT NULL COMMENT 'Role code',
+  `role_name` varchar(100) NOT NULL COMMENT 'Role name',
+  `role_domain` varchar(50) NOT NULL DEFAULT 'global' COMMENT 'Permission domain: global-Global permissions, space-Space permissions',
+  `super_admin` tinyint NOT NULL DEFAULT 0 COMMENT 'Is super admin: 0-No, 1-Yes',
+  `space_role_type` tinyint NULL COMMENT 'Space role type: 1-owner, 2-admin, 3-member (only valid when role_domain=space)',
+  `is_builtin` tinyint NOT NULL DEFAULT 0 COMMENT 'Is builtin role: 0-No, 1-Yes',
+  `is_disabled` tinyint NOT NULL DEFAULT 0 COMMENT 'Is disabled: 0-Enabled, 1-Disabled',
+  `permissions` json NULL COMMENT 'Permission matrix JSON configuration',
+  `description` text NULL COMMENT 'Role description',
+  `created_by` bigint unsigned NOT NULL COMMENT 'Creator ID',
+  `created_at` bigint unsigned NOT NULL DEFAULT 0,
+  `updated_at` bigint unsigned NOT NULL DEFAULT 0,
+  `deleted_at` datetime(3) NULL COMMENT 'Soft delete timestamp (NULL means not deleted)',
+  PRIMARY KEY (`id`),
+  INDEX `idx_deleted_at` (`deleted_at`),
+  INDEX `idx_is_builtin` (`is_builtin`),
+  INDEX `idx_is_disabled` (`is_disabled`),
+  INDEX `idx_role_domain` (`role_domain`),
+  INDEX `idx_space_role_type` (`space_role_type`),
+  INDEX `idx_super_admin` (`super_admin`),
+  UNIQUE INDEX `uniq_role_code` (`role_code`)
+) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Role definition table';
+
 -- 初始化用户表数据
 -- 使用 INSERT ON DUPLICATE KEY UPDATE 语句
 -- 当主键或唯一键冲突时，不会插入新记录，而是更新指定字段
@@ -775,4 +1006,481 @@ INSERT INTO workflow_draft (id, canvas, input_params, output_params, test_run_su
     ON DUPLICATE KEY UPDATE
     id = VALUES(id);
 
+INSERT INTO `opencoze`.`permission_template` (`template_code`, `template_name`, `domain`, `resource`, `resource_name`, `action`, `action_name`, `description`, `is_default`, `sort_order`, `is_active`, `created_at`, `updated_at`) VALUES
 
+-- 1. 组织管理权限 (Organization Management)
+('ORG_CREATE', '创建组织', 'global', 'organization', '组织管理', 'create', '创建组织', '可以创建新的组织架构', 0, 100, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('ORG_EDIT', '编辑组织', 'global', 'organization', '组织管理', 'edit', '编辑组织', '编辑组织基本信息', 0, 101, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('ORG_DELETE', '删除组织', 'global', 'organization', '组织管理', 'delete', '删除组织', '删除不需要的组织单位', 0, 102, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+
+-- 2. 部门管理权限 (Department Management)
+('DEPT_CREATE', '添加部门', 'global', 'department', '部门管理', 'create', '添加部门', '在组织架构中创建新的部门，设置部门层级关系和基本信息', 0, 110, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('DEPT_EDIT', '编辑部门', 'global', 'department', '部门管理', 'edit', '编辑部门', '修改部门信息、调整部门层级、删除空部门或不需要的部门', 0, 111, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('DEPT_DELETE', '删除部门', 'global', 'department', '部门管理', 'delete', '删除部门', '删除空部门或不需要的部门', 0, 112, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+
+-- 3. 人员管理权限 (Employee Management)
+('EMP_INVITE', '添加人员', 'global', 'employee', '人员管理', 'create', '添加人员', '添加新成员入组织，设置成员的基本信息和所属部门', 0, 120, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('EMP_EDIT', '编辑人员', 'global', 'employee', '人员管理', 'edit', '修改人员基本信息', '修改人员基本信息', 0, 121, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('EMP_MANAGE_POS', '操作离职', 'global', 'employee', '人员管理', 'manage_quit', '操作离职', '处理员工离职，包括账号禁用、权限回收', 0, 122, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('EMP_CHANGE_DEPT', '变更人员部门', 'global', 'employee', '人员管理', 'change_department', '变更人员部门', '调整组织成员的部门归属，处理人员调动和组织架构变更', 0, 123, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('EMP_VIEW', '查看组织人员', 'global', 'employee', '人员管理', 'view', '查看组织人员', '查看组织内所有成员的基本信息、部门归属和联系方式', 0, 124, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+
+-- 4. 用户管理权限 (User Management)
+('USER_DISABLE_ENABLE', '启用/禁用用户', 'global', 'user', '用户管理', 'disable_enable', '启用/禁用用户', '控制用户账号的启用和禁用状态', 0, 200, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('USER_RESET_PWD', '重置密码', 'global', 'user', '用户管理', 'reset_password', '重置密码', '为用户重置登录密码', 0, 201, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('USER_ROLE_ASSIGN', '分配用户角色', 'global', 'user', '用户管理', 'assign', '分配用户角色', '分配和调整用户的角色，如管理员、成员等级别权限', 0, 202, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('USER_ROLE_UNBIND', '解绑用户角色', 'global', 'user', '用户管理', 'unbind', '解绑用户角色', '移除用户的特定角色绑定关系，回收对应权限', 0, 203, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+
+-- 5. 角色管理权限 (Role Management)
+('ROLE_VIEW', '查看角色', 'global', 'role', '角色管理', 'view', '查看角色', '查看系统中的所有角色定义', 0, 300, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('ROLE_CREATE', '创建角色', 'global', 'role', '角色管理', 'create', '创建角色', '创建新的自定义角色', 0, 301, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('ROLE_EDIT', '编辑角色', 'global', 'role', '角色管理', 'edit', '编辑角色', '修改角色信息和权限配置', 0, 302, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('ROLE_DELETE', '删除角色', 'global', 'role', '角色管理', 'delete', '删除角色', '删除自定义角色', 0, 303, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+
+-- 6. 工作空间管理权限 (Workspace Management)
+('WS_CREATE', '新建工作空间', 'global', 'workspace', '工作空间管理', 'create', '新建工作空间', '创建新的工作空间，设置空间访问权限和协作范围', 0, 400, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000);
+
+-- Initialize space permission domain template
+INSERT INTO `opencoze`.`permission_template` (`template_code`, `template_name`, `domain`, `resource`, `resource_name`, `action`, `action_name`, `description`, `is_default`, `sort_order`, `is_active`, `created_at`, `updated_at`) VALUES
+
+-- 1. 管理空间权限 (Space Management)
+('SPACE_INVITE_MEMBER', '添加成员', 'space', 'member', '成员管理', 'invite', '添加成员', '将用户添加到空间中', 0, 100, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('SPACE_REMOVE_MEMBER', '移除成员', 'space', 'member', '成员管理', 'remove', '移除成员', '从空间中移除某个用户', 0, 101, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('SPACE_ADJUST_ROLE', '调整角色', 'space', 'member', '成员管理', 'adjust_role', '调整角色', '控制为空间中的用户设置空间角色，可以设置为成员或管理员', 0, 102, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('SPACE_DELETE_SPACE', '删除空间、修改空间名称、转让空间所有权', 'space', 'config', '空间配置', 'delete_transfer', '删除空间、修改空间名称、转让空间所有权', '空间一旦删除无法恢复，空间内的所有资源和数据也会同步删除', 0, 110, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('SPACE_LEAVE', '离开空间', 'space', 'config', '空间配置', 'leave', '离开空间', '普通成员和管理员可以随时离开空间，所有者转移空间所有权后才能离开空间。离开空间后，用户创建的资源会转移给空间所有者，这些资源的协作者权限不会变', 1, 111, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+
+-- 2. 管理资源权限 (Resource Management)
+('SPACE_CREATE_RESOURCE', '创建、查看、复制', 'space', 'resource', '管理资源', 'create_view_copy', '创建、查看、复制', '在空间中创建、查看、复制智能体等资源', 1, 200, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('SPACE_EDIT_PUBLISH', '修改、发布', 'space', 'resource', '管理资源', 'edit_publish', '修改、发布', '默认仅资源的所有者可修改、发布资源。创建者也可以将其他成员设置为智能体或工作流的协作者，协作者可以协同编辑、发布智能体或工作流。其他资源仅资源所有者或管理员可以修改、发布资源', 0, 201, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('SPACE_IMPORT_EXPORT', '导入', 'space', 'workflow', '工作流', 'import', '导入', '目前仅工作流支持导入功能', 1, 210, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('SPACE_EXPORT', '导出', 'space', 'workflow', '工作流', 'export', '导出', '目前仅工作流支持导出功能。工作流的所有者、空间所有者或管理员可以导出工作流。空间成员不可导出其他成员拥有的工作流', 0, 211, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000),
+('SPACE_DELETE_RESOURCE', '删除资源', 'space', 'resource', '管理资源', 'delete', '删除资源', '空间成员不可删除其他成员拥有的资源', 0, 220, 1, UNIX_TIMESTAMP(NOW()) * 1000, UNIX_TIMESTAMP(NOW()) * 1000);
+
+-- Step 5: Initialize builtin roles with list<PermissionTemplateGroup> structure
+-- 1. Super Admin Role (has all global permissions)
+INSERT INTO `opencoze`.`role` (`id`, `role_code`, `role_name`, `role_domain`, `super_admin`, `space_role_type`, `is_builtin`, `permissions`, `description`, `created_by`, `created_at`, `updated_at`)
+SELECT
+  1 as id,
+  'super_admin' as role_code,
+  '超级管理员' as role_name,
+  'global' as role_domain,
+  1 as super_admin,
+  NULL as space_role_type,
+  1 as is_builtin,
+  -- Generate list<PermissionTemplateGroup> format JSON - Super Admin has all permissions enabled (is_default=1)
+  JSON_ARRAY(
+    JSON_OBJECT(
+      'domain', 'global',
+      'domain_name', '全局权限域',
+      'resources', (
+        SELECT JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'resource', resource_group.resource,
+            'resource_name', resource_group.resource_name,
+            'actions', (
+              SELECT JSON_ARRAYAGG(
+                JSON_OBJECT(
+                  'id', CAST(pt2.id AS CHAR),
+                  'template_code', pt2.template_code,
+                  'template_name', pt2.template_name,
+                  'domain', pt2.domain,
+                  'resource', pt2.resource,
+                  'resource_name', pt2.resource_name,
+                  'action', pt2.action,
+                  'action_name', pt2.action_name,
+                  'description', pt2.description,
+                  'is_default', 1,  -- Super Admin: all permissions enabled
+                  'sort_order', pt2.sort_order,
+                  'is_active', pt2.is_active
+                )
+              )
+              FROM opencoze.permission_template pt2
+              WHERE pt2.domain = 'global'
+                AND pt2.resource = resource_group.resource
+                AND pt2.is_active = 1
+              ORDER BY pt2.sort_order
+            )
+          )
+        )
+        FROM (
+          SELECT DISTINCT resource,
+                 FIRST_VALUE(resource_name) OVER (PARTITION BY resource ORDER BY sort_order) as resource_name
+          FROM opencoze.permission_template
+          WHERE domain = 'global' AND is_active = 1
+        ) as resource_group
+        ORDER BY resource_group.resource
+      )
+    )
+  ) as permissions,
+  '系统超级管理员，拥有完整的功能级权限，可管理组织、权限、工作空间和系统配置' as description,
+  1 as created_by,
+  UNIX_TIMESTAMP(NOW()) * 1000 as created_at,
+  UNIX_TIMESTAMP(NOW()) * 1000 as updated_at;
+
+-- 2. Space Owner Role (ID=2, corresponds to space_user.role_type=1)
+INSERT INTO `opencoze`.`role` (`id`, `role_code`, `role_name`, `role_domain`, `super_admin`, `space_role_type`, `is_builtin`, `permissions`, `description`, `created_by`, `created_at`, `updated_at`)
+SELECT
+  2 as id,
+  'space_owner' as role_code,
+  '空间所有者' as role_name,
+  'space' as role_domain,
+  0 as super_admin,
+  1 as space_role_type,
+  1 as is_builtin,
+  -- Generate list<PermissionTemplateGroup> format JSON - Space Owner has all space permissions enabled (is_default=1)
+  JSON_ARRAY(
+    JSON_OBJECT(
+      'domain', 'space',
+      'domain_name', '工作空间',
+      'resources', (
+        SELECT JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'resource', resource_group.resource,
+            'resource_name', resource_group.resource_name,
+            'actions', (
+              SELECT JSON_ARRAYAGG(
+                JSON_OBJECT(
+                  'id', CAST(pt2.id AS CHAR),
+                  'template_code', pt2.template_code,
+                  'template_name', pt2.template_name,
+                  'domain', pt2.domain,
+                  'resource', pt2.resource,
+                  'resource_name', pt2.resource_name,
+                  'action', pt2.action,
+                  'action_name', pt2.action_name,
+                  'description', pt2.description,
+                  'is_default', 1,  -- Space Owner: all space permissions enabled
+                  'sort_order', pt2.sort_order,
+                  'is_active', pt2.is_active
+                )
+              )
+              FROM opencoze.permission_template pt2
+              WHERE pt2.domain = 'space'
+                AND pt2.resource = resource_group.resource
+                AND pt2.is_active = 1
+              ORDER BY pt2.sort_order
+            )
+          )
+        )
+        FROM (
+          SELECT DISTINCT resource,
+                 FIRST_VALUE(resource_name) OVER (PARTITION BY resource ORDER BY sort_order) as resource_name
+          FROM opencoze.permission_template
+          WHERE domain = 'space' AND is_active = 1
+        ) as resource_group
+        ORDER BY resource_group.resource
+      )
+    )
+  ) as permissions,
+  '空间所有者，拥有空间完全控制权，包括成员管理、空间配置、内容协作等所有权限' as description,
+  1 as created_by,
+  UNIX_TIMESTAMP(NOW()) * 1000 as created_at,
+  UNIX_TIMESTAMP(NOW()) * 1000 as updated_at;
+
+-- 3. Space Admin Role (ID=3, corresponds to space_user.role_type=2)
+-- Note: Space Admin includes all space permissions but some are disabled (is_default=0)
+INSERT INTO `opencoze`.`role` (`id`, `role_code`, `role_name`, `role_domain`, `super_admin`, `space_role_type`, `is_builtin`, `permissions`, `description`, `created_by`, `created_at`, `updated_at`)
+SELECT
+  3 as id,
+  'space_admin' as role_code,
+  '空间管理员' as role_name,
+  'space' as role_domain,
+  0 as super_admin,
+  2 as space_role_type,
+  1 as is_builtin,
+  -- Generate list<PermissionTemplateGroup> format JSON - Space Admin: include all permissions but set is_default based on access rights
+  JSON_ARRAY(
+    JSON_OBJECT(
+      'domain', 'space',
+      'domain_name', '工作空间',
+      'resources', (
+        SELECT JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'resource', resource_group.resource,
+            'resource_name', resource_group.resource_name,
+            'actions', (
+              SELECT JSON_ARRAYAGG(
+                JSON_OBJECT(
+                  'id', CAST(pt2.id AS CHAR),
+                  'template_code', pt2.template_code,
+                  'template_name', pt2.template_name,
+                  'domain', pt2.domain,
+                  'resource', pt2.resource,
+                  'resource_name', pt2.resource_name,
+                  'action', pt2.action,
+                  'action_name', pt2.action_name,
+                  'description', pt2.description,
+                  'is_default', CASE
+                    WHEN pt2.action IN ('delete_transfer', 'delete') THEN 0  -- Space Admin: disable delete/delete_transfer permissions
+                    ELSE 1  -- Space Admin: enable other permissions
+                  END,
+                  'sort_order', pt2.sort_order,
+                  'is_active', pt2.is_active
+                )
+              )
+              FROM opencoze.permission_template pt2
+              WHERE pt2.domain = 'space'
+                AND pt2.resource = resource_group.resource
+                AND pt2.is_active = 1
+              ORDER BY pt2.sort_order
+            )
+          )
+        )
+        FROM (
+          SELECT DISTINCT resource,
+                 FIRST_VALUE(resource_name) OVER (PARTITION BY resource ORDER BY sort_order) as resource_name
+          FROM opencoze.permission_template
+          WHERE domain = 'space' AND is_active = 1
+        ) as resource_group
+        ORDER BY resource_group.resource
+      )
+    )
+  ) as permissions,
+  '空间管理员，可管理成员、编辑内容，但不能管理空间配置' as description,
+  1 as created_by,
+  UNIX_TIMESTAMP(NOW()) * 1000 as created_at,
+  UNIX_TIMESTAMP(NOW()) * 1000 as updated_at;
+
+-- 4. Space Member Role (ID=4, corresponds to space_user.role_type=3)
+-- Note: Space Member includes all space permissions but only basic ones are enabled (is_default matches original template)
+INSERT INTO `opencoze`.`role` (`id`, `role_code`, `role_name`, `role_domain`, `super_admin`, `space_role_type`, `is_builtin`, `permissions`, `description`, `created_by`, `created_at`, `updated_at`)
+SELECT
+  4 as id,
+  'space_member' as role_code,
+  '空间成员' as role_name,
+  'space' as role_domain,
+  0 as super_admin,
+  3 as space_role_type,
+  1 as is_builtin,
+  -- Generate list<PermissionTemplateGroup> format JSON - Space Member: include all permissions, use original is_default values
+  JSON_ARRAY(
+    JSON_OBJECT(
+      'domain', 'space',
+      'domain_name', '工作空间',
+      'resources', (
+        SELECT JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'resource', resource_group.resource,
+            'resource_name', resource_group.resource_name,
+            'actions', (
+              SELECT JSON_ARRAYAGG(
+                JSON_OBJECT(
+                  'id', CAST(pt2.id AS CHAR),
+                  'template_code', pt2.template_code,
+                  'template_name', pt2.template_name,
+                  'domain', pt2.domain,
+                  'resource', pt2.resource,
+                  'resource_name', pt2.resource_name,
+                  'action', pt2.action,
+                  'action_name', pt2.action_name,
+                  'description', pt2.description,
+                  'is_default', pt2.is_default,  -- Space Member: use original template is_default values
+                  'sort_order', pt2.sort_order,
+                  'is_active', pt2.is_active
+                )
+              )
+              FROM opencoze.permission_template pt2
+              WHERE pt2.domain = 'space'
+                AND pt2.resource = resource_group.resource
+                AND pt2.is_active = 1
+              ORDER BY pt2.sort_order
+            )
+          )
+        )
+        FROM (
+          SELECT DISTINCT resource,
+                 FIRST_VALUE(resource_name) OVER (PARTITION BY resource ORDER BY sort_order) as resource_name
+          FROM opencoze.permission_template
+          WHERE domain = 'space' AND is_active = 1
+        ) as resource_group
+        ORDER BY resource_group.resource
+      )
+    )
+  ) as permissions,
+  '空间普通成员，可创建、查看资源和离开空间，权限固定' as description,
+  1 as created_by,
+  UNIX_TIMESTAMP(NOW()) * 1000 as created_at,
+  UNIX_TIMESTAMP(NOW()) * 1000 as updated_at;
+
+-- Step 6: Initialize Casbin policy rules for all builtin roles based on permission templates
+-- 1. Generate Super Admin policies (all global permissions)
+INSERT INTO `opencoze`.`casbin_rule` (`ptype`, `v0`, `v1`, `v2`, `v3`, `v4`, `created_at`, `updated_at`)
+SELECT
+  'p' as ptype,
+  'super_admin' as v0,
+  pt.domain as v1,
+  pt.resource as v2,
+  pt.action as v3,
+  'allow' as v4,
+  UNIX_TIMESTAMP(NOW()) * 1000 as created_at,
+  UNIX_TIMESTAMP(NOW()) * 1000 as updated_at
+FROM opencoze.permission_template pt
+WHERE pt.domain = 'global' AND pt.is_active = 1;
+
+-- 2. Generate Space Owner policies (all space permissions)
+INSERT INTO `opencoze`.`casbin_rule` (`ptype`, `v0`, `v1`, `v2`, `v3`, `v4`, `created_at`, `updated_at`)
+SELECT
+  'p' as ptype,
+  'space_owner' as v0,
+  pt.domain as v1,
+  pt.resource as v2,
+  pt.action as v3,
+  'allow' as v4,
+  UNIX_TIMESTAMP(NOW()) * 1000 as created_at,
+  UNIX_TIMESTAMP(NOW()) * 1000 as updated_at
+FROM opencoze.permission_template pt
+WHERE pt.domain = 'space' AND pt.is_active = 1;
+
+-- 3. Generate Space Admin policies (deny delete_transfer and delete actions, allow others)
+INSERT INTO `opencoze`.`casbin_rule` (`ptype`, `v0`, `v1`, `v2`, `v3`, `v4`, `created_at`, `updated_at`)
+SELECT
+  'p' as ptype,
+  'space_admin' as v0,
+  pt.domain as v1,
+  pt.resource as v2,
+  pt.action as v3,
+  CASE
+    WHEN pt.action IN ('delete_transfer', 'delete') THEN 'deny'  -- Space Admin: deny delete operations
+    ELSE 'allow'  -- Space Admin: allow other operations
+  END as v4,
+  UNIX_TIMESTAMP(NOW()) * 1000 as created_at,
+  UNIX_TIMESTAMP(NOW()) * 1000 as updated_at
+FROM opencoze.permission_template pt
+WHERE pt.domain = 'space' AND pt.is_active = 1;
+
+-- 4. Generate Space Member policies (allow if original template is_default=1, deny others)
+INSERT INTO `opencoze`.`casbin_rule` (`ptype`, `v0`, `v1`, `v2`, `v3`, `v4`, `created_at`, `updated_at`)
+SELECT
+  'p' as ptype,
+  'space_member' as v0,
+  pt.domain as v1,
+  pt.resource as v2,
+  pt.action as v3,
+  CASE
+    WHEN pt.is_default = 1 THEN 'allow'  -- Space Member: allow only basic permissions
+    ELSE 'deny'  -- Space Member: deny advanced permissions
+  END as v4,
+  UNIX_TIMESTAMP(NOW()) * 1000 as created_at,
+  UNIX_TIMESTAMP(NOW()) * 1000 as updated_at
+FROM opencoze.permission_template pt
+WHERE pt.domain = 'space' AND pt.is_active = 1;
+
+INSERT INTO `opencoze`.`user` (
+  `id`,
+  `name`,
+  `unique_name`,
+  `email`,
+  `password`,
+  `description`,
+  `icon_uri`,
+  `user_verified`,
+  `locale`,
+  `is_disabled`,
+  `created_by`,
+  `created_at`,
+  `updated_at`
+)
+SELECT
+  1 as id,
+  '超级管理员' as name,
+  'Administrator' as unique_name,
+  'administrator@coze-plus.cn' as email,
+  '$argon2id$v=19$m=65536,t=3,p=4$4VgdFFA0A1yfSdK/iZEiRQ$GQG5+aEz4zYnhZ7SByTiEZOMrZl/dXSra5psuQPAoYs' as password,
+  '系统超级管理员，拥有完整的系统管理权限' as description,
+  'default_icon/user_default_icon.png' as icon_uri,
+  1 as user_verified,
+  'zh-CN' as locale,
+  0 as is_disabled,
+  1 as created_by,
+  UNIX_TIMESTAMP(NOW()) * 1000 as created_at,
+  UNIX_TIMESTAMP(NOW()) * 1000 as updated_at
+WHERE NOT EXISTS (
+  SELECT 1 FROM `opencoze`.`user` WHERE `email` = 'administrator@coze-plus.cn'
+);
+
+-- Step 2: Assign Super Admin Role
+INSERT INTO `opencoze`.`user_role` (
+  `user_id`,
+  `role_id`,
+  `assigned_by`,
+  `assigned_at`
+)
+SELECT
+  1 as user_id,
+  1 as role_id,  -- Super Admin role (already exists from 20250901130000_update.sql)
+  1 as assigned_by,
+  UNIX_TIMESTAMP(NOW()) * 1000 as assigned_at
+WHERE NOT EXISTS (
+  SELECT 1 FROM `opencoze`.`user_role` WHERE `user_id` = 1 AND `role_id` = 1
+);
+
+-- Step 3: Create Super Admin's Personal Space
+INSERT INTO `opencoze`.`space` (
+  `id`,
+  `owner_id`,
+  `name`,
+  `description`,
+  `icon_uri`,
+  `creator_id`,
+  `created_at`,
+  `updated_at`
+)
+SELECT
+  1 as id,
+  1 as owner_id,
+  '管理员工作空间' as name,
+  '超级管理员的默认工作空间，用于系统管理和初始配置' as description,
+  'default_icon/team_default_icon.png' as icon_uri,
+  1 as creator_id,
+  UNIX_TIMESTAMP(NOW()) * 1000 as created_at,
+  UNIX_TIMESTAMP(NOW()) * 1000 as updated_at
+WHERE NOT EXISTS (
+  SELECT 1 FROM `opencoze`.`space` WHERE `id` = 1
+);
+
+-- Step 4: Add Super Admin to Personal Space as Owner
+INSERT INTO `opencoze`.`space_user` (
+  `space_id`,
+  `user_id`,
+  `role_type`,
+  `created_at`,
+  `updated_at`
+)
+SELECT
+  1 as space_id,
+  1 as user_id,
+  1 as role_type,  -- 1 = owner (from space_user.role_type definition)
+  UNIX_TIMESTAMP(NOW()) * 1000 as created_at,
+  UNIX_TIMESTAMP(NOW()) * 1000 as updated_at
+WHERE NOT EXISTS (
+  SELECT 1 FROM `opencoze`.`space_user` WHERE `space_id` = 1 AND `user_id` = 1
+);
+
+-- Step 5: Add Casbin group rule to link super admin user to super admin role
+-- Format: ptype='g', v0=user:{user_id}, v1=role_code, v2=domain ('global' for global roles)
+INSERT INTO `opencoze`.`casbin_rule` (
+  `ptype`,
+  `v0`,
+  `v1`,
+  `v2`,
+  `v3`,
+  `v4`,
+  `v5`,
+  `created_at`,
+  `updated_at`
+)
+SELECT
+  'g' as ptype,
+  'user:1' as v0,  -- user subject format: user:{user_id}
+  'super_admin' as v1,  -- role_code = super_admin
+  'global' as v2,  -- domain = global (for global roles)
+  '' as v3,  -- unused for group rules
+  '' as v4,  -- unused for group rules
+  '' as v5,  -- unused for group rules
+  UNIX_TIMESTAMP(NOW()) * 1000 as created_at,
+  UNIX_TIMESTAMP(NOW()) * 1000 as updated_at
+WHERE NOT EXISTS (
+  SELECT 1 FROM `opencoze`.`casbin_rule`
+  WHERE `ptype` = 'g' AND `v0` = 'user:1' AND `v1` = 'super_admin' AND `v2` = 'global'
+);

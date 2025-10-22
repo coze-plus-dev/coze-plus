@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 coze-dev Authors
+ * Copyright 2025 coze-plus Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -210,8 +210,11 @@ var path2Table2Columns2Model = map[string]map[string]map[string]any{
 			"publish_config": appEntity.PublishConfig{},
 		},
 	},
-	"domain/upload/internal/dal/query": {
-		"files": {},
+	"domain/corporation/internal/dal/query": {
+		"corporation":                     {},
+		"corporation_department":          {},
+		"corporation_employee":            {},
+		"corporation_employee_department": {},
 	},
 	"bizpkg/config/modelmgr/internal/query": {
 		"model_instance": {
@@ -225,7 +228,8 @@ var path2Table2Columns2Model = map[string]map[string]map[string]any{
 }
 
 var fieldNullablePath = map[string]bool{
-	"domain/agent/singleagent/internal/dal/query": true,
+	// "domain/agent/singleagent/internal/dal/query": true,
+	"domain/corporation/internal/dal/query": true,
 }
 
 func main() {

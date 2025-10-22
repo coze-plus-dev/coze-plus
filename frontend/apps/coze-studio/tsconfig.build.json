@@ -85,6 +85,9 @@
       "path": "../../packages/arch/web-context/tsconfig.build.json"
     },
     {
+      "path": "../../packages/community/enterprise/tsconfig.build.json"
+    },
+    {
       "path": "../../packages/community/explore/tsconfig.build.json"
     },
     {

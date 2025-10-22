@@ -1,0 +1,157 @@
+.tableContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  margin: 0 24px; // 添加左右margin
+  min-height: 0; // 允许容器收缩
+  
+  .tableHeader {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--semi-color-border);
+    margin-bottom: 16px;
+    
+    .nodeInfo {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      
+      .nodeName {
+        font-size: 16px;
+        font-weight: 500;
+        color: var(--semi-color-text-0);
+      }
+      
+      .memberCount {
+        font-size: 14px;
+        color: var(--semi-color-text-1);
+        background: var(--semi-color-fill-0);
+        padding: 4px 8px;
+        border-radius: 4px;
+      }
+    }
+  }
+  
+  .emptyWrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+  }
+
+  // 表格内容区域
+  .tableWrapper {
+    flex: 1;
+    min-height: 0;
+  }
+  
+  .nameCell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: var(--semi-color-primary-light-default);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--semi-color-primary);
+      
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+    }
+  }
+
+  .departmentContainer {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+
+    > span {
+      max-width: 120px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  .actionColumn {
+    display: flex;
+    align-items: center;
+    justify-content: center; // 确保操作列内容居中
+    gap: 8px;
+    
+    .actionLink {
+      color: var(--semi-color-primary);
+      cursor: pointer;
+      
+      &:hover {
+        color: var(--semi-color-primary-hover);
+      }
+    }
+    
+    .moreButton {
+      padding: 0;
+      min-width: 24px;
+      height: 24px;
+      border: none;
+      background: transparent;
+      color: var(--semi-color-primary);
+      
+      &:hover {
+        background: var(--semi-color-fill-0);
+        color: var(--semi-color-primary-hover);
+      }
+    }
+  }
+
+  :global {
+    .semi-table {
+      background: var(--semi-color-bg-0);
+    }
+
+    .semi-table-thead th {
+      background: var(--semi-color-bg-1);
+      font-weight: 500;
+      text-align: center; // 表格标题居中
+      
+      .semi-table-column-title {
+        justify-content: center; // flex布局居中
+      }
+    }
+
+    .semi-table-row:hover {
+      background: var(--semi-color-fill-0);
+    }
+    
+    .moreButton {
+      background: transparent;
+      border: none;
+      color: var(--semi-color-primary);
+      
+      &:hover {
+        background: var(--semi-color-fill-0);
+        color: var(--semi-color-primary-hover);
+      }
+      
+      .semi-icon {
+        color: var(--semi-color-primary);
+      }
+      
+      &:hover .semi-icon {
+        color: var(--semi-color-primary-hover);
+      }
+    }
+  }
+}

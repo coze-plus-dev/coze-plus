@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 coze-dev Authors
+ * Copyright 2025 coze-plus Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -11025,6 +11025,10 @@ export type I18nKeysNoOptionsType =
   | 'navigation_store'
   | 'navigation_template'
   | 'navigation_template_2'
+  | 'navigation_organization_account_management'
+  | 'navigation_organization_address_book'
+  | 'navigation_organization_management'
+  | 'navigation_organization_role_management'
   | 'navigation_workspace'
   | 'navigation_workspace_develop'
   | 'navigation_workspace_fav_load'
@@ -16779,6 +16783,39 @@ export type I18nKeysNoOptionsType =
   | 'data_request_requesting'
   | 'other_knowledge'
   | 'recall_knowledge_empty'
+  | 'common_name'
+  | 'common_mobile'
+  | 'common_department'
+  | 'common_role'
+  | 'common_status'
+  | 'common_operation'
+  | 'common_edit'
+  | 'common_create'
+  | 'common_joined'
+  | 'common_not_joined'
+  | 'enterprise_organization'
+  | 'enterprise_department'
+  | 'enterprise_member'
+  | 'enterprise_no_employee_data'
+  | 'enterprise_please_add_employee'
+  | 'enterprise_no_department_data'
+  | 'enterprise_please_create_department'
+  | 'create_organization'
+  | 'organization_name'
+  | 'please_input_organization_name'
+  | 'organization_name_too_long'
+  | 'organization_type'
+  | 'please_select_organization_type'
+  | 'corp_type_group'
+  | 'corp_type_company'
+  | 'corp_type_branch'
+  | 'create_success'
+  | 'create_failed'
+  | 'login_page_email_label'
+  | 'login_page_password_label'
+  | 'login_page_welcome_coze_plus'
+  | 'login_page_language_chinese'
+  | 'login_page_language_english'
   | 'workflow_node_from_cn_store';
 // #endregion
 

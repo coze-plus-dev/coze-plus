@@ -1,0 +1,168 @@
+.permissionMatrix {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--semi-color-bg-0);
+}
+
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.permissionTable {
+  border: 1px solid var(--semi-color-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.tableHeader {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  background-color: var(--semi-color-fill-0);
+  border-bottom: 1px solid var(--semi-color-border);
+}
+
+.permissionColumn,
+.actionColumn {
+  padding: 16px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--semi-color-text-0);
+  border-right: 1px solid var(--semi-color-border);
+}
+
+.actionColumn {
+  border-right: none;
+}
+
+.actionColumnContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.headerActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.editActions {
+  display: flex;
+  gap: 8px;
+  
+  :global(.semi-button-solid) {
+    background-color: #52c41a;
+    border-color: #52c41a;
+    
+    &:hover {
+      background-color: #73d13d;
+      border-color: #73d13d;
+    }
+  }
+  
+  :global(.semi-button-borderless) {
+    color: #8c8c8c;
+    
+    &:hover {
+      color: #595959;
+      background-color: var(--semi-color-fill-0);
+    }
+  }
+}
+
+.builtinNotice {
+  font-size: 12px;
+  color: var(--semi-color-text-2);
+  font-style: italic;
+}
+
+.tableBody {
+  background-color: var(--semi-color-bg-0);
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+}
+
+.tableRow {
+  display: contents;
+}
+
+.permissionCell {
+  padding: 20px;
+  border-right: 1px solid var(--semi-color-border);
+  border-bottom: 2px solid var(--semi-color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.permissionName {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--semi-color-text-0);
+  line-height: 1.4;
+}
+
+.permissionDescription {
+  font-size: 12px;
+  color: var(--semi-color-text-2);
+  line-height: 1.5;
+}
+
+.actionCell {
+  padding: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.actionItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  gap: 16px;
+}
+
+.actionContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.actionName {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--semi-color-text-0);
+  line-height: 1.4;
+}
+
+.actionDesc {
+  font-size: 13px;
+  color: var(--semi-color-text-2);
+  line-height: 1.5;
+}
+
+.actionItem :global(.semi-checkbox) {
+  flex-shrink: 0;
+}
+
+.emptyContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
+}
+
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
+}
