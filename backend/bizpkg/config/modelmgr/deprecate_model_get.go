@@ -1,4 +1,20 @@
 /*
+ * Copyright 2025 coze-plus Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * Copyright 2025 coze-dev Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -282,6 +298,10 @@ func toNewModel(old *OldModel) (*Model, error) {
 		m.Connection.Claude = modelMeta.Connection.Claude
 	}
 
+	if old.Meta.ConnConfig.EnableBase64Url != nil {
+		m.EnableBase64URL = *old.Meta.ConnConfig.EnableBase64Url
+	}
+
 	logs.Debugf("to new model, old: %v \n new %v",
 		conv.DebugJsonToStr(old), conv.DebugJsonToStr(m))
 
@@ -360,6 +380,7 @@ type OldConfig struct {
 	TopK             *int     `json:"top_k,omitempty" yaml:"top_k"`
 	Stop             []string `json:"stop,omitempty" yaml:"stop"`
 	EnableThinking   *bool    `json:"enable_thinking,omitempty" yaml:"enable_thinking,omitempty"`
+	EnableBase64Url  *bool    `json:"enable_base64_url,omitempty" yaml:"enable_base64_url,omitempty"`
 
 	OpenAI   *OpenAIConfig   `json:"open_ai,omitempty" yaml:"openai"`
 	Claude   *ClaudeConfig   `json:"claude,omitempty" yaml:"claude"`

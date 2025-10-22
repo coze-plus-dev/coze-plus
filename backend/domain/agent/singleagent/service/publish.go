@@ -1,4 +1,20 @@
 /*
+ * Copyright 2025 coze-plus Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * Copyright 2025 coze-dev Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,12 +34,14 @@ package singleagent
 
 import (
 	"context"
+	"errors"
 	"sort"
 	"time"
 
 	"github.com/coze-dev/coze-studio/backend/api/model/app/developer_api"
 	crossconnector "github.com/coze-dev/coze-studio/backend/crossdomain/contract/connector"
 	"github.com/coze-dev/coze-studio/backend/domain/agent/singleagent/entity"
+	"github.com/coze-dev/coze-studio/backend/pkg/kvstore"
 	"github.com/coze-dev/coze-studio/backend/pkg/lang/conv"
 	"github.com/coze-dev/coze-studio/backend/pkg/logs"
 	"github.com/coze-dev/coze-studio/backend/types/consts"
@@ -44,7 +62,7 @@ func (s *singleAgentImpl) SavePublishRecord(ctx context.Context, p *entity.Singl
 }
 
 func (s *singleAgentImpl) GetPublishedTime(ctx context.Context, agentID int64) (int64, error) {
-	pubInfo, err := s.PublishInfoRepo.Get(ctx, consts.PublishInfoKeyPrefix, conv.Int64ToStr(agentID))
+	pubInfo, err := s.GetPublishedInfo(ctx, agentID)
 	if err != nil {
 		return 0, err
 	}
@@ -54,7 +72,7 @@ func (s *singleAgentImpl) GetPublishedTime(ctx context.Context, agentID int64) (
 
 func (s *singleAgentImpl) UpdatePublishInfo(ctx context.Context, agentID int64, connectorIDs []int64) error {
 	now := time.Now().UnixMilli()
-	pubInfo, err := s.PublishInfoRepo.Get(ctx, consts.PublishInfoKeyPrefix, conv.Int64ToStr(agentID))
+	pubInfo, err := s.GetPublishedInfo(ctx, agentID)
 	if err != nil {
 		return err
 	}
@@ -83,7 +101,15 @@ func (s *singleAgentImpl) UpdatePublishInfo(ctx context.Context, agentID int64, 
 }
 
 func (s *singleAgentImpl) GetPublishedInfo(ctx context.Context, agentID int64) (*entity.PublishInfo, error) {
-	return s.PublishInfoRepo.Get(ctx, consts.PublishInfoKeyPrefix, conv.Int64ToStr(agentID))
+	pubInfo, err := s.PublishInfoRepo.Get(ctx, consts.PublishInfoKeyPrefix, conv.Int64ToStr(agentID))
+	if err != nil {
+		if errors.Is(err, kvstore.ErrKeyNotFound) {
+			return &entity.PublishInfo{}, nil
+		}
+		return nil, err
+	}
+
+	return pubInfo, nil
 }
 
 func (s *singleAgentImpl) GetPublishConnectorList(ctx context.Context, agentID int64) (*entity.PublishConnectorData, error) {
