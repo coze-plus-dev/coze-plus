@@ -28,6 +28,7 @@ import (
 	"github.com/bytedance/sonic"
 	"github.com/getkin/kin-openapi/openapi3"
 
+	"github.com/coze-dev/coze-studio/backend/api/model/app/bot_common"
 	common "github.com/coze-dev/coze-studio/backend/api/model/plugin_develop/common"
 	"github.com/coze-dev/coze-studio/backend/crossdomain/contract/plugin/consts"
 	"github.com/coze-dev/coze-studio/backend/crossdomain/contract/plugin/model"
@@ -125,7 +126,7 @@ func (p *pluginServiceImpl) acquireAccessTokenIfNeed(ctx context.Context, req *m
 			return "", "", err
 		}
 
-		authURL, err = genAuthURL(authorizationCode)
+		authURL, err = genAuthURL(ctx, authorizationCode)
 		if err != nil {
 			return "", "", err
 		}
@@ -184,12 +185,32 @@ func (p *pluginServiceImpl) getDraftAgentPluginInfo(ctx context.Context, req *mo
 		return nil, nil, fmt.Errorf("draft tool is not supported in online agent")
 	}
 
-	onlineTool, exist, err := p.toolRepo.GetOnlineTool(ctx, req.ToolID)
-	if err != nil {
-		return nil, nil, errorx.Wrapf(err, "GetOnlineTool failed, toolID=%d", req.ToolID)
-	}
-	if !exist {
-		return nil, nil, errorx.New(errno.ErrPluginRecordNotFound)
+	var (
+		exist bool
+	)
+	if req.PluginFrom != nil && *req.PluginFrom == bot_common.PluginFrom_FromSaas {
+
+		tools, _, err := p.toolRepo.BatchGetSaasPluginToolsInfo(ctx, []int64{req.PluginID})
+		if err != nil {
+			return nil, nil, errorx.Wrapf(err, "BatchGetSaasPluginToolsInfo failed, pluginID=%d", req.PluginID)
+		}
+		if len(tools) == 0 {
+			return nil, nil, errorx.New(errno.ErrPluginRecordNotFound)
+		}
+		for _, tool := range tools[req.PluginID] {
+			if tool.ID == req.ToolID {
+				onlineTool = tool
+				break
+			}
+		}
+	} else {
+		onlineTool, exist, err = p.toolRepo.GetOnlineTool(ctx, req.ToolID)
+		if err != nil {
+			return nil, nil, errorx.Wrapf(err, "GetOnlineTool failed, toolID=%d", req.ToolID)
+		}
+		if !exist {
+			return nil, nil, errorx.New(errno.ErrPluginRecordNotFound)
+		}
 	}
 
 	agentTool, exist, err := p.toolRepo.GetDraftAgentTool(ctx, execOpt.ProjectInfo.ProjectID, req.ToolID)
@@ -200,24 +221,35 @@ func (p *pluginServiceImpl) getDraftAgentPluginInfo(ctx context.Context, req *mo
 		return nil, nil, errorx.New(errno.ErrPluginRecordNotFound)
 	}
 
-	if execOpt.ToolVersion == "" {
-		onlinePlugin, exist, err = p.pluginRepo.GetOnlinePlugin(ctx, req.PluginID)
+	if req.PluginFrom != nil && *req.PluginFrom == bot_common.PluginFrom_FromSaas {
+		saasPlugins, err := p.GetSaasPluginInfo(ctx, []int64{req.PluginID})
 		if err != nil {
-			return nil, nil, errorx.Wrapf(err, "GetOnlinePlugin failed, pluginID=%d", req.PluginID)
+			return nil, nil, errorx.Wrapf(err, "GetSaasPluginInfo failed, pluginID=%d", req.PluginID)
 		}
-		if !exist {
+		if len(saasPlugins) == 0 {
 			return nil, nil, errorx.New(errno.ErrPluginRecordNotFound)
 		}
+		onlinePlugin = saasPlugins[0]
 	} else {
-		onlinePlugin, exist, err = p.pluginRepo.GetVersionPlugin(ctx, model.VersionPlugin{
-			PluginID: req.PluginID,
-			Version:  execOpt.ToolVersion,
-		})
-		if err != nil {
-			return nil, nil, errorx.Wrapf(err, "GetVersionPlugin failed, pluginID=%d, version=%s", req.PluginID, execOpt.ToolVersion)
-		}
-		if !exist {
-			return nil, nil, errorx.New(errno.ErrPluginRecordNotFound)
+		if execOpt.ToolVersion == "" {
+			onlinePlugin, exist, err = p.pluginRepo.GetOnlinePlugin(ctx, req.PluginID)
+			if err != nil {
+				return nil, nil, errorx.Wrapf(err, "GetOnlinePlugin failed, pluginID=%d", req.PluginID)
+			}
+			if !exist {
+				return nil, nil, errorx.New(errno.ErrPluginRecordNotFound)
+			}
+		} else {
+			onlinePlugin, exist, err = p.pluginRepo.GetVersionPlugin(ctx, model.VersionPlugin{
+				PluginID: req.PluginID,
+				Version:  execOpt.ToolVersion,
+			})
+			if err != nil {
+				return nil, nil, errorx.Wrapf(err, "GetVersionPlugin failed, pluginID=%d, version=%s", req.PluginID, execOpt.ToolVersion)
+			}
+			if !exist {
+				return nil, nil, errorx.New(errno.ErrPluginRecordNotFound)
+			}
 		}
 	}
 
@@ -236,12 +268,32 @@ func (p *pluginServiceImpl) getOnlineAgentPluginInfo(ctx context.Context, req *m
 		return nil, nil, fmt.Errorf("draft tool is not supported in online agent")
 	}
 
-	onlineTool, exist, err := p.toolRepo.GetOnlineTool(ctx, req.ToolID)
-	if err != nil {
-		return nil, nil, errorx.Wrapf(err, "GetOnlineTool failed, toolID=%d", req.ToolID)
-	}
-	if !exist {
-		return nil, nil, errorx.New(errno.ErrPluginRecordNotFound)
+	var (
+		exist bool
+	)
+	if req.PluginFrom != nil && *req.PluginFrom == bot_common.PluginFrom_FromSaas {
+
+		tools, _, err := p.toolRepo.BatchGetSaasPluginToolsInfo(ctx, []int64{req.PluginID})
+		if err != nil {
+			return nil, nil, errorx.Wrapf(err, "BatchGetSaasPluginToolsInfo failed, pluginID=%d", req.PluginID)
+		}
+		if len(tools) == 0 {
+			return nil, nil, errorx.New(errno.ErrPluginRecordNotFound)
+		}
+		for _, tool := range tools[req.PluginID] {
+			if tool.ID == req.ToolID {
+				onlineTool = tool
+				break
+			}
+		}
+	} else {
+		onlineTool, exist, err = p.toolRepo.GetOnlineTool(ctx, req.ToolID)
+		if err != nil {
+			return nil, nil, errorx.Wrapf(err, "GetOnlineTool failed, toolID=%d", req.ToolID)
+		}
+		if !exist {
+			return nil, nil, errorx.New(errno.ErrPluginRecordNotFound)
+		}
 	}
 
 	agentTool, exist, err := p.toolRepo.GetVersionAgentTool(ctx, execOpt.ProjectInfo.ProjectID, model.VersionAgentTool{
@@ -256,24 +308,35 @@ func (p *pluginServiceImpl) getOnlineAgentPluginInfo(ctx context.Context, req *m
 		return nil, nil, errorx.New(errno.ErrPluginRecordNotFound)
 	}
 
-	if execOpt.ToolVersion == "" {
-		onlinePlugin, exist, err = p.pluginRepo.GetOnlinePlugin(ctx, req.PluginID)
+	if req.PluginFrom != nil && *req.PluginFrom == bot_common.PluginFrom_FromSaas {
+		saasPlugins, err := p.GetSaasPluginInfo(ctx, []int64{req.PluginID})
 		if err != nil {
-			return nil, nil, errorx.Wrapf(err, "GetOnlinePlugin failed, pluginID=%d", req.PluginID)
+			return nil, nil, errorx.Wrapf(err, "GetSaasPluginInfo failed, pluginID=%d", req.PluginID)
 		}
-		if !exist {
+		if len(saasPlugins) == 0 {
 			return nil, nil, errorx.New(errno.ErrPluginRecordNotFound)
 		}
+		onlinePlugin = saasPlugins[0]
 	} else {
-		onlinePlugin, exist, err = p.pluginRepo.GetVersionPlugin(ctx, model.VersionPlugin{
-			PluginID: req.PluginID,
-			Version:  execOpt.ToolVersion,
-		})
-		if err != nil {
-			return nil, nil, errorx.Wrapf(err, "GetVersionPlugin failed, pluginID=%d, version=%s", req.PluginID, execOpt.ToolVersion)
-		}
-		if !exist {
-			return nil, nil, errorx.New(errno.ErrPluginRecordNotFound)
+		if execOpt.ToolVersion == "" {
+			onlinePlugin, exist, err = p.pluginRepo.GetOnlinePlugin(ctx, req.PluginID)
+			if err != nil {
+				return nil, nil, errorx.Wrapf(err, "GetOnlinePlugin failed, pluginID=%d", req.PluginID)
+			}
+			if !exist {
+				return nil, nil, errorx.New(errno.ErrPluginRecordNotFound)
+			}
+		} else {
+			onlinePlugin, exist, err = p.pluginRepo.GetVersionPlugin(ctx, model.VersionPlugin{
+				PluginID: req.PluginID,
+				Version:  execOpt.ToolVersion,
+			})
+			if err != nil {
+				return nil, nil, errorx.Wrapf(err, "GetVersionPlugin failed, pluginID=%d, version=%s", req.PluginID, execOpt.ToolVersion)
+			}
+			if !exist {
+				return nil, nil, errorx.New(errno.ErrPluginRecordNotFound)
+			}
 		}
 	}
 
@@ -287,6 +350,27 @@ func (p *pluginServiceImpl) getOnlineAgentPluginInfo(ctx context.Context, req *m
 
 func (p *pluginServiceImpl) getWorkflowPluginInfo(ctx context.Context, req *model.ExecuteToolRequest,
 	execOpt *model.ExecuteToolOption) (pl *entity.PluginInfo, tl *entity.ToolInfo, err error) {
+
+	if req.PluginFrom != nil && *req.PluginFrom == bot_common.PluginFrom_FromSaas {
+		tools, plugin, err := p.toolRepo.BatchGetSaasPluginToolsInfo(ctx, []int64{req.PluginID})
+		if err != nil {
+			return nil, nil, errorx.Wrapf(err, "BatchGetSaasPluginToolsInfo failed, pluginID=%d", req.PluginID)
+		}
+		if len(tools) == 0 {
+			return nil, nil, errorx.New(errno.ErrPluginRecordNotFound)
+		}
+		for _, tool := range tools[req.PluginID] {
+			if tool.ID == req.ToolID {
+				tl = tool
+				break
+			}
+		}
+		if plugin != nil {
+			pl = plugin[req.PluginID]
+		}
+
+		return pl, tl, nil
+	}
 
 	if req.ExecDraftTool {
 		var exist bool
@@ -557,8 +641,13 @@ func (t *toolExecutor) execute(ctx context.Context, argumentsInJson, accessToken
 		}
 	}
 
-	toolInvocation := newToolInvocation(t)
-	requestStr, rawResp, err := toolInvocation.Do(ctx, invocation)
+	var requestStr, rawResp string
+	if t.plugin.Source != nil && *t.plugin.Source == bot_common.PluginFrom_FromSaas {
+		requestStr, rawResp, err = tool.NewSaasCallImpl().Do(ctx, invocation)
+	} else {
+		requestStr, rawResp, err = newToolInvocation(t).Do(ctx, invocation)
+	}
+
 	if err != nil {
 		return nil, err
 	}

@@ -29,7 +29,7 @@ require (
 	github.com/cloudwego/eino-ext/components/model/ollama v0.1.3
 	github.com/cloudwego/eino-ext/components/model/openai v0.1.1
 	github.com/cloudwego/eino-ext/components/model/qwen v0.0.0-20250612061754-5a3deb091dc5
-	github.com/cloudwego/eino-ext/libs/acl/openai v0.0.0-20250918130948-16e3a249e721
+	github.com/cloudwego/eino-ext/libs/acl/openai v0.0.0-20250918130948-16e3a249e721 // indirect
 	github.com/cloudwego/hertz v0.10.2
 	github.com/dimchansky/utfbom v1.1.1
 	github.com/elastic/go-elasticsearch/v7 v7.17.10
@@ -50,7 +50,7 @@ require (
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 	github.com/nikolalohinski/gonja v1.5.3 // indirect
 	github.com/nsqio/go-nsq v1.1.0
-	github.com/ollama/ollama v0.9.6
+	github.com/ollama/ollama v0.9.6 // indirect
 	github.com/onsi/gomega v1.35.1
 	github.com/pingcap/tidb/pkg/parser v0.0.0-20250417044355-c5882b1f6c58
 	github.com/pkg/errors v0.9.1
@@ -286,6 +286,7 @@ require (
 	github.com/apache/pulsar-client-go v0.16.0
 	github.com/casbin/casbin/v2 v2.123.0
 	github.com/casbin/gorm-adapter/v3 v3.37.0
+	github.com/eino-contrib/ollama v0.1.0
 )
 
 require (
@@ -302,7 +303,6 @@ require (
 	github.com/danieljoos/wincred v1.1.2 // indirect
 	github.com/dvsekhvalnov/jose2go v1.6.0 // indirect
 	github.com/eino-contrib/jsonschema v1.0.0 // indirect
-	github.com/eino-contrib/ollama v0.1.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
 	github.com/glebarez/go-sqlite v1.20.3 // indirect

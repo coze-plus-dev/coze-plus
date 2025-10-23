@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS `agent_tool_draft` (
   `tool_name` varchar(255) NOT NULL DEFAULT '' COMMENT 'Tool Name',
   `tool_version` varchar(255) NOT NULL DEFAULT '' COMMENT 'Tool Version, e.g. v1.0.0',
   `operation` json NULL COMMENT 'Tool Openapi Operation Schema',
+  `source` tinyint NOT NULL DEFAULT 0 COMMENT 'tool source 1 coze saas 0 default',
   PRIMARY KEY (`id`),
   INDEX `idx_agent_plugin_tool` (`agent_id`, `plugin_id`, `tool_id`),
   INDEX `idx_agent_tool_bind` (`agent_id`, `created_at`),
@@ -41,6 +42,7 @@ CREATE TABLE IF NOT EXISTS `agent_tool_version` (
   `method` varchar(64) NOT NULL DEFAULT '' COMMENT 'HTTP Request Method',
   `operation` json NULL COMMENT 'Tool Openapi Operation Schema',
   `created_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Create Time in Milliseconds',
+  `source` tinyint NOT NULL DEFAULT 0 COMMENT 'tool source 1 coze saas 0 default',
   PRIMARY KEY (`id`),
   INDEX `idx_agent_tool_id_created_at` (`agent_id`, `tool_id`, `created_at`),
   INDEX `idx_agent_tool_name_created_at` (`agent_id`, `tool_name`, `created_at`),
@@ -86,7 +88,7 @@ CREATE TABLE IF NOT EXISTS `app_conversation_template_draft` (
   `deleted_at` datetime(3) NULL COMMENT 'delete time in millisecond',
   PRIMARY KEY (`id`),
   INDEX `idx_space_id_app_id_template_id` (`space_id`, `app_id`, `template_id`)
-) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT 'app_conversation_template_draft';
 -- Create 'app_conversation_template_online' table
 CREATE TABLE IF NOT EXISTS `app_conversation_template_online` (
   `id` bigint unsigned NOT NULL COMMENT 'id',
@@ -99,7 +101,7 @@ CREATE TABLE IF NOT EXISTS `app_conversation_template_online` (
   `created_at` bigint unsigned NOT NULL COMMENT 'create time in millisecond',
   PRIMARY KEY (`id`),
   INDEX `idx_space_id_app_id_template_id_version` (`space_id`, `app_id`, `template_id`, `version`)
-) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT 'app_conversation_template_online';
 -- Create 'app_draft' table
 CREATE TABLE IF NOT EXISTS `app_draft` (
   `id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'APP ID',
@@ -126,7 +128,7 @@ CREATE TABLE IF NOT EXISTS `app_dynamic_conversation_draft` (
   PRIMARY KEY (`id`),
   INDEX `idx_app_id_connector_id_user_id` (`app_id`, `connector_id`, `user_id`),
   INDEX `idx_connector_id_user_id_name` (`connector_id`, `user_id`, `name`)
-) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT 'app_dynamic_conversation_draft';
 -- Create 'app_dynamic_conversation_online' table
 CREATE TABLE IF NOT EXISTS `app_dynamic_conversation_online` (
   `id` bigint unsigned NOT NULL COMMENT 'id',
@@ -140,7 +142,7 @@ CREATE TABLE IF NOT EXISTS `app_dynamic_conversation_online` (
   PRIMARY KEY (`id`),
   INDEX `idx_app_id_connector_id_user_id` (`app_id`, `connector_id`, `user_id`),
   INDEX `idx_connector_id_user_id_name` (`connector_id`, `user_id`, `name`)
-) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT 'app_dynamic_conversation_online';
 -- Create 'app_release_record' table
 CREATE TABLE IF NOT EXISTS `app_release_record` (
   `id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Publish Record ID',
@@ -208,13 +210,13 @@ CREATE TABLE IF NOT EXISTS `chat_flow_role_config` (
   `workflow_id` bigint unsigned NOT NULL COMMENT 'workflow id',
   `connector_id` bigint unsigned NULL COMMENT 'connector id',
   `name` varchar(256) NOT NULL COMMENT 'role name',
-  `description` mediumtext NOT NULL COMMENT 'role description',
-  `version` varchar(256) NOT NULL COMMENT 'version',
+  `description` mediumtext NULL COMMENT 'role description',
+  `version` varchar(256) NULL COMMENT 'version',
   `avatar` varchar(256) NOT NULL COMMENT 'avatar uri',
-  `background_image_info` mediumtext NOT NULL COMMENT 'background image information, object structure',
-  `onboarding_info` mediumtext NOT NULL COMMENT 'intro information, object structure',
-  `suggest_reply_info` mediumtext NOT NULL COMMENT 'user suggestions, object structure',
-  `audio_config` mediumtext NOT NULL COMMENT 'agent audio config, object structure',
+  `background_image_info` mediumtext NULL COMMENT 'background image information, object structure',
+  `onboarding_info` mediumtext NULL COMMENT 'intro information, object structure',
+  `suggest_reply_info` mediumtext NULL COMMENT 'user suggestions, object structure',
+  `audio_config` mediumtext NULL COMMENT 'agent audio config, object structure',
   `user_input_config` varchar(256) NOT NULL COMMENT 'user input config, object structure',
   `creator_id` bigint unsigned NOT NULL COMMENT 'creator id',
   `created_at` bigint unsigned NOT NULL COMMENT 'create time in millisecond',
@@ -223,7 +225,7 @@ CREATE TABLE IF NOT EXISTS `chat_flow_role_config` (
   PRIMARY KEY (`id`),
   INDEX `idx_connector_id_version` (`connector_id`, `version`),
   INDEX `idx_workflow_id_version` (`workflow_id`, `version`)
-) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT 'chat_flow_role_config';
 -- Create 'connector_workflow_version' table
 CREATE TABLE IF NOT EXISTS `connector_workflow_version` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
@@ -239,7 +241,6 @@ CREATE TABLE IF NOT EXISTS `connector_workflow_version` (
 -- Create 'conversation' table
 CREATE TABLE IF NOT EXISTS `conversation` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
-  `name` varchar(255) NOT NULL DEFAULT '' COMMENT 'conversation name',
   `connector_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Publish Connector ID',
   `agent_id` bigint NOT NULL DEFAULT 0 COMMENT 'agent_id',
   `scene` tinyint NOT NULL DEFAULT 0 COMMENT 'conversation scene',
@@ -249,6 +250,7 @@ CREATE TABLE IF NOT EXISTS `conversation` (
   `status` tinyint NOT NULL DEFAULT 1 COMMENT 'status: 1-normal 2-deleted',
   `created_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Create Time in Milliseconds',
   `updated_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Update Time in Milliseconds',
+  `name` varchar(255) NULL DEFAULT '' COMMENT 'conversation name',
   PRIMARY KEY (`id`),
   INDEX `idx_connector_bot_status` (`connector_id`, `agent_id`, `creator_id`)
 ) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'conversation info record';
@@ -505,6 +507,15 @@ CREATE TABLE IF NOT EXISTS `knowledge_document_slice` (
   INDEX `idx_knowledge_id_document_id` (`knowledge_id`, `document_id`),
   INDEX `idx_sequence` (`sequence`)
 ) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'knowledge document slice';
+-- Create 'kv_entries' table
+CREATE TABLE IF NOT EXISTS `kv_entries` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `namespace` varchar(255) NOT NULL COMMENT 'namespace',
+  `key_data` varchar(255) NOT NULL COMMENT 'key_data',
+  `value_data` longblob NULL COMMENT 'value_data',
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `uniq_namespace_key` (`namespace`, `key_data`)
+) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_general_ci COMMENT 'kv data';
 -- Create 'message' table
 CREATE TABLE IF NOT EXISTS `message` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
@@ -546,6 +557,21 @@ CREATE TABLE IF NOT EXISTS `model_entity` (
   INDEX `idx_scenario` (`scenario`),
   INDEX `idx_status` (`status`)
 ) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Model information';
+-- Create 'model_instance' table
+CREATE TABLE IF NOT EXISTS `model_instance` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `type` tinyint NOT NULL COMMENT 'Model Type 0-LLM 1-TextEmbedding 2-Rerank ',
+  `provider` json NOT NULL COMMENT 'Provider Information',
+  `display_info` json NOT NULL COMMENT 'Display Information',
+  `connection` json NOT NULL COMMENT 'Connection Information',
+  `capability` json NOT NULL COMMENT 'Model Capability',
+  `parameters` json NOT NULL COMMENT 'Model Parameters',
+  `extra` json NULL COMMENT 'Extra Information',
+  `created_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Create Time in Milliseconds',
+  `updated_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Update Time in Milliseconds',
+  `deleted_at` datetime(3) NULL COMMENT 'Delete Time',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT 'Model Instance Management Table';
 -- Create 'model_meta' table
 CREATE TABLE IF NOT EXISTS `model_meta` (
   `id` bigint unsigned NOT NULL COMMENT 'id',
@@ -567,25 +593,25 @@ CREATE TABLE IF NOT EXISTS `model_meta` (
 CREATE TABLE IF NOT EXISTS `node_execution` (
   `id` bigint unsigned NOT NULL COMMENT 'node execution id',
   `execute_id` bigint unsigned NOT NULL COMMENT 'the workflow execute id this node execution belongs to',
-  `node_id` varchar(128) NOT NULL COMMENT 'node key' COLLATE utf8mb4_unicode_ci,
-  `node_name` varchar(128) NOT NULL COMMENT 'name of the node' COLLATE utf8mb4_unicode_ci,
-  `node_type` varchar(128) NOT NULL COMMENT 'the type of the node, in string' COLLATE utf8mb4_unicode_ci,
+  `node_id` varchar(128) NOT NULL COMMENT 'node key',
+  `node_name` varchar(128) NOT NULL COMMENT 'name of the node',
+  `node_type` varchar(128) NOT NULL COMMENT 'the type of the node, in string',
   `created_at` bigint unsigned NOT NULL COMMENT 'create time in millisecond',
   `status` tinyint unsigned NOT NULL COMMENT '1=waiting 2=running 3=success 4=fail',
   `duration` bigint unsigned NULL COMMENT 'execution duration in millisecond',
-  `input` mediumtext NULL COMMENT 'actual input of the node' COLLATE utf8mb4_unicode_ci,
-  `output` mediumtext NULL COMMENT 'actual output of the node' COLLATE utf8mb4_unicode_ci,
-  `raw_output` mediumtext NULL COMMENT 'the original output of the node' COLLATE utf8mb4_unicode_ci,
-  `error_info` mediumtext NULL COMMENT 'error info' COLLATE utf8mb4_unicode_ci,
-  `error_level` varchar(32) NULL COMMENT 'level of the error' COLLATE utf8mb4_unicode_ci,
+  `input` mediumtext NULL COMMENT 'actual input of the node',
+  `output` mediumtext NULL COMMENT 'actual output of the node',
+  `raw_output` mediumtext NULL COMMENT 'the original output of the node',
+  `error_info` mediumtext NULL COMMENT 'error info',
+  `error_level` varchar(32) NULL COMMENT 'level of the error',
   `input_tokens` bigint unsigned NULL COMMENT 'number of input tokens',
   `output_tokens` bigint unsigned NULL COMMENT 'number of output tokens',
   `updated_at` bigint unsigned NULL COMMENT 'update time in millisecond',
   `composite_node_index` bigint unsigned NULL COMMENT 'loop or batch_s execution index',
-  `composite_node_items` mediumtext NULL COMMENT 'the items extracted from parent composite node for this index' COLLATE utf8mb4_unicode_ci,
-  `parent_node_id` varchar(128) NULL COMMENT 'when as inner node for loop or batch, this is the parent node_s key' COLLATE utf8mb4_unicode_ci,
+  `composite_node_items` mediumtext NULL COMMENT 'the items extracted from parent composite node for this index',
+  `parent_node_id` varchar(128) NULL COMMENT 'when as inner node for loop or batch, this is the parent node_s key',
   `sub_execute_id` bigint unsigned NULL COMMENT 'if this node is sub_workflow, the exe id of the sub workflow',
-  `extra` mediumtext NULL COMMENT 'extra info' COLLATE utf8mb4_unicode_ci,
+  `extra` mediumtext NULL COMMENT 'extra info',
   PRIMARY KEY (`id`),
   INDEX `idx_execute_id_node_id` (`execute_id`, `node_id`),
   INDEX `idx_execute_id_parent_node_id` (`execute_id`, `parent_node_id`)
@@ -797,6 +823,7 @@ CREATE TABLE IF NOT EXISTS `shortcut_command` (
   `agent_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'When executing a multi instruction, which node executes the instruction',
   `shortcut_icon` json NULL COMMENT 'shortcut icon',
   `plugin_tool_id` bigint NOT NULL DEFAULT 0 COMMENT 'tool_id',
+  `source` tinyint NULL DEFAULT 0 COMMENT 'plugin source 1 coze saas 0 default',
   PRIMARY KEY (`id`),
   UNIQUE INDEX `uniq_object_command_id_type` (`object_id`, `command_id`, `is_online`)
 ) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_general_ci COMMENT 'bot shortcut command table';
@@ -823,8 +850,8 @@ CREATE TABLE IF NOT EXISTS `single_agent_draft` (
   `jump_config` json NULL COMMENT 'Jump Configuration',
   `background_image_info_list` json NULL COMMENT 'Background image',
   `database_config` json NULL COMMENT 'Agent Database Base Configuration',
-  `bot_mode` tinyint NOT NULL DEFAULT 0 COMMENT 'bot mode,0:single mode 2:chatflow mode',
   `shortcut_command` json NULL COMMENT 'shortcut command',
+  `bot_mode` tinyint NOT NULL DEFAULT 0 COMMENT 'bot mode,0:single mode 2:chatflow mode',
   `layout_info` text NULL COMMENT 'chatflow layout info',
   PRIMARY KEY (`id`),
   INDEX `idx_creator_id` (`creator_id`),
@@ -849,316 +876,6 @@ CREATE TABLE IF NOT EXISTS `single_agent_publish` (
   INDEX `idx_creator_id` (`creator_id`),
   INDEX `idx_publish_id` (`publish_id`)
 ) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Bot connector and release version info';
--- Create 'single_agent_version' table
-CREATE TABLE IF NOT EXISTS `single_agent_version` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Primary Key ID',
-  `agent_id` bigint NOT NULL DEFAULT 0 COMMENT 'Agent ID',
-  `creator_id` bigint NOT NULL DEFAULT 0 COMMENT 'Creator ID',
-  `space_id` bigint NOT NULL DEFAULT 0 COMMENT 'Space ID',
-  `name` varchar(255) NOT NULL DEFAULT '' COMMENT 'Agent Name',
-  `description` text NULL COMMENT 'Agent Description',
-  `icon_uri` varchar(255) NOT NULL DEFAULT '' COMMENT 'Icon URI',
-  `created_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Create Time in Milliseconds',
-  `updated_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Update Time in Milliseconds',
-  `deleted_at` datetime(3) NULL COMMENT 'delete time in millisecond',
-  `variables_meta_id` bigint NULL COMMENT 'variables meta table ID',
-  `model_info` json NULL COMMENT 'Model Configuration Information',
-  `onboarding_info` json NULL COMMENT 'Onboarding Information',
-  `prompt` json NULL COMMENT 'Agent Prompt Configuration',
-  `plugin` json NULL COMMENT 'Agent Plugin Base Configuration',
-  `knowledge` json NULL COMMENT 'Agent Knowledge Base Configuration',
-  `workflow` json NULL COMMENT 'Agent Workflow Configuration',
-  `suggest_reply` json NULL COMMENT 'Suggested Replies',
-  `jump_config` json NULL COMMENT 'Jump Configuration',
-  `connector_id` bigint unsigned NOT NULL COMMENT 'Connector ID',
-  `version` varchar(255) NOT NULL DEFAULT '' COMMENT 'Agent Version',
-  `background_image_info_list` json NULL COMMENT 'Background image',
-  `database_config` json NULL COMMENT 'Agent Database Base Configuration',
-  `bot_mode` tinyint NOT NULL DEFAULT 0 COMMENT 'bot mode,0:single mode 2:chatflow mode',
-  `shortcut_command` json NULL COMMENT 'shortcut command',
-  `layout_info` text NULL COMMENT 'chatflow layout info',
-  PRIMARY KEY (`id`),
-  INDEX `idx_creator_id` (`creator_id`),
-  UNIQUE INDEX `uniq_agent_id_and_version_connector_id` (`agent_id`, `version`, `connector_id`)
-) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Single Agent Version Copy Table';
--- Create 'space' table
-CREATE TABLE IF NOT EXISTS `space` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Primary Key ID, Space ID',
-  `owner_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Owner ID',
-  `name` varchar(200) NOT NULL DEFAULT '' COMMENT 'Space Name',
-  `description` varchar(2000) NOT NULL DEFAULT '' COMMENT 'Space Description',
-  `icon_uri` varchar(200) NOT NULL DEFAULT '' COMMENT 'Icon URI',
-  `creator_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Creator ID',
-  `created_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Creation Time (Milliseconds)',
-  `updated_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Update Time (Milliseconds)',
-  `deleted_at` bigint unsigned NULL COMMENT 'Deletion Time (Milliseconds)',
-  PRIMARY KEY (`id`),
-  INDEX `idx_creator_id` (`creator_id`),
-  INDEX `idx_owner_id` (`owner_id`)
-) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Space Table';
--- Create 'space_user' table
-CREATE TABLE IF NOT EXISTS `space_user` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Primary Key ID, Auto Increment',
-  `space_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Space ID',
-  `user_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'User ID',
-  `role_type` int NOT NULL DEFAULT 3 COMMENT 'Role Type: 1.owner 2.admin 3.member',
-  `role_id` bigint unsigned NULL COMMENT 'Custom role ID (NULL uses role_type)',
-  `created_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Creation Time (Milliseconds)',
-  `updated_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Update Time (Milliseconds)',
-  `expired_at` bigint unsigned NULL COMMENT 'Permission expiration time (NULL means permanent)',
-  PRIMARY KEY (`id`),
-  INDEX `idx_role_id` (`role_id`),
-  INDEX `idx_user_id` (`user_id`),
-  UNIQUE INDEX `uniq_space_user` (`space_id`, `user_id`)
-) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Space Member Table';
--- Create 'template' table
-CREATE TABLE IF NOT EXISTS `template` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Primary Key ID',
-  `agent_id` bigint NOT NULL DEFAULT 0 COMMENT 'Agent ID',
-  `workflow_id` bigint NOT NULL DEFAULT 0 COMMENT 'Workflow ID',
-  `space_id` bigint NOT NULL DEFAULT 0 COMMENT 'Space ID',
-  `created_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Create Time in Milliseconds',
-  `heat` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Heat',
-  `product_entity_type` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Product Entity Type',
-  `meta_info` json NULL COMMENT 'Meta Info',
-  `agent_extra` json NULL COMMENT 'Agent Extra Info',
-  `workflow_extra` json NULL COMMENT 'Workflow Extra Info',
-  `project_extra` json NULL COMMENT 'Project Extra Info',
-  PRIMARY KEY (`id`),
-  UNIQUE INDEX `uniq_agent_id` (`agent_id`)
-) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Template Info Table';
--- Create 'tool' table
-CREATE TABLE IF NOT EXISTS `tool` (
-  `id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Tool ID',
-  `plugin_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Plugin ID',
-  `created_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Create Time in Milliseconds',
-  `updated_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Update Time in Milliseconds',
-  `version` varchar(255) NOT NULL DEFAULT '' COMMENT 'Tool Version, e.g. v1.0.0',
-  `sub_url` varchar(512) NOT NULL DEFAULT '' COMMENT 'Sub URL Path',
-  `method` varchar(64) NOT NULL DEFAULT '' COMMENT 'HTTP Request Method',
-  `operation` json NULL COMMENT 'Tool Openapi Operation Schema',
-  `activated_status` tinyint unsigned NOT NULL DEFAULT 0 COMMENT '0:activated; 1:deactivated',
-  PRIMARY KEY (`id`),
-  INDEX `idx_plugin_activated_status` (`plugin_id`, `activated_status`),
-  UNIQUE INDEX `uniq_idx_plugin_sub_url_method` (`plugin_id`, `sub_url`, `method`)
-) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Latest Tool';
--- Create 'tool_draft' table
-CREATE TABLE IF NOT EXISTS `tool_draft` (
-  `id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Tool ID',
-  `plugin_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Plugin ID',
-  `created_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Create Time in Milliseconds',
-  `updated_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Update Time in Milliseconds',
-  `sub_url` varchar(512) NOT NULL DEFAULT '' COMMENT 'Sub URL Path',
-  `method` varchar(64) NOT NULL DEFAULT '' COMMENT 'HTTP Request Method',
-  `operation` json NULL COMMENT 'Tool Openapi Operation Schema',
-  `debug_status` tinyint unsigned NOT NULL DEFAULT 0 COMMENT '0:not pass; 1:pass',
-  `activated_status` tinyint unsigned NOT NULL DEFAULT 0 COMMENT '0:activated; 1:deactivated',
-  PRIMARY KEY (`id`),
-  INDEX `idx_plugin_created_at_id` (`plugin_id`, `created_at`, `id`),
-  UNIQUE INDEX `uniq_idx_plugin_sub_url_method` (`plugin_id`, `sub_url`, `method`)
-) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Draft Tool';
--- Create 'tool_version' table
-CREATE TABLE IF NOT EXISTS `tool_version` (
-  `id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Primary Key ID',
-  `tool_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Tool ID',
-  `plugin_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Plugin ID',
-  `version` varchar(255) NOT NULL DEFAULT '' COMMENT 'Tool Version, e.g. v1.0.0',
-  `sub_url` varchar(512) NOT NULL DEFAULT '' COMMENT 'Sub URL Path',
-  `method` varchar(64) NOT NULL DEFAULT '' COMMENT 'HTTP Request Method',
-  `operation` json NULL COMMENT 'Tool Openapi Operation Schema',
-  `created_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Create Time in Milliseconds',
-  `deleted_at` datetime NULL COMMENT 'Delete Time',
-  PRIMARY KEY (`id`),
-  UNIQUE INDEX `uniq_idx_tool_version` (`tool_id`, `version`)
-) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Tool Version';
--- Create 'user' table
-CREATE TABLE IF NOT EXISTS `user` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Primary Key ID',
-  `name` varchar(128) NOT NULL DEFAULT '' COMMENT 'User Nickname',
-  `unique_name` varchar(128) NOT NULL DEFAULT '' COMMENT 'User Unique Name',
-  `email` varchar(128) NOT NULL DEFAULT '' COMMENT 'Email',
-  `password` varchar(128) NOT NULL DEFAULT '' COMMENT 'Password (Encrypted)',
-  `description` varchar(512) NOT NULL DEFAULT '' COMMENT 'User Description',
-  `icon_uri` varchar(512) NOT NULL DEFAULT '' COMMENT 'Avatar URI',
-  `user_verified` bool NOT NULL DEFAULT 0 COMMENT 'User Verification Status',
-  `is_disabled` tinyint NOT NULL DEFAULT 0 COMMENT 'User status: 0-enabled, 1-disabled',
-  `locale` varchar(128) NOT NULL DEFAULT '' COMMENT 'Locale',
-  `created_by` bigint unsigned NULL COMMENT 'Creator user ID',
-  `session_key` varchar(256) NOT NULL DEFAULT '' COMMENT 'Session Key',
-  `created_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Creation Time (Milliseconds)',
-  `updated_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Update Time (Milliseconds)',
-  `deleted_at` bigint unsigned NULL COMMENT 'Deletion Time (Milliseconds)',
-  `deleted_by` bigint unsigned NULL COMMENT 'Deleter user ID',
-  PRIMARY KEY (`id`),
-  INDEX `idx_created_by` (`created_by`),
-  INDEX `idx_deleted_by` (`deleted_by`),
-  INDEX `idx_is_disabled` (`is_disabled`),
-  INDEX `idx_session_key` (`session_key`),
-  UNIQUE INDEX `uniq_email` (`email`),
-  UNIQUE INDEX `uniq_unique_name` (`unique_name`)
-) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'User Table';
--- Create 'user_role' table
-CREATE TABLE IF NOT EXISTS `user_role` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` bigint unsigned NOT NULL COMMENT 'User ID',
-  `role_id` bigint unsigned NOT NULL COMMENT 'Role ID',
-  `assigned_by` bigint unsigned NOT NULL COMMENT 'Assigner ID',
-  `assigned_at` bigint unsigned NOT NULL COMMENT 'Assignment time',
-  `expired_at` bigint unsigned NULL COMMENT 'Expiration time (NULL means permanent)',
-  `deleted_at` datetime(3) NULL COMMENT 'Soft delete timestamp (NULL means not deleted)',
-  PRIMARY KEY (`id`),
-  INDEX `idx_deleted_at` (`deleted_at`),
-  INDEX `idx_expired_at` (`expired_at`),
-  INDEX `idx_role_id` (`role_id`),
-  INDEX `idx_user_id` (`user_id`),
-  UNIQUE INDEX `uniq_user_role_active` (`user_id`, `role_id`, `deleted_at`)
-) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'User role relationship table';
--- Create 'variable_instance' table
-CREATE TABLE IF NOT EXISTS `variable_instance` (
-  `id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'id',
-  `biz_type` tinyint unsigned NOT NULL COMMENT '1 for agent，2 for app',
-  `biz_id` varchar(128) NOT NULL DEFAULT '' COMMENT '1 for agent_id，2 for app_id',
-  `version` varchar(255) NOT NULL COMMENT 'agent or project version empty represents draft status',
-  `keyword` varchar(255) NOT NULL COMMENT 'Keyword to Memory',
-  `type` tinyint NOT NULL COMMENT 'Memory type 1 KV 2 list',
-  `content` text NULL COMMENT 'content',
-  `connector_uid` varchar(255) NOT NULL COMMENT 'connector_uid',
-  `connector_id` bigint NOT NULL COMMENT 'connector_id, e.g. coze = 10000010',
-  `created_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Create Time in Milliseconds',
-  `updated_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Update Time in Milliseconds',
-  PRIMARY KEY (`id`),
-  INDEX `idx_connector_key` (`biz_id`, `biz_type`, `version`, `connector_uid`, `connector_id`)
-) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT 'KV Memory';
--- Create 'variables_meta' table
-CREATE TABLE IF NOT EXISTS `variables_meta` (
-  `id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'id',
-  `creator_id` bigint unsigned NOT NULL COMMENT 'creator id',
-  `biz_type` tinyint unsigned NOT NULL COMMENT '1 for agent，2 for app',
-  `biz_id` varchar(128) NOT NULL DEFAULT '' COMMENT '1 for agent_id，2 for app_id',
-  `variable_list` json NULL COMMENT 'JSON data for variable configuration',
-  `created_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Create Time in Milliseconds',
-  `updated_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Update Time in Milliseconds',
-  `version` varchar(255) NOT NULL COMMENT 'Project version, empty represents draft status',
-  PRIMARY KEY (`id`),
-  INDEX `idx_user_key` (`creator_id`),
-  UNIQUE INDEX `uniq_project_key` (`biz_id`, `biz_type`, `version`)
-) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT 'KV Memory meta';
--- Create 'workflow_draft' table
-CREATE TABLE IF NOT EXISTS `workflow_draft` (
-  `id` bigint unsigned NOT NULL COMMENT 'workflow ID',
-  `canvas` mediumtext NULL COMMENT 'Front end schema',
-  `input_params` mediumtext NULL COMMENT 'Input schema',
-  `output_params` mediumtext NULL COMMENT 'Output parameter schema',
-  `test_run_success` bool NOT NULL DEFAULT 0 COMMENT '0 not running, 1 running successfully',
-  `modified` bool NOT NULL DEFAULT 0 COMMENT '0 has not been modified, 1 has been modified',
-  `updated_at` bigint unsigned NULL COMMENT 'Update Time in Milliseconds',
-  `deleted_at` datetime(3) NULL COMMENT 'Delete Time',
-  `commit_id` varchar(255) NOT NULL COMMENT 'used to uniquely identify a draft snapshot',
-  PRIMARY KEY (`id`),
-  INDEX `idx_updated_at` (`updated_at` DESC)
-) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Workflow canvas draft table, used to record the latest draft canvas information of workflow';
--- Create 'workflow_execution' table
-CREATE TABLE IF NOT EXISTS `workflow_execution` (
-  `id` bigint unsigned NOT NULL COMMENT 'execute id',
-  `workflow_id` bigint unsigned NOT NULL COMMENT 'workflow_id',
-  `version` varchar(50) NULL COMMENT 'workflow version. empty if is draft',
-  `space_id` bigint unsigned NOT NULL COMMENT 'the space id the workflow belongs to',
-  `mode` tinyint unsigned NOT NULL COMMENT 'the execution mode: 1. debug run 2. release run 3. node debug',
-  `operator_id` bigint unsigned NOT NULL COMMENT 'the user id that runs this workflow',
-  `connector_id` bigint unsigned NULL COMMENT 'the connector on which this execution happened',
-  `connector_uid` varchar(64) NULL COMMENT 'user id of the connector',
-  `created_at` bigint unsigned NOT NULL COMMENT 'create time in millisecond',
-  `log_id` varchar(128) NULL COMMENT 'log id',
-  `status` tinyint unsigned NULL COMMENT '1=running 2=success 3=fail 4=interrupted',
-  `duration` bigint unsigned NULL COMMENT 'execution duration in millisecond',
-  `input` mediumtext NULL COMMENT 'actual input of this execution',
-  `output` mediumtext NULL COMMENT 'the actual output of this execution',
-  `error_code` varchar(255) NULL COMMENT 'error code if any',
-  `fail_reason` mediumtext NULL COMMENT 'the reason for failure',
-  `input_tokens` bigint unsigned NULL COMMENT 'number of input tokens',
-  `output_tokens` bigint unsigned NULL COMMENT 'number of output tokens',
-  `updated_at` bigint unsigned NULL COMMENT 'update time in millisecond',
-  `root_execution_id` bigint unsigned NULL COMMENT 'the top level execution id. Null if this is the root',
-  `parent_node_id` varchar(128) NULL COMMENT 'the node key for the sub_workflow node that executes this workflow',
-  `app_id` bigint unsigned NULL COMMENT 'app id this workflow execution belongs to',
-  `node_count` mediumint unsigned NULL COMMENT 'the total node count of the workflow',
-  `resume_event_id` bigint unsigned NULL COMMENT 'the current event ID which is resuming',
-  `agent_id` bigint unsigned NULL COMMENT 'the agent that this execution binds to',
-  `sync_pattern` tinyint unsigned NULL COMMENT 'the sync pattern 1. sync 2. async 3. stream',
-  `commit_id` varchar(255) NULL COMMENT 'draft commit id this execution belongs to',
-  PRIMARY KEY (`id`),
-  INDEX `idx_workflow_id_version_mode_created_at` (`workflow_id`, `version`, `mode`, `created_at`)
-) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Workflow Execution Record Table, used to record the status of each workflow execution';
--- Create 'workflow_meta' table
-CREATE TABLE IF NOT EXISTS `workflow_meta` (
-  `id` bigint unsigned NOT NULL COMMENT 'workflow id',
-  `name` varchar(256) NOT NULL COMMENT 'workflow name',
-  `description` varchar(2000) NOT NULL COMMENT 'workflow description',
-  `icon_uri` varchar(256) NOT NULL COMMENT 'icon uri',
-  `status` tinyint unsigned NOT NULL COMMENT '0: Not published, 1: Published',
-  `content_type` tinyint unsigned NOT NULL COMMENT '0 Users 1 Official',
-  `mode` tinyint unsigned NOT NULL COMMENT '0:workflow, 3:chat_flow',
-  `created_at` bigint unsigned NOT NULL COMMENT 'create time in millisecond',
-  `updated_at` bigint unsigned NULL COMMENT 'update time in millisecond',
-  `deleted_at` datetime(3) NULL COMMENT 'delete time in millisecond',
-  `creator_id` bigint unsigned NOT NULL COMMENT 'user id for creator',
-  `tag` tinyint unsigned NULL COMMENT 'template tag: Tag: 1=All, 2=Hot, 3=Information, 4=Music, 5=Picture, 6=UtilityTool, 7=Life, 8=Traval, 9=Network, 10=System, 11=Movie, 12=Office, 13=Shopping, 14=Education, 15=Health, 16=Social, 17=Entertainment, 18=Finance, 100=Hidden',
-  `author_id` bigint unsigned NOT NULL COMMENT 'Original author user ID',
-  `space_id` bigint unsigned NOT NULL COMMENT 'space id',
-  `updater_id` bigint unsigned NULL COMMENT 'User ID for updating metadata',
-  `source_id` bigint unsigned NULL COMMENT 'Workflow ID of source',
-  `app_id` bigint unsigned NULL COMMENT 'app id',
-  `latest_version` varchar(50) NULL COMMENT 'the version of the most recent publish',
-  `latest_version_ts` bigint unsigned NULL COMMENT 'create time of latest version',
-  PRIMARY KEY (`id`),
-  INDEX `idx_app_id` (`app_id`),
-  INDEX `idx_latest_version_ts` (`latest_version_ts` DESC),
-  INDEX `idx_space_id_app_id_status_latest_version_ts` (`space_id`, `app_id`, `status`, `latest_version_ts`)
-) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'The workflow metadata table,used to record the basic metadata of workflow';
--- Create 'workflow_reference' table
-CREATE TABLE IF NOT EXISTS `workflow_reference` (
-  `id` bigint unsigned NOT NULL COMMENT 'workflow id',
-  `referred_id` bigint unsigned NOT NULL COMMENT 'the id of the workflow that is referred by other entities',
-  `referring_id` bigint unsigned NOT NULL COMMENT 'the entity id that refers this workflow',
-  `refer_type` tinyint unsigned NOT NULL COMMENT '1 subworkflow 2 tool',
-  `referring_biz_type` tinyint unsigned NOT NULL COMMENT 'the biz type the referring entity belongs to: 1. workflow 2. agent',
-  `created_at` bigint unsigned NOT NULL COMMENT 'create time in millisecond',
-  `status` tinyint unsigned NOT NULL COMMENT 'whether this reference currently takes effect. 0: disabled 1: enabled',
-  `deleted_at` datetime(3) NULL COMMENT 'Delete Time',
-  PRIMARY KEY (`id`),
-  INDEX `idx_referred_id_referring_biz_type_status` (`referred_id`, `referring_biz_type`, `status`),
-  INDEX `idx_referring_id_status` (`referring_id`, `status`),
-  UNIQUE INDEX `uniq_referred_id_referring_id_refer_type` (`referred_id`, `referring_id`, `refer_type`)
-) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'The workflow association table,used to record the direct mutual reference relationship between workflows';
--- Create 'workflow_snapshot' table
-CREATE TABLE IF NOT EXISTS `workflow_snapshot` (
-  `workflow_id` bigint unsigned NOT NULL COMMENT 'workflow id this snapshot belongs to',
-  `commit_id` varchar(255) NOT NULL COMMENT 'the commit id of the workflow draft',
-  `canvas` mediumtext NULL COMMENT 'frontend schema for this snapshot',
-  `input_params` mediumtext NULL COMMENT 'input parameter info',
-  `output_params` mediumtext NULL COMMENT 'output parameter info',
-  `created_at` bigint unsigned NOT NULL COMMENT 'Create Time in Milliseconds',
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  PRIMARY KEY (`id`),
-  UNIQUE INDEX `uniq_workflow_id_commit_id` (`workflow_id`, `commit_id`)
-) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'snapshot for executed workflow draft';
--- Create 'workflow_version' table
-CREATE TABLE IF NOT EXISTS `workflow_version` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `version` varchar(50) NOT NULL COMMENT 'Published version',
-  `version_description` varchar(2000) NOT NULL COMMENT 'Version Description',
-  `canvas` mediumtext NULL COMMENT 'Front end schema',
-  `input_params` mediumtext NULL COMMENT 'input params',
-  `output_params` mediumtext NULL COMMENT 'output params',
-  `creator_id` bigint unsigned NOT NULL COMMENT 'creator id',
-  `created_at` bigint unsigned NOT NULL COMMENT 'Create Time in Milliseconds',
-  `deleted_at` datetime(3) NULL COMMENT 'Delete Time',
-  `commit_id` varchar(255) NOT NULL COMMENT 'the commit id corresponding to this version',
-  `workflow_id` bigint unsigned NOT NULL COMMENT 'workflow id',
-  PRIMARY KEY (`id`),
-  INDEX `idx_id_created_at` (`workflow_id`, `created_at`),
-  UNIQUE INDEX `uniq_workflow_id_version` (`workflow_id`, `version`)
-) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Workflow Canvas Version Information Table, used to record canvas information for different versions';
 -- 初始化用户表数据
 -- 使用 INSERT ON DUPLICATE KEY UPDATE 语句
 -- 当主键或唯一键冲突时，不会插入新记录，而是更新指定字段

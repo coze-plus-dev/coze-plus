@@ -42,7 +42,6 @@ table "agent_to_database" {
 table "agent_tool_draft" {
   schema  = schema.opencoze
   comment = "Draft Agent Tool"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null     = false
     type     = bigint
@@ -107,6 +106,12 @@ table "agent_tool_draft" {
     type    = json
     comment = "Tool Openapi Operation Schema"
   }
+  column "source" {
+    null    = false
+    type    = tinyint
+    default = 0
+    comment = "tool source 1 coze saas 0 default"
+  }
   primary_key {
     columns = [column.id]
   }
@@ -128,7 +133,6 @@ table "agent_tool_draft" {
 table "agent_tool_version" {
   schema  = schema.opencoze
   comment = "Agent Tool Version"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null     = false
     type     = bigint
@@ -199,6 +203,12 @@ table "agent_tool_version" {
     unsigned = true
     comment  = "Create Time in Milliseconds"
   }
+  column "source" {
+    null    = false
+    type    = tinyint
+    default = 0
+    comment = "tool source 1 coze saas 0 default"
+  }
   primary_key {
     columns = [column.id]
   }
@@ -220,7 +230,6 @@ table "agent_tool_version" {
 table "api_key" {
   schema  = schema.opencoze
   comment = "api key table"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null           = false
     type           = bigint
@@ -291,7 +300,6 @@ table "api_key" {
 table "app_connector_release_ref" {
   schema  = schema.opencoze
   comment = "Connector Release Record Reference"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null     = false
     type     = bigint
@@ -347,7 +355,7 @@ table "app_connector_release_ref" {
 }
 table "app_conversation_template_draft" {
   schema  = schema.opencoze
-  collate = "utf8mb4_unicode_ci"
+  comment = "app_conversation_template_draft"
   column "id" {
     null     = false
     type     = bigint
@@ -409,7 +417,7 @@ table "app_conversation_template_draft" {
 }
 table "app_conversation_template_online" {
   schema  = schema.opencoze
-  collate = "utf8mb4_unicode_ci"
+  comment = "app_conversation_template_online"
   column "id" {
     null     = false
     type     = bigint
@@ -466,7 +474,6 @@ table "app_conversation_template_online" {
 table "app_draft" {
   schema  = schema.opencoze
   comment = "Draft Application"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null     = false
     type     = bigint
@@ -530,7 +537,7 @@ table "app_draft" {
 }
 table "app_dynamic_conversation_draft" {
   schema  = schema.opencoze
-  collate = "utf8mb4_unicode_ci"
+  comment = "app_dynamic_conversation_draft"
   column "id" {
     null     = false
     type     = bigint
@@ -589,7 +596,7 @@ table "app_dynamic_conversation_draft" {
 }
 table "app_dynamic_conversation_online" {
   schema  = schema.opencoze
-  collate = "utf8mb4_unicode_ci"
+  comment = "app_dynamic_conversation_online"
   column "id" {
     null     = false
     type     = bigint
@@ -649,7 +656,6 @@ table "app_dynamic_conversation_online" {
 table "app_release_record" {
   schema  = schema.opencoze
   comment = "Application Release Record"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null     = false
     type     = bigint
@@ -755,8 +761,7 @@ table "app_release_record" {
   }
 }
 table "app_static_conversation_draft" {
-  schema  = schema.opencoze
-  collate = "utf8mb4_unicode_ci"
+  schema = schema.opencoze
   column "id" {
     null     = false
     type     = bigint
@@ -806,8 +811,7 @@ table "app_static_conversation_draft" {
   }
 }
 table "app_static_conversation_online" {
-  schema  = schema.opencoze
-  collate = "utf8mb4_unicode_ci"
+  schema = schema.opencoze
   column "id" {
     null     = false
     type     = bigint
@@ -854,7 +858,6 @@ table "app_static_conversation_online" {
 table "casbin_rule" {
   schema  = schema.opencoze
   comment = "Casbin permission policy table"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null           = false
     type           = bigint
@@ -862,32 +865,39 @@ table "casbin_rule" {
     auto_increment = true
   }
   column "ptype" {
-    null = true
-    type = varchar(100)
+    null    = false
+    type    = varchar(100)
+    comment = "Policy type: p(policy), g(user role)"
   }
   column "v0" {
-    null = true
-    type = varchar(100)
+    null    = false
+    type    = varchar(100)
+    comment = "User ID/Role"
   }
   column "v1" {
-    null = true
-    type = varchar(100)
+    null    = false
+    type    = varchar(100)
+    comment = "Resource domain"
   }
   column "v2" {
-    null = true
-    type = varchar(100)
+    null    = false
+    type    = varchar(100)
+    comment = "Resource type"
   }
   column "v3" {
-    null = true
-    type = varchar(100)
+    null    = true
+    type    = varchar(100)
+    comment = "Action"
   }
   column "v4" {
-    null = true
-    type = varchar(100)
+    null    = true
+    type    = varchar(100)
+    comment = "Effect"
   }
   column "v5" {
-    null = true
-    type = varchar(100)
+    null    = true
+    type    = varchar(100)
+    comment = "Extension field"
   }
   column "created_at" {
     null     = false
@@ -904,10 +914,6 @@ table "casbin_rule" {
   primary_key {
     columns = [column.id]
   }
-  index "idx_casbin_rule" {
-    unique  = true
-    columns = [column.ptype, column.v0, column.v1, column.v2, column.v3, column.v4, column.v5]
-  }
   index "idx_ptype_v0_v1" {
     columns = [column.ptype, column.v0, column.v1]
   }
@@ -918,7 +924,7 @@ table "casbin_rule" {
 }
 table "chat_flow_role_config" {
   schema  = schema.opencoze
-  collate = "utf8mb4_unicode_ci"
+  comment = "chat_flow_role_config"
   column "id" {
     null     = false
     type     = bigint
@@ -943,12 +949,12 @@ table "chat_flow_role_config" {
     comment = "role name"
   }
   column "description" {
-    null    = false
+    null    = true
     type    = mediumtext
     comment = "role description"
   }
   column "version" {
-    null    = false
+    null    = true
     type    = varchar(256)
     comment = "version"
   }
@@ -958,22 +964,22 @@ table "chat_flow_role_config" {
     comment = "avatar uri"
   }
   column "background_image_info" {
-    null    = false
+    null    = true
     type    = mediumtext
     comment = "background image information, object structure"
   }
   column "onboarding_info" {
-    null    = false
+    null    = true
     type    = mediumtext
     comment = "intro information, object structure"
   }
   column "suggest_reply_info" {
-    null    = false
+    null    = true
     type    = mediumtext
     comment = "user suggestions, object structure"
   }
   column "audio_config" {
-    null    = false
+    null    = true
     type    = mediumtext
     comment = "agent audio config, object structure"
   }
@@ -1018,7 +1024,6 @@ table "chat_flow_role_config" {
 table "connector_workflow_version" {
   schema  = schema.opencoze
   comment = "connector workflow version"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null           = false
     type           = bigint
@@ -1069,19 +1074,12 @@ table "connector_workflow_version" {
 table "conversation" {
   schema  = schema.opencoze
   comment = "conversation info record"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null           = false
     type           = bigint
     unsigned       = true
     comment        = "id"
     auto_increment = true
-  }
-  column "name" {
-    null    = false
-    type    = varchar(255)
-    default = ""
-    comment = "conversation name"
   }
   column "connector_id" {
     null     = false
@@ -1141,6 +1139,12 @@ table "conversation" {
     unsigned = true
     comment  = "Update Time in Milliseconds"
   }
+  column "name" {
+    null    = true
+    type    = varchar(255)
+    default = ""
+    comment = "conversation name"
+  }
   primary_key {
     columns = [column.id]
   }
@@ -1151,7 +1155,6 @@ table "conversation" {
 table "corporation" {
   schema  = schema.opencoze
   comment = "Corporation Info Table"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null           = false
     type           = bigint
@@ -1251,7 +1254,6 @@ table "corporation" {
 table "corporation_department" {
   schema  = schema.opencoze
   comment = "Department Info Table"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null           = false
     type           = bigint
@@ -1392,7 +1394,6 @@ table "corporation_department" {
 table "corporation_employee" {
   schema  = schema.opencoze
   comment = "Employee Info Table"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null           = false
     type           = bigint
@@ -1525,7 +1526,6 @@ table "corporation_employee" {
 table "corporation_employee_department" {
   schema  = schema.opencoze
   comment = "Employee Department Relationship Table"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null           = false
     type           = bigint
@@ -1944,7 +1944,6 @@ table "files" {
 table "knowledge" {
   schema  = schema.opencoze
   comment = "knowledge tabke"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null     = false
     type     = bigint
@@ -2034,7 +2033,6 @@ table "knowledge" {
 table "knowledge_document" {
   schema  = schema.opencoze
   comment = "knowledge document info"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null     = false
     type     = bigint
@@ -2164,7 +2162,6 @@ table "knowledge_document" {
 table "knowledge_document_review" {
   schema  = schema.opencoze
   comment = "Document slice preview info"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null     = false
     type     = bigint
@@ -2262,7 +2259,6 @@ table "knowledge_document_review" {
 table "knowledge_document_slice" {
   schema  = schema.opencoze
   comment = "knowledge document slice"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null     = false
     type     = bigint
@@ -2357,10 +2353,43 @@ table "knowledge_document_slice" {
     columns = [column.sequence]
   }
 }
+table "kv_entries" {
+  schema  = schema.opencoze
+  comment = "kv data"
+  collate = "utf8mb4_general_ci"
+  column "id" {
+    null           = false
+    type           = bigint
+    unsigned       = true
+    comment        = "id"
+    auto_increment = true
+  }
+  column "namespace" {
+    null    = false
+    type    = varchar(255)
+    comment = "namespace"
+  }
+  column "key_data" {
+    null    = false
+    type    = varchar(255)
+    comment = "key_data"
+  }
+  column "value_data" {
+    null    = true
+    type    = longblob
+    comment = "value_data"
+  }
+  primary_key {
+    columns = [column.id]
+  }
+  index "uniq_namespace_key" {
+    unique  = true
+    columns = [column.namespace, column.key_data]
+  }
+}
 table "message" {
   schema  = schema.opencoze
   comment = "message record"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null           = false
     type           = bigint
@@ -2491,7 +2520,6 @@ table "message" {
 table "model_entity" {
   schema  = schema.opencoze
   comment = "Model information"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null     = false
     type     = bigint
@@ -2561,10 +2589,77 @@ table "model_entity" {
     columns = [column.status]
   }
 }
+table "model_instance" {
+  schema  = schema.opencoze
+  comment = "Model Instance Management Table"
+  column "id" {
+    null           = false
+    type           = bigint
+    unsigned       = true
+    comment        = "id"
+    auto_increment = true
+  }
+  column "type" {
+    null    = false
+    type    = tinyint
+    comment = "Model Type 0-LLM 1-TextEmbedding 2-Rerank "
+  }
+  column "provider" {
+    null    = false
+    type    = json
+    comment = "Provider Information"
+  }
+  column "display_info" {
+    null    = false
+    type    = json
+    comment = "Display Information"
+  }
+  column "connection" {
+    null    = false
+    type    = json
+    comment = "Connection Information"
+  }
+  column "capability" {
+    null    = false
+    type    = json
+    comment = "Model Capability"
+  }
+  column "parameters" {
+    null    = false
+    type    = json
+    comment = "Model Parameters"
+  }
+  column "extra" {
+    null    = true
+    type    = json
+    comment = "Extra Information"
+  }
+  column "created_at" {
+    null     = false
+    type     = bigint
+    default  = 0
+    unsigned = true
+    comment  = "Create Time in Milliseconds"
+  }
+  column "updated_at" {
+    null     = false
+    type     = bigint
+    default  = 0
+    unsigned = true
+    comment  = "Update Time in Milliseconds"
+  }
+  column "deleted_at" {
+    null    = true
+    type    = datetime(3)
+    comment = "Delete Time"
+  }
+  primary_key {
+    columns = [column.id]
+  }
+}
 table "model_meta" {
   schema  = schema.opencoze
   comment = "Model metadata"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null     = false
     type     = bigint
@@ -2661,19 +2756,16 @@ table "node_execution" {
     null    = false
     type    = varchar(128)
     comment = "node key"
-    collate = "utf8mb4_unicode_ci"
   }
   column "node_name" {
     null    = false
     type    = varchar(128)
     comment = "name of the node"
-    collate = "utf8mb4_unicode_ci"
   }
   column "node_type" {
     null    = false
     type    = varchar(128)
     comment = "the type of the node, in string"
-    collate = "utf8mb4_unicode_ci"
   }
   column "created_at" {
     null     = false
@@ -2697,31 +2789,26 @@ table "node_execution" {
     null    = true
     type    = mediumtext
     comment = "actual input of the node"
-    collate = "utf8mb4_unicode_ci"
   }
   column "output" {
     null    = true
     type    = mediumtext
     comment = "actual output of the node"
-    collate = "utf8mb4_unicode_ci"
   }
   column "raw_output" {
     null    = true
     type    = mediumtext
     comment = "the original output of the node"
-    collate = "utf8mb4_unicode_ci"
   }
   column "error_info" {
     null    = true
     type    = mediumtext
     comment = "error info"
-    collate = "utf8mb4_unicode_ci"
   }
   column "error_level" {
     null    = true
     type    = varchar(32)
     comment = "level of the error"
-    collate = "utf8mb4_unicode_ci"
   }
   column "input_tokens" {
     null     = true
@@ -2751,13 +2838,11 @@ table "node_execution" {
     null    = true
     type    = mediumtext
     comment = "the items extracted from parent composite node for this index"
-    collate = "utf8mb4_unicode_ci"
   }
   column "parent_node_id" {
     null    = true
     type    = varchar(128)
     comment = "when as inner node for loop or batch, this is the parent node_s key"
-    collate = "utf8mb4_unicode_ci"
   }
   column "sub_execute_id" {
     null     = true
@@ -2769,7 +2854,6 @@ table "node_execution" {
     null    = true
     type    = mediumtext
     comment = "extra info"
-    collate = "utf8mb4_unicode_ci"
   }
   primary_key {
     columns = [column.id]
@@ -2887,7 +2971,6 @@ table "online_database_info" {
 table "permission_template" {
   schema  = schema.opencoze
   comment = "Permission template table"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null           = false
     type           = bigint
@@ -2993,7 +3076,6 @@ table "permission_template" {
 table "plugin" {
   schema  = schema.opencoze
   comment = "Latest Plugin"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null     = false
     type     = bigint
@@ -3088,7 +3170,6 @@ table "plugin" {
 table "plugin_draft" {
   schema  = schema.opencoze
   comment = "Draft Plugin"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null     = false
     type     = bigint
@@ -3180,7 +3261,6 @@ table "plugin_draft" {
 table "plugin_oauth_auth" {
   schema  = schema.opencoze
   comment = "Plugin OAuth Authorization Code Info"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null     = false
     type     = bigint
@@ -3270,7 +3350,6 @@ table "plugin_oauth_auth" {
 table "plugin_version" {
   schema  = schema.opencoze
   comment = "Plugin Version"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null     = false
     type     = bigint
@@ -3384,16 +3463,19 @@ table "prompt_resource" {
     null    = false
     type    = varchar(255)
     comment = "name"
+    collate = "utf8mb4_0900_ai_ci"
   }
   column "description" {
     null    = false
     type    = varchar(255)
     comment = "description"
+    collate = "utf8mb4_0900_ai_ci"
   }
   column "prompt_text" {
     null    = true
     type    = mediumtext
     comment = "prompt text"
+    collate = "utf8mb4_0900_ai_ci"
   }
   column "status" {
     null    = false
@@ -3429,7 +3511,6 @@ table "prompt_resource" {
 table "role" {
   schema  = schema.opencoze
   comment = "Role definition table"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null           = false
     type           = bigint
@@ -3538,7 +3619,6 @@ table "role" {
 table "run_record" {
   schema  = schema.opencoze
   comment = "run record"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null     = false
     type     = bigint
@@ -3797,6 +3877,12 @@ table "shortcut_command" {
     default = 0
     comment = "tool_id"
   }
+  column "source" {
+    null    = true
+    type    = tinyint
+    default = 0
+    comment = "plugin source 1 coze saas 0 default"
+  }
   primary_key {
     columns = [column.id]
   }
@@ -3808,7 +3894,6 @@ table "shortcut_command" {
 table "single_agent_draft" {
   schema  = schema.opencoze
   comment = "Single Agent Draft Copy Table"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null           = false
     type           = bigint
@@ -3925,16 +4010,16 @@ table "single_agent_draft" {
     type    = json
     comment = "Agent Database Base Configuration"
   }
+  column "shortcut_command" {
+    null    = true
+    type    = json
+    comment = "shortcut command"
+  }
   column "bot_mode" {
     null    = false
     type    = tinyint
     default = 0
     comment = "bot mode,0:single mode 2:chatflow mode"
-  }
-  column "shortcut_command" {
-    null    = true
-    type    = json
-    comment = "shortcut command"
   }
   column "layout_info" {
     null    = true
@@ -3955,7 +4040,6 @@ table "single_agent_draft" {
 table "single_agent_publish" {
   schema  = schema.opencoze
   comment = "Bot connector and release version info"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null           = false
     type           = bigint
@@ -4049,7 +4133,6 @@ table "single_agent_publish" {
 table "single_agent_version" {
   schema  = schema.opencoze
   comment = "Single Agent Version Copy Table"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null           = false
     type           = bigint
@@ -4178,16 +4261,16 @@ table "single_agent_version" {
     type    = json
     comment = "Agent Database Base Configuration"
   }
+  column "shortcut_command" {
+    null    = true
+    type    = json
+    comment = "shortcut command"
+  }
   column "bot_mode" {
     null    = false
     type    = tinyint
     default = 0
     comment = "bot mode,0:single mode 2:chatflow mode"
-  }
-  column "shortcut_command" {
-    null    = true
-    type    = json
-    comment = "shortcut command"
   }
   column "layout_info" {
     null    = true
@@ -4208,7 +4291,6 @@ table "single_agent_version" {
 table "space" {
   schema  = schema.opencoze
   comment = "Space Table"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null           = false
     type           = bigint
@@ -4281,7 +4363,6 @@ table "space" {
 table "space_user" {
   schema  = schema.opencoze
   comment = "Space Member Table"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null           = false
     type           = bigint
@@ -4352,7 +4433,6 @@ table "space_user" {
 table "template" {
   schema  = schema.opencoze
   comment = "Template Info Table"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null           = false
     type           = bigint
@@ -4430,7 +4510,6 @@ table "template" {
 table "tool" {
   schema  = schema.opencoze
   comment = "Latest Tool"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null     = false
     type     = bigint
@@ -4503,7 +4582,6 @@ table "tool" {
 table "tool_draft" {
   schema  = schema.opencoze
   comment = "Draft Tool"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null     = false
     type     = bigint
@@ -4577,7 +4655,6 @@ table "tool_draft" {
 table "tool_version" {
   schema  = schema.opencoze
   comment = "Tool Version"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null     = false
     type     = bigint
@@ -4645,7 +4722,6 @@ table "tool_version" {
 table "user" {
   schema  = schema.opencoze
   comment = "User Table"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null           = false
     type           = bigint
@@ -4772,7 +4848,6 @@ table "user" {
 table "user_role" {
   schema  = schema.opencoze
   comment = "User role relationship table"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null           = false
     type           = bigint
@@ -4855,16 +4930,19 @@ table "variable_instance" {
     type    = varchar(128)
     default = ""
     comment = "1 for agent_id，2 for app_id"
+    collate = "utf8mb4_0900_ai_ci"
   }
   column "version" {
     null    = false
     type    = varchar(255)
     comment = "agent or project version empty represents draft status"
+    collate = "utf8mb4_0900_ai_ci"
   }
   column "keyword" {
     null    = false
     type    = varchar(255)
     comment = "Keyword to Memory"
+    collate = "utf8mb4_0900_ai_ci"
   }
   column "type" {
     null    = false
@@ -4875,11 +4953,13 @@ table "variable_instance" {
     null    = true
     type    = text
     comment = "content"
+    collate = "utf8mb4_0900_ai_ci"
   }
   column "connector_uid" {
     null    = false
     type    = varchar(255)
     comment = "connector_uid"
+    collate = "utf8mb4_0900_ai_ci"
   }
   column "connector_id" {
     null    = false
@@ -4934,6 +5014,7 @@ table "variables_meta" {
     type    = varchar(128)
     default = ""
     comment = "1 for agent_id，2 for app_id"
+    collate = "utf8mb4_0900_ai_ci"
   }
   column "variable_list" {
     null    = true
@@ -4958,6 +5039,7 @@ table "variables_meta" {
     null    = false
     type    = varchar(255)
     comment = "Project version, empty represents draft status"
+    collate = "utf8mb4_0900_ai_ci"
   }
   primary_key {
     columns = [column.id]
@@ -4973,7 +5055,6 @@ table "variables_meta" {
 table "workflow_draft" {
   schema  = schema.opencoze
   comment = "Workflow canvas draft table, used to record the latest draft canvas information of workflow"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null     = false
     type     = bigint
@@ -5036,7 +5117,6 @@ table "workflow_draft" {
 table "workflow_execution" {
   schema  = schema.opencoze
   comment = "Workflow Execution Record Table, used to record the status of each workflow execution"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null     = false
     type     = bigint
@@ -5200,7 +5280,6 @@ table "workflow_execution" {
 table "workflow_meta" {
   schema  = schema.opencoze
   comment = "The workflow metadata table,used to record the basic metadata of workflow"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null     = false
     type     = bigint
@@ -5329,7 +5408,6 @@ table "workflow_meta" {
 table "workflow_reference" {
   schema  = schema.opencoze
   comment = "The workflow association table,used to record the direct mutual reference relationship between workflows"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null     = false
     type     = bigint
@@ -5394,7 +5472,6 @@ table "workflow_reference" {
 table "workflow_snapshot" {
   schema  = schema.opencoze
   comment = "snapshot for executed workflow draft"
-  collate = "utf8mb4_unicode_ci"
   column "workflow_id" {
     null     = false
     type     = bigint
@@ -5445,13 +5522,18 @@ table "workflow_snapshot" {
 table "workflow_version" {
   schema  = schema.opencoze
   comment = "Workflow Canvas Version Information Table, used to record canvas information for different versions"
-  collate = "utf8mb4_unicode_ci"
   column "id" {
     null           = false
     type           = bigint
     unsigned       = true
     comment        = "ID"
     auto_increment = true
+  }
+  column "workflow_id" {
+    null     = false
+    type     = bigint
+    unsigned = true
+    comment  = "workflow id"
   }
   column "version" {
     null    = false
@@ -5500,12 +5582,6 @@ table "workflow_version" {
     type    = varchar(255)
     comment = "the commit id corresponding to this version"
   }
-  column "workflow_id" {
-    null     = false
-    type     = bigint
-    unsigned = true
-    comment  = "workflow id"
-  }
   primary_key {
     columns = [column.id]
   }
@@ -5519,5 +5595,5 @@ table "workflow_version" {
 }
 schema "opencoze" {
   charset = "utf8mb4"
-  collate = "utf8mb4_0900_ai_ci"
+  collate = "utf8mb4_unicode_ci"
 }

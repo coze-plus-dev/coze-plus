@@ -25,6 +25,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	gonanoid "github.com/matoous/go-nanoid"
 
+	"github.com/coze-dev/coze-studio/backend/api/model/app/bot_common"
 	productAPI "github.com/coze-dev/coze-studio/backend/api/model/marketplace/product_public_api"
 	"github.com/coze-dev/coze-studio/backend/api/model/plugin_develop/common"
 	"github.com/coze-dev/coze-studio/backend/crossdomain/contract/plugin/consts"
@@ -43,9 +44,14 @@ type ToolInfo struct {
 	ActivatedStatus *consts.ActivatedStatus
 	DebugStatus     *common.APIDebugStatus
 
+	Source *bot_common.PluginFrom
+	Extra  map[string]any
+
 	Method    *string
 	SubURL    *string
 	Operation *Openapi3Operation
+
+	AgentID *int64
 }
 
 func (t ToolInfo) GetName() string {
@@ -64,6 +70,10 @@ func (t ToolInfo) GetDesc() string {
 
 func (t ToolInfo) GetVersion() string {
 	return ptr.FromOrDefault(t.Version, "")
+}
+
+func (t ToolInfo) GetPluginFrom() bot_common.PluginFrom {
+	return ptr.FromOrDefault(t.Source, 0)
 }
 
 func (t ToolInfo) GetActivatedStatus() consts.ActivatedStatus {
@@ -147,7 +157,7 @@ func (t ToolInfo) ToRespAPIParameter() ([]*common.APIParameter, error) {
 			location: string(consts.ParamInBody),
 			required: required[subParamName],
 		}
-		apiParam, err := toAPIParameter(paramMeta, prop.Value)
+		apiParam, err := t.toAPIParameter(paramMeta, prop.Value)
 		if err != nil {
 			return nil, err
 		}
@@ -196,7 +206,7 @@ func (t ToolInfo) ToReqAPIParameter() ([]*common.APIParameter, error) {
 			location: paramVal.In,
 			required: paramVal.Required,
 		}
-		apiParam, err := toAPIParameter(paramMeta, schemaVal)
+		apiParam, err := t.toAPIParameter(paramMeta, schemaVal)
 		if err != nil {
 			return nil, err
 		}
@@ -233,7 +243,7 @@ func (t ToolInfo) ToReqAPIParameter() ([]*common.APIParameter, error) {
 				location: string(consts.ParamInBody),
 				required: required[subParamName],
 			}
-			apiParam, err := toAPIParameter(paramMeta, prop.Value)
+			apiParam, err := t.toAPIParameter(paramMeta, prop.Value)
 			if err != nil {
 				return nil, err
 			}
@@ -247,7 +257,7 @@ func (t ToolInfo) ToReqAPIParameter() ([]*common.APIParameter, error) {
 	return params, nil
 }
 
-func toAPIParameter(paramMeta paramMetaInfo, sc *openapi3.Schema) (*common.APIParameter, error) {
+func (t ToolInfo) toAPIParameter(paramMeta paramMetaInfo, sc *openapi3.Schema) (*common.APIParameter, error) {
 	if sc == nil {
 		return nil, fmt.Errorf("schema is required")
 	}
@@ -273,7 +283,9 @@ func toAPIParameter(paramMeta paramMetaInfo, sc *openapi3.Schema) (*common.APIPa
 
 	if sc.Default != nil {
 		apiParam.GlobalDefault = ptr.Of(fmt.Sprintf("%v", sc.Default))
-		apiParam.LocalDefault = ptr.Of(fmt.Sprintf("%v", sc.Default))
+		if t.AgentID != nil {
+			apiParam.LocalDefault = ptr.Of(fmt.Sprintf("%v", sc.Default))
+		}
 	}
 
 	if sc.Format != "" {
@@ -325,7 +337,7 @@ func toAPIParameter(paramMeta paramMetaInfo, sc *openapi3.Schema) (*common.APIPa
 				required: required[subParamName],
 				location: paramMeta.location,
 			}
-			subParam, err := toAPIParameter(subMeta, prop.Value)
+			subParam, err := t.toAPIParameter(subMeta, prop.Value)
 			if err != nil {
 				return nil, err
 			}
@@ -348,7 +360,7 @@ func toAPIParameter(paramMeta paramMetaInfo, sc *openapi3.Schema) (*common.APIPa
 			location: paramMeta.location,
 			required: paramMeta.required,
 		}
-		subParam, err := toAPIParameter(subMeta, item)
+		subParam, err := t.toAPIParameter(subMeta, item)
 		if err != nil {
 			return nil, err
 		}
@@ -600,7 +612,9 @@ type VersionAgentTool struct {
 	ToolName *string
 	ToolID   int64
 
+	PluginID     int64
 	AgentVersion *string
+	PluginFrom   *bot_common.PluginFrom
 }
 
 type MGetAgentToolsRequest struct {
@@ -617,6 +631,8 @@ type ExecuteToolRequest struct {
 	ToolID        int64
 	ExecDraftTool bool // if true, execute draft tool
 	ExecScene     consts.ExecuteScene
+
+	PluginFrom *bot_common.PluginFrom
 
 	ArgumentsInJson string
 }

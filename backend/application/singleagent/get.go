@@ -28,6 +28,8 @@ import (
 	"github.com/coze-dev/coze-studio/backend/api/model/playground"
 	"github.com/coze-dev/coze-studio/backend/api/model/plugin_develop/common"
 	"github.com/coze-dev/coze-studio/backend/api/model/workflow"
+	"github.com/coze-dev/coze-studio/backend/bizpkg/config"
+	"github.com/coze-dev/coze-studio/backend/bizpkg/config/modelmgr"
 	"github.com/coze-dev/coze-studio/backend/crossdomain/contract/plugin/consts"
 	"github.com/coze-dev/coze-studio/backend/crossdomain/contract/plugin/model"
 	"github.com/coze-dev/coze-studio/backend/domain/agent/singleagent/entity"
@@ -36,7 +38,6 @@ import (
 	shortcutCMDEntity "github.com/coze-dev/coze-studio/backend/domain/shortcutcmd/entity"
 	workflowEntity "github.com/coze-dev/coze-studio/backend/domain/workflow/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/entity/vo"
-	"github.com/coze-dev/coze-studio/backend/infra/modelmgr"
 	"github.com/coze-dev/coze-studio/backend/pkg/errorx"
 	"github.com/coze-dev/coze-studio/backend/pkg/lang/conv"
 	"github.com/coze-dev/coze-studio/backend/pkg/lang/ptr"
@@ -155,6 +156,7 @@ func (s *SingleAgentApplicationService) shortcutCMDDo2Vo(cmdDOs []*shortcutCMDEn
 			ComponentsList:  cmdDO.Components,
 			CardSchema:      cmdDO.CardSchema,
 			ToolInfo:        cmdDO.ToolInfo,
+			PluginFrom:      ptr.Of(bot_common.PluginFrom(cmdDO.Source)),
 		}
 	})
 }
@@ -165,9 +167,8 @@ func (s *SingleAgentApplicationService) fetchModelDetails(ctx context.Context, a
 	}
 
 	modelID := agentInfo.ModelInfo.GetModelId()
-	modelInfos, err := s.appContext.ModelMgr.MGetModelByID(ctx, &modelmgr.MGetModelRequest{
-		IDs: []int64{modelID},
-	})
+	modelInfos, err := config.ModelConf().MGetModelByID(ctx, []int64{modelID})
+
 	if err != nil {
 		return nil, fmt.Errorf("fetch model(%d) details failed: %v", modelID, err)
 	}
@@ -206,27 +207,55 @@ func (s *SingleAgentApplicationService) fetchToolDetails(ctx context.Context, ag
 		IsDraft: true,
 		VersionAgentTools: slices.Transform(agentInfo.Plugin, func(a *bot_common.PluginInfo) model.VersionAgentTool {
 			return model.VersionAgentTool{
-				ToolID: a.GetApiId(),
+				ToolID:     a.GetApiId(),
+				PluginFrom: a.PluginFrom,
+				PluginID:   a.GetPluginId(),
 			}
 		}),
 	})
 }
 
 func (s *SingleAgentApplicationService) fetchPluginDetails(ctx context.Context, agentInfo *entity.SingleAgent, toolInfos []*pluginEntity.ToolInfo) ([]*pluginEntity.PluginInfo, error) {
-	vPlugins := make([]model.VersionPlugin, 0, len(agentInfo.Plugin))
+	vLocalPlugins := make([]model.VersionPlugin, 0, len(agentInfo.Plugin))
 	vPluginMap := make(map[string]bool, len(agentInfo.Plugin))
+	vSaasPlugin := make([]model.VersionPlugin, 0, len(agentInfo.Plugin))
 	for _, v := range toolInfos {
-		k := fmt.Sprintf("%d:%s", v.PluginID, v.GetVersion())
+		k := fmt.Sprintf("%d:%s:%s", v.PluginID, v.GetVersion(), v.GetPluginFrom())
 		if vPluginMap[k] {
 			continue
 		}
 		vPluginMap[k] = true
-		vPlugins = append(vPlugins, model.VersionPlugin{
-			PluginID: v.PluginID,
-			Version:  v.GetVersion(),
-		})
+		if v.GetPluginFrom() == bot_common.PluginFrom_FromSaas {
+			vSaasPlugin = append(vSaasPlugin, model.VersionPlugin{
+				PluginID: v.PluginID,
+				Version:  v.GetVersion(),
+			})
+		} else {
+			vLocalPlugins = append(vLocalPlugins, model.VersionPlugin{
+				PluginID: v.PluginID,
+				Version:  v.GetVersion(),
+			})
+		}
 	}
-	return s.appContext.PluginDomainSVC.MGetVersionPlugins(ctx, vPlugins)
+	pluginInfos := make([]*pluginEntity.PluginInfo, 0, len(vLocalPlugins)+len(vSaasPlugin))
+	if len(vLocalPlugins) > 0 {
+		localPluginInfos, err := s.appContext.PluginDomainSVC.MGetVersionPlugins(ctx, vLocalPlugins)
+		if err != nil {
+			return nil, fmt.Errorf("fetch local plugin details failed: %v", err)
+		}
+		pluginInfos = append(pluginInfos, localPluginInfos...)
+	}
+
+	if len(vSaasPlugin) > 0 {
+		saasPluginInfos, err := s.appContext.PluginDomainSVC.GetSaasPluginInfo(ctx, slices.Transform(vSaasPlugin, func(v model.VersionPlugin) int64 {
+			return v.PluginID
+		}))
+		if err != nil {
+			return nil, fmt.Errorf("fetch saas plugin details failed: %v", err)
+		}
+		pluginInfos = append(pluginInfos, saasPluginInfos...)
+	}
+	return pluginInfos, nil
 }
 
 func (s *SingleAgentApplicationService) fetchWorkflowDetails(ctx context.Context, agentInfo *entity.SingleAgent) ([]*workflowEntity.Workflow, error) {
@@ -256,14 +285,12 @@ func modelInfoDo2Vo(modelInfos []*modelmgr.Model) map[int64]*playground.ModelDet
 }
 
 func toModelDetail(m *modelmgr.Model) *playground.ModelDetail {
-	mm := m.Meta
-
 	return &playground.ModelDetail{
-		Name:         ptr.Of(m.Name),
-		ModelName:    ptr.Of(m.Name),
+		Name:         ptr.Of(m.DisplayInfo.Name),
+		ModelName:    ptr.Of(m.Connection.BaseConnInfo.Model),
 		ModelID:      ptr.Of(m.ID),
-		ModelFamily:  ptr.Of(int64(mm.Protocol.TOModelClass())),
-		ModelIconURL: ptr.Of(m.IconURL),
+		ModelFamily:  ptr.Of(int64(m.Provider.ModelClass)),
+		ModelIconURL: ptr.Of(m.Provider.IconURL),
 	}
 }
 
@@ -305,7 +332,9 @@ func (s *SingleAgentApplicationService) pluginInfoDo2Vo(ctx context.Context, plu
 		e := v.PluginInfo
 
 		var iconURL string
-		if e.GetIconURI() != "" {
+		if e.IconURL != nil {
+			iconURL = *e.IconURL
+		} else if e.GetIconURI() != "" {
 			var err error
 			iconURL, err = s.appContext.TosClient.GetObjectUrl(ctx, e.GetIconURI())
 			if err != nil {
@@ -326,6 +355,7 @@ func (s *SingleAgentApplicationService) pluginInfoDo2Vo(ctx context.Context, plu
 				}
 				return ptr.Of(false)
 			}(),
+			PluginFrom: e.Source,
 		}
 	})
 }

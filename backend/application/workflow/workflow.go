@@ -2654,6 +2654,7 @@ func (w *ApplicationService) GetApiDetail(ctx context.Context, req *workflow.Get
 		PluginEntity: vo.PluginEntity{
 			PluginID:      pluginID,
 			PluginVersion: req.PluginVersion,
+			PluginFrom:    req.PluginFrom,
 		},
 		ToolIDs: []int64{toolID},
 	})
@@ -2691,6 +2692,7 @@ func (w *ApplicationService) GetApiDetail(ctx context.Context, req *workflow.Get
 			LatestVersion:       toolInfoResponse.LatestVersion,
 			PluginProductStatus: ternary.IFElse(toolInfoResponse.IsOfficial, int64(1), 0),
 			ProjectID:           ternary.IFElse(toolInfoResponse.AppID != 0, ptr.Of(strconv.FormatInt(toolInfoResponse.AppID, 10)), nil),
+			PluginFrom:          req.PluginFrom,
 		},
 		ToolInputs:  inputVars,
 		ToolOutputs: outputVars,
@@ -2743,6 +2745,7 @@ func (w *ApplicationService) GetLLMNodeFCSettingDetail(ctx context.Context, req 
 					PluginEntity: vo.PluginEntity{
 						PluginID:      pluginID,
 						PluginVersion: pl.PluginVersion,
+						PluginFrom:    pl.PluginFrom,
 					},
 					ToolIDs: []int64{toolID},
 					IsDraft: pl.IsDraft,
@@ -2940,7 +2943,8 @@ func (w *ApplicationService) GetLLMNodeFCSettingsMerged(ctx context.Context, req
 
 		pluginReq := &plugin.ToolsInfoRequest{
 			PluginEntity: vo.PluginEntity{
-				PluginID: pluginID,
+				PluginID:   pluginID,
+				PluginFrom: pluginFcSetting.PluginFrom,
 			},
 			ToolIDs: []int64{toolID},
 			IsDraft: isDraft,

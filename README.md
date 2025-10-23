@@ -69,7 +69,6 @@ Coze Plus 采用现代化技术架构，后端基于 Golang + Hertz 框架，前
    git clone https://github.com/coze-plus-dev/coze-plus.git
    cd coze-plus
    ```
-
 2. 配置模型
    ```bash
    # 复制模型配置模板
@@ -81,13 +80,15 @@ Coze Plus 采用现代化技术架构，后端基于 Golang + Hertz 框架，前
    * **meta.conn_config.api_key**：模型服务的 API Key
    * **meta.conn_config.model**：模型名称或 Endpoint ID
 
-3. 部署并启动服务
+3. 部署并启动服务。首次部署和启动时，可能需要一段时间来拉取镜像和构建本地镜像，请耐心等待。
    ```bash
    cd docker
    cp .env.example .env
    # 执行数据库迁移，初始化超级管理员账号
    docker compose up -d
    ```
+
+   常见启动失败问题，请参考 [FAQ](https://github.com/coze-dev/coze-studio/wiki/9.-FAQ)
 
 4. 访问系统
    * 打开浏览器访问 `http://localhost:8888/`
