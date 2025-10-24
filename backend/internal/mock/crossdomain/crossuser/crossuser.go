@@ -29,8 +29,9 @@ import (
 	context "context"
 	reflect "reflect"
 
-	crossuser "github.com/coze-dev/coze-studio/backend/crossdomain/contract/user"
 	gomock "go.uber.org/mock/gomock"
+
+	crossuser "github.com/coze-dev/coze-studio/backend/crossdomain/user"
 )
 
 // MockUser is a mock of User interface.
@@ -58,10 +59,10 @@ func (m *MockUser) EXPECT() *MockUserMockRecorder {
 }
 
 // CreateUser mocks base method.
-func (m *MockUser) CreateUser(ctx context.Context, req *crossuser.CreateUserRequest) (*crossuser.UserInfo, error) {
+func (m *MockUser) CreateUser(ctx context.Context, req *crossuser.CreateUserRequest) (*crossuser.EntityUser, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateUser", ctx, req)
-	ret0, _ := ret[0].(*crossuser.UserInfo)
+	ret0, _ := ret[0].(*crossuser.EntityUser)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -73,10 +74,10 @@ func (mr *MockUserMockRecorder) CreateUser(ctx, req any) *gomock.Call {
 }
 
 // GetUserSpaceList mocks base method.
-func (m *MockUser) GetUserSpaceList(ctx context.Context, userID int64) ([]*crossuser.Space, error) {
+func (m *MockUser) GetUserSpaceList(ctx context.Context, userID int64) ([]*crossuser.EntitySpace, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserSpaceList", ctx, userID)
-	ret0, _ := ret[0].([]*crossuser.Space)
+	ret0, _ := ret[0].([]*crossuser.EntitySpace)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -85,4 +86,47 @@ func (m *MockUser) GetUserSpaceList(ctx context.Context, userID int64) ([]*cross
 func (mr *MockUserMockRecorder) GetUserSpaceList(ctx, userID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserSpaceList", reflect.TypeOf((*MockUser)(nil).GetUserSpaceList), ctx, userID)
+}
+
+// ListUsers mocks base method.
+func (m *MockUser) ListUsers(ctx context.Context, req *crossuser.ListUsersRequest) (*crossuser.ListUsersResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListUsers", ctx, req)
+	ret0, _ := ret[0].(*crossuser.ListUsersResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListUsers indicates an expected call of ListUsers.
+func (mr *MockUserMockRecorder) ListUsers(ctx, req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListUsers", reflect.TypeOf((*MockUser)(nil).ListUsers), ctx, req)
+}
+
+// ResetUserPassword mocks base method.
+func (m *MockUser) ResetUserPassword(ctx context.Context, email, newPassword string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ResetUserPassword", ctx, email, newPassword)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ResetUserPassword indicates an expected call of ResetUserPassword.
+func (mr *MockUserMockRecorder) ResetUserPassword(ctx, email, newPassword any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetUserPassword", reflect.TypeOf((*MockUser)(nil).ResetUserPassword), ctx, email, newPassword)
+}
+
+// UpdateUserStatus mocks base method.
+func (m *MockUser) UpdateUserStatus(ctx context.Context, req *crossuser.UpdateUserStatusRequest) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateUserStatus", ctx, req)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateUserStatus indicates an expected call of UpdateUserStatus.
+func (mr *MockUserMockRecorder) UpdateUserStatus(ctx, req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserStatus", reflect.TypeOf((*MockUser)(nil).UpdateUserStatus), ctx, req)
 }

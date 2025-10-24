@@ -1,4 +1,20 @@
 /*
+ * Copyright 2025 coze-plus Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * Copyright 2025 coze-dev Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,9 +41,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 
-	workflowModel "github.com/coze-dev/coze-studio/backend/api/model/crossdomain/workflow"
-	crossmessage "github.com/coze-dev/coze-studio/backend/crossdomain/contract/message"
-	messagemock "github.com/coze-dev/coze-studio/backend/crossdomain/contract/message/messagemock"
+	crossmessage "github.com/coze-dev/coze-studio/backend/crossdomain/message"
+	messagemock "github.com/coze-dev/coze-studio/backend/crossdomain/message/messagemock"
+	workflowModel "github.com/coze-dev/coze-studio/backend/crossdomain/workflow/model"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/entity"
 	mock_workflow "github.com/coze-dev/coze-studio/backend/internal/mock/domain/workflow"
 	"github.com/coze-dev/coze-studio/backend/pkg/lang/ptr"
