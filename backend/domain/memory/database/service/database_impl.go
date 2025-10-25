@@ -1,4 +1,20 @@
 /*
+ * Copyright 2025 coze-plus Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * Copyright 2025 coze-dev Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,9 +50,10 @@ import (
 	"github.com/coze-dev/coze-studio/backend/infra/cache"
 
 	"github.com/coze-dev/coze-studio/backend/api/model/app/bot_common"
-	"github.com/coze-dev/coze-studio/backend/api/model/crossdomain/database"
 	"github.com/coze-dev/coze-studio/backend/api/model/data/database/table"
-	crossvariables "github.com/coze-dev/coze-studio/backend/crossdomain/contract/variables"
+	"github.com/coze-dev/coze-studio/backend/crossdomain/database/model"
+	database "github.com/coze-dev/coze-studio/backend/crossdomain/database/model"
+	crossvariables "github.com/coze-dev/coze-studio/backend/crossdomain/variables"
 	entity2 "github.com/coze-dev/coze-studio/backend/domain/memory/database/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/memory/database/internal/convertor"
 	"github.com/coze-dev/coze-studio/backend/domain/memory/database/internal/dal/query"
@@ -391,7 +408,7 @@ func (d databaseService) MGetDatabase(ctx context.Context, req *MGetDatabaseRequ
 	for _, onlineDatabase := range onlineDatabases {
 		if needSys, ok := onlineID2NeedSysFields[onlineDatabase.ID]; ok && needSys {
 			if onlineDatabase.FieldList == nil {
-				onlineDatabase.FieldList = make([]*database.FieldItem, 0, 3)
+				onlineDatabase.FieldList = make([]*model.FieldItem, 0, 3)
 			}
 			onlineDatabase.FieldList = append(onlineDatabase.FieldList, physicaltable.GetDisplayCreateTimeField(), physicaltable.GetDisplayUidField(), physicaltable.GetDisplayIDField())
 		}

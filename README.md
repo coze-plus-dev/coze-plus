@@ -50,6 +50,10 @@ Coze Plus 采用现代化技术架构，后端基于 Golang + Hertz 框架，前
       <td><img src="images/role.png" alt="角色管理" width="400"/></td>
       <td><img src="images/account.png" alt="账号管理" width="400"/></td>
     </tr>
+    <tr>
+      <td><img src="images/20251025-132256.png" alt="模型配置" width="400"/></td>
+      <td><img src="images/20251025-132311.jpg" alt="官方插件" width="400"/></td>
+    </tr>
   </table>
 </div>
 
@@ -70,15 +74,9 @@ Coze Plus 采用现代化技术架构，后端基于 Golang + Hertz 框架，前
    cd coze-plus
    ```
 2. 配置模型
-   ```bash
-   # 复制模型配置模板
-   cp backend/conf/model/template/model_template_ark_doubao-seed-1.6.yaml backend/conf/model/ark_doubao-seed-1.6.yaml
-   ```
+   访问 http://localhost:8888/admin 配置
 
-   编辑配置文件 `backend/conf/model/ark_doubao-seed-1.6.yaml`，设置：
-   * **id**：模型 ID（非零整数，全局唯一）
-   * **meta.conn_config.api_key**：模型服务的 API Key
-   * **meta.conn_config.model**：模型名称或 Endpoint ID
+   ![模型配置示例](images/20251025-132256.png)
 
 3. 部署并启动服务。首次部署和启动时，可能需要一段时间来拉取镜像和构建本地镜像，请耐心等待。
    ```bash

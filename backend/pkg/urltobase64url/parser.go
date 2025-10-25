@@ -1,4 +1,20 @@
 /*
+ * Copyright 2025 coze-plus Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * Copyright 2025 coze-dev Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,6 +39,7 @@ import (
 	"mime"
 	"net/http"
 	"path/filepath"
+	"strings"
 )
 
 type FileData struct {
@@ -49,12 +66,36 @@ func URLToBase64(url string) (*FileData, error) {
 
 	var mimeType string
 
-	mimeType = resp.Header.Get("Content-Type")
+	contentType := resp.Header.Get("Content-Type")
+	if contentType != "" {
+		mediaType, _, err := mime.ParseMediaType(contentType)
+		if err == nil && mediaType != "" {
+			mimeType = mediaType
+		}
+	}
 
 	if mimeType == "" {
-		ext := filepath.Ext(url)
+		detectedType := http.DetectContentType(fileContent)
+		if detectedType != "application/octet-stream" {
+			mimeType = detectedType
+		}
+	}
+
+	if mimeType == "" || mimeType == "application/octet-stream" {
+		urlPath := url
+		if idx := strings.Index(urlPath, "?"); idx != -1 {
+			urlPath = urlPath[:idx]
+		}
+		if idx := strings.Index(urlPath, "#"); idx != -1 {
+			urlPath = urlPath[:idx]
+		}
+
+		ext := filepath.Ext(urlPath)
 		if ext != "" {
-			mimeType = mime.TypeByExtension(ext)
+			extMimeType := mime.TypeByExtension(ext)
+			if extMimeType != "" {
+				mimeType = extMimeType
+			}
 		}
 	}
 

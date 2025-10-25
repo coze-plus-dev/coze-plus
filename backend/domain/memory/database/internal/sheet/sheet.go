@@ -1,4 +1,20 @@
 /*
+ * Copyright 2025 coze-plus Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * Copyright 2025 coze-dev Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,8 +51,9 @@ import (
 	"github.com/extrame/xls"
 	"github.com/xuri/excelize/v2"
 
-	"github.com/coze-dev/coze-studio/backend/api/model/crossdomain/database"
 	"github.com/coze-dev/coze-studio/backend/api/model/data/knowledge"
+	"github.com/coze-dev/coze-studio/backend/crossdomain/database/model"
+	database "github.com/coze-dev/coze-studio/backend/crossdomain/database/model"
 	"github.com/coze-dev/coze-studio/backend/domain/memory/database/entity"
 	"github.com/coze-dev/coze-studio/backend/infra/storage"
 	"github.com/coze-dev/coze-studio/backend/pkg/errorx"
@@ -59,7 +76,7 @@ var (
 
 type TosTableParser struct {
 	UserID         int64
-	DocumentSource database.DocumentSourceType
+	DocumentSource model.DocumentSourceType
 	TosURI         string
 	TosServ        storage.Storage
 }
@@ -551,11 +568,11 @@ func GetColumnTypePriority(columnType knowledge.ColumnType) int64 {
 	return 0
 }
 
-func GetColumnTypeCategory(columnType knowledge.ColumnType) database.ColumnTypeCategory {
+func GetColumnTypeCategory(columnType knowledge.ColumnType) model.ColumnTypeCategory {
 	if columnType == knowledge.ColumnType_Number || columnType == knowledge.ColumnType_Float {
-		return database.ColumnTypeCategoryNumber
+		return model.ColumnTypeCategoryNumber
 	}
-	return database.ColumnTypeCategoryText
+	return model.ColumnTypeCategoryText
 }
 
 func GetCellType(cellValue string) knowledge.ColumnType {
@@ -710,7 +727,7 @@ func (t *TosTableParser) TransferPreviewData(ctx context.Context, columns []*kno
 	return previewData, nil
 }
 
-func CheckSheetIsValid(fields []*database.FieldItem, parsedColumns []*knowledge.DocTableColumn, sheet *entity.ExcelExtraInfo) (bool, *string) {
+func CheckSheetIsValid(fields []*model.FieldItem, parsedColumns []*knowledge.DocTableColumn, sheet *entity.ExcelExtraInfo) (bool, *string) {
 	if len(fields) != len(parsedColumns) {
 		return false, ptr.Of("field number not match")
 	}

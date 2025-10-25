@@ -25,7 +25,7 @@ import (
 	"github.com/coze-dev/coze-studio/backend/api/model/corporation/common"
 	employeeAPI "github.com/coze-dev/coze-studio/backend/api/model/corporation/employee"
 	"github.com/coze-dev/coze-studio/backend/application/base/ctxutil"
-	crossuser "github.com/coze-dev/coze-studio/backend/crossdomain/contract/user"
+	crossuser "github.com/coze-dev/coze-studio/backend/crossdomain/user"
 	"github.com/coze-dev/coze-studio/backend/domain/corporation/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/corporation/service"
 	"github.com/coze-dev/coze-studio/backend/pkg/errorx"
@@ -96,7 +96,7 @@ func (s *CorporationApplicationService) CreateEmployee(ctx context.Context, req 
 				}
 				return errorx.WrapByCode(err, errno.ErrCorporationInternalError)
 			}
-			serviceReq.UserID = &user.ID
+			serviceReq.UserID = &user.UserID
 		}
 
 		serviceResp, err = s.DomainEmployeeSVC.CreateEmployee(ctx, serviceReq)

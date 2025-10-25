@@ -26,7 +26,7 @@ import (
 	"github.com/coze-dev/coze-studio/backend/api/model/permission/common"
 	permission1 "github.com/coze-dev/coze-studio/backend/api/model/permission/permission"
 	"github.com/coze-dev/coze-studio/backend/application/base/ctxutil"
-	crossuser "github.com/coze-dev/coze-studio/backend/crossdomain/contract/user"
+	crossuser "github.com/coze-dev/coze-studio/backend/crossdomain/user"
 	"github.com/coze-dev/coze-studio/backend/domain/permission/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/permission/service"
 	"github.com/coze-dev/coze-studio/backend/pkg/errorx"
@@ -805,12 +805,7 @@ func (p *PermissionApplicationService) ResetUserPassword(ctx context.Context, re
 	}
 
 	// Call crossdomain user service to reset password
-	resetReq := &crossuser.ResetUserPasswordRequest{
-		Email:       req.Email,
-		NewPassword: req.NewPassword,
-	}
-
-	if err := crossuser.DefaultSVC().ResetUserPassword(ctx, resetReq); err != nil {
+	if err := crossuser.DefaultSVC().ResetUserPassword(ctx, req.Email, req.NewPassword); err != nil {
 		logs.CtxErrorf(ctx, "reset user password failed for email %s, err: %v", req.Email, err)
 		return nil, err
 	}
@@ -833,7 +828,7 @@ func parseInt64FromString(s string) int64 {
 }
 
 // convertCrossUserToAPIModel converts crossdomain user to API model
-func convertCrossUserToAPIModel(crossUser *crossuser.UserInfo) *permission1.UserData {
+func convertCrossUserToAPIModel(crossUser *crossuser.EntityUser) *permission1.UserData {
 	if crossUser == nil {
 		return nil
 	}
@@ -842,7 +837,7 @@ func convertCrossUserToAPIModel(crossUser *crossuser.UserInfo) *permission1.User
 	updatedAt := time.Unix(crossUser.UpdatedAt/1000, 0).Format("2006-01-02 15:04:05")
 
 	return &permission1.UserData{
-		UserID:       &crossUser.ID,
+		UserID:       &crossUser.UserID,
 		Name:         &crossUser.Name,
 		UniqueName:   &crossUser.UniqueName,
 		Email:        &crossUser.Email,

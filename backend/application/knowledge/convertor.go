@@ -1,4 +1,20 @@
 /*
+ * Copyright 2025 coze-plus Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * Copyright 2025 coze-dev Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,11 +41,9 @@ import (
 	"strings"
 	"time"
 
-	knowledgeModel "github.com/coze-dev/coze-studio/backend/api/model/crossdomain/knowledge"
-	model "github.com/coze-dev/coze-studio/backend/api/model/crossdomain/knowledge"
 	dataset "github.com/coze-dev/coze-studio/backend/api/model/data/knowledge"
-	modelCommon "github.com/coze-dev/coze-studio/backend/api/model/data/knowledge"
 	"github.com/coze-dev/coze-studio/backend/application/upload"
+	"github.com/coze-dev/coze-studio/backend/crossdomain/knowledge/model"
 	"github.com/coze-dev/coze-studio/backend/domain/knowledge/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/knowledge/service"
 	"github.com/coze-dev/coze-studio/backend/infra/document"
@@ -145,17 +159,17 @@ func convertDocTableSheet2Model(sheet entity.TableSheet) *dataset.DocTableSheet 
 	}
 }
 
-func convertTableMeta(t []*entity.TableColumn) []*modelCommon.DocTableColumn {
+func convertTableMeta(t []*entity.TableColumn) []*dataset.DocTableColumn {
 	if len(t) == 0 {
 		return nil
 	}
-	resp := make([]*modelCommon.DocTableColumn, 0)
+	resp := make([]*dataset.DocTableColumn, 0)
 	for i := range t {
 		if t[i] == nil {
 			continue
 		}
 
-		resp = append(resp, &modelCommon.DocTableColumn{
+		resp = append(resp, &dataset.DocTableColumn{
 			ID:         t[i].ID,
 			ColumnName: t[i].Name,
 			IsSemantic: t[i].Indexing,
@@ -167,30 +181,30 @@ func convertTableMeta(t []*entity.TableColumn) []*modelCommon.DocTableColumn {
 	return resp
 }
 
-func convertColumnType(t document.TableColumnType) *modelCommon.ColumnType {
+func convertColumnType(t document.TableColumnType) *dataset.ColumnType {
 	switch t {
 	case document.TableColumnTypeString:
-		return modelCommon.ColumnTypePtr(modelCommon.ColumnType_Text)
+		return dataset.ColumnTypePtr(dataset.ColumnType_Text)
 	case document.TableColumnTypeBoolean:
-		return modelCommon.ColumnTypePtr(modelCommon.ColumnType_Boolean)
+		return dataset.ColumnTypePtr(dataset.ColumnType_Boolean)
 	case document.TableColumnTypeNumber:
-		return modelCommon.ColumnTypePtr(modelCommon.ColumnType_Float)
+		return dataset.ColumnTypePtr(dataset.ColumnType_Float)
 	case document.TableColumnTypeTime:
-		return modelCommon.ColumnTypePtr(modelCommon.ColumnType_Date)
+		return dataset.ColumnTypePtr(dataset.ColumnType_Date)
 	case document.TableColumnTypeInteger:
-		return modelCommon.ColumnTypePtr(modelCommon.ColumnType_Number)
+		return dataset.ColumnTypePtr(dataset.ColumnType_Number)
 	case document.TableColumnTypeImage:
-		return modelCommon.ColumnTypePtr(modelCommon.ColumnType_Image)
+		return dataset.ColumnTypePtr(dataset.ColumnType_Image)
 	default:
-		return modelCommon.ColumnTypePtr(modelCommon.ColumnType_Text)
+		return dataset.ColumnTypePtr(dataset.ColumnType_Text)
 	}
 }
 
-func convertDocTableSheet(t *entity.TableSheet) *modelCommon.DocTableSheet {
+func convertDocTableSheet(t *entity.TableSheet) *dataset.DocTableSheet {
 	if t == nil {
 		return nil
 	}
-	return &modelCommon.DocTableSheet{
+	return &dataset.DocTableSheet{
 		ID:        t.SheetId,
 		SheetName: t.SheetName,
 		TotalRow:  t.TotalRows,
@@ -217,7 +231,7 @@ func convertSliceContent(s *entity.Slice) string {
 	if len(s.RawContent) == 0 {
 		return ""
 	}
-	if s.RawContent[0].Type == knowledgeModel.SliceContentTypeTable {
+	if s.RawContent[0].Type == model.SliceContentTypeTable {
 		tableData := make([]sliceContentData, 0, len(s.RawContent[0].Table.Columns))
 		for _, col := range s.RawContent[0].Table.Columns {
 			tableData = append(tableData, sliceContentData{
@@ -240,13 +254,13 @@ type sliceContentData struct {
 	Desc       string `json:"desc"`
 }
 
-func convertSliceStatus2Model(status knowledgeModel.SliceStatus) dataset.SliceStatus {
+func convertSliceStatus2Model(status model.SliceStatus) dataset.SliceStatus {
 	switch status {
-	case knowledgeModel.SliceStatusInit:
+	case model.SliceStatusInit:
 		return dataset.SliceStatus_PendingVectoring
-	case knowledgeModel.SliceStatusFinishStore:
+	case model.SliceStatusFinishStore:
 		return dataset.SliceStatus_FinishVectoring
-	case knowledgeModel.SliceStatusFailed:
+	case model.SliceStatusFailed:
 		return dataset.SliceStatus_Deactive
 	default:
 		return dataset.SliceStatus_PendingVectoring
